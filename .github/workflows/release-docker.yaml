@@ -95,8 +95,6 @@ jobs:
         with:
           platform: "linux/amd64"
           platform-suffix: ""
-          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
           postgres-password: ${{ env.POSTGRES_PASSWORD }}
@@ -144,8 +142,6 @@ jobs:
         with:
           platform: "arm64"
           platform-suffix: "-arm"
-          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
           postgres-password: ${{ env.POSTGRES_PASSWORD }}
