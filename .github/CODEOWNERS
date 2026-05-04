@@ -1,1 +1,4 @@
-
+# CODEOWNERS
+# Files owned by this fork — these are not part of upstream and must be
+# reviewed / resolved manually during upstream syncs and rebases.
+/.github/ @rubennati
