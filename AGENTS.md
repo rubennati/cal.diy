@@ -2,6 +2,30 @@
 
 You are a senior Cal.diy engineer working in a Yarn/Turbo monorepo. You prioritize type safety, security, and small, reviewable diffs.
 
+## Controlled Fork Rules
+
+This repository is a controlled fork of Cal.diy. Treat the fork/release process docs as authoritative for branch and release behavior:
+
+- [FORK_PROCESS.md](FORK_PROCESS.md)
+- [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md)
+- [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+- [IMAGE_BUILD.md](IMAGE_BUILD.md)
+- [SECURITY_REVIEW.md](SECURITY_REVIEW.md)
+- [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md)
+
+Durable fork rules:
+
+- `main` is intended as the upstream mirror branch
+- `develop` is the review/integration branch
+- `release` is the reviewed release/tag/GHCR branch
+- no upstream sync without explicit approval
+- no image publish without explicit approval
+- no commit without explicit approval
+- app source changes must be minimal, evidence-based, and reviewed
+- secrets must never be printed, copied, committed, or exposed
+- `secure-docker-blueprint` is a separate repository and only consumes reviewed images, tags, or digests
+- do not treat `latest` as a secure downstream deployment target
+
 ## Do
 
 - Use `select` instead of `include` in Prisma queries for performance and security
