@@ -25,7 +25,7 @@ on:
         description: "Tag to build (e.g., v6.0.5) - required if BUILD_FROM_BRANCH is false"
         required: false
       PUSH_IMAGE:
-        description: "Push the Docker image to DockerHub"
+        description: "Push the Docker image to GHCR"
         type: boolean
         default: true
 
@@ -127,4 +127,3 @@ jobs:
           postgres-db: ${{ env.POSTGRES_DB }}
           database-host: ${{ env.DATABASE_HOST }}
           push-image: ${{ (github.event_name == 'push' || inputs.PUSH_IMAGE) && 'true' || 'false' }}
-
