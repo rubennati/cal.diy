@@ -5,9 +5,6 @@ Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md]
 
 ## Now / next (in cal.forte)
 
-- **Trivy image-gate**: wire an image-layer scan into `release-docker`
-  (build → scan → fail-on-critical → push) as a pre-publish gate. Touches the reusable
-  `docker-build-and-test` action.
 - **Pin `develop` base to an upstream release tag** (FORK_STRATEGY → Upstream base) and
   record it in the sync-log.
 
