@@ -44,8 +44,21 @@ excluding them breaks `next build` — do NOT exclude those. Original context ex
 Removes `apps/web/playwright/` (81 files) + all test sources from the image → kills the Trivy
 "Stripe secret" false positives. Runtime-safe (tests aren't used at boot).
 
-### Stage 2 — drop dev dependencies (the big win)
-Blocker: the boot seed needs `ts-node`. Fix first, then prune:
+### Stage 2 — drop dev CLI/test tooling ✅ done & verified
+Implemented as a surgical prune in `builder-two` (before the runner copies the tree):
+removed `trigger.dev` (CLI, pulls `@depot/cli` + esbuild), `vitest`, `playwright`, `@biomejs`.
+
+**Kept — verified as runtime-required (each nearly broke the build):**
+`turbo` (`start.sh` runs `turbo run start`), `ts-node` (boot seed),
+`@trigger.dev/sdk` (prod dep imported by app code).
+
+**Result** (non-publishing build `30222509498`, both jobs green incl. runtime health-check):
+node-pkg CRITICALs **8 → 4**; the gobinary findings (`@depot`/esbuild → docker, grpc, Go
+stdlib) are gone. Remaining: `vitest` (nested copy under `packages/*/node_modules`), `tar`
+(nested), `websocket-driver` (fixed by a 0.7.5 resolution).
+
+A deeper prune (full production-only install) still needs the boot seed pre-compiled so
+`ts-node` can go. Original plan:
 
 1. **Pre-compile the seed** at build time (e.g. `esbuild scripts/seed-app-store.ts` →
    `seed-app-store.js`) and change `start.sh` to `node scripts/seed-app-store.js` → `ts-node`
