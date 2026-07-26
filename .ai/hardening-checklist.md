@@ -37,7 +37,8 @@ LINKEDIN_ADS_ENABLED=0
 ## 4. Lock down access
 | Lever | Value | Where |
 |-------|-------|-------|
-| `NEXT_PUBLIC_DISABLE_SIGNUP` | `true` | **build** (needs a build-arg — see branding.md §1) |
+| Disable signup | **DB feature flag `disable-signup`** | **runtime** — admin UI `/settings/admin/flags`, no rebuild (preferred) |
+| `NEXT_PUBLIC_DISABLE_SIGNUP` | `true` | build-baked; the DB flag above is the runtime-capable path |
 | `ALLOWED_HOSTNAMES` | `'"your-domain"'` | runtime |
 | `CSP_POLICY` | `non-strict` | build (already a Dockerfile ARG) |
 | `NEXTAUTH_COOKIE_DOMAIN` | `your-domain` | runtime |
@@ -63,11 +64,18 @@ deployment, fill the placeholders, inject secrets as Docker secrets.
 The image already ships **telemetry + ad-tracking OFF by default** (runner-stage ENV) — no need
 to set those; override via runtime env only if you ever want them on.
 
-## 8. First run (don't lock yourself out)
+## 8. First run (don't lock yourself out) — do this immediately after deploy
 
-`NEXT_PUBLIC_DISABLE_SIGNUP` is build-time (client-baked). On a fresh instance: keep **signup
-enabled**, create your admin account, *then* bake `DISABLE_SIGNUP=true` into a later image build.
-Disabling signup before the first account exists locks you out.
+Signup is **open by default**. Sequence on a fresh instance:
+
+1. Deploy, open the app, **create your own account first**.
+2. Then disable signup at runtime: `/settings/admin/flags` → enable **`disable-signup`**
+   (seeded by migration `20230601181657_disable_signup_feature_flag`).
+   It is enforced **server-side** — both `POST /api/auth/signup` and the signup page check it,
+   so it genuinely blocks registration, not just the UI link.
+3. Verify: open `/signup` in a private window — it must refuse.
+
+Leaving this step out means **anyone can register on your instance**.
 
 ## 9. Overriding baked-in files (logos) without wiping the folder
 
