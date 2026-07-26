@@ -12,6 +12,25 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Release v6.2.0-3 (GHCR publish)
+
+Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
+
+- **tag:** `v6.2.0-3`
+- **source branch:** `release`
+- **source commit:** `11cbb281` (promotion of `develop` `feef5b6`)
+- **upstream base:** cal.com 6.2.0 (merge-base `46eb533d`)
+- **new since v6.2.0-2:** cal.forte branding (`NEXT_PUBLIC_APP_NAME`), Trivy image scan
+  (report-only), hardened image defaults (telemetry/ads off), the `config/` template + docs,
+  and `next-auth 4.24.15` + `tar 7.5.19` security bumps.
+- **image:** `ghcr.io/rubennati/cal.diy:v6.2.0-3` (amd64; arm64 as `v6.2.0-3-arm`)
+- **digest:** `sha256:e5311b428005b74e3c1771b58d8429adf436e5da48b33b0f12bb037cfb8c627a`
+- **checks:** `forte-ci` green (install / type-check / biome); release build success
+  (run `30215955037`); Trivy image scan ran report-only (findings = base-OS + dev/build
+  tooling — pending the runtime-image slim, see roadmap).
+
+---
+
 ## 2026-07-26 — Trivy gate → report-only + next-auth fix
 
 The first Trivy-gated release build (`v6.2.0-3`) **blocked the publish** — the image scan
