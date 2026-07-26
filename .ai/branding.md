@@ -105,13 +105,14 @@ not linked from any paywall.
 - Round-robin & collective scheduling exist at the code level: `SchedulingType`
   (`ROUND_ROBIN`/`COLLECTIVE`/`MANAGED`), `getLuckyUser` host selection, and team event-type
   support (member assignment, team availability, API v2 team event-types).
-- **But team management is not wired up**: no `viewer/teams` CRUD router, no `createTeam`
-  mutation anywhere, no team-settings/create page — only residual i18n strings and
-  team-*consumption* handlers remain.
-- **Conclusion:** creating/managing a team through the UI is very likely **not available** in
-  this build; round-robin needs a team you cannot create in-app. If shared/team calendars
-  matter, verify hands-on (`/settings/teams`) — but expect it absent. This is a CE-stripping
-  choice, not a bug.
+- **But there is no way to create a team** — verified across every path: no `viewer/teams`
+  CRUD router, no `createTeam` mutation, no team-settings/create page; the onboarding wizard
+  is **personal-only** (no team step); the `create_new_team` i18n string is **unused** (dead);
+  no CLI script; no API v2 create-team endpoint. Only residual models + team-*consumption* code remain.
+- **Conclusion:** team / shared-calendar / round-robin is **not usable** in this build —
+  round-robin needs a team, and there is no UI / wizard / CLI / API to create one (a
+  DB-inserted `Team` row likely wouldn't surface either — no team pages). Re-adding teams
+  would be a feature project, not a config toggle. A CE-stripping choice, not a bug.
 
 ## 6. To actually rebrand the image (future step, if wanted)
 
