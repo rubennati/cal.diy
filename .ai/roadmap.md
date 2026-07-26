@@ -10,11 +10,12 @@ remaining big item is code-slimming below._
 
 ## Later (bigger — needs its own sub-plan before touching)
 
-- **Code-slimming** — remove unused features / attack surface. Candidates: Trigger.dev,
-  parts of the App-Store, EE modules. **HIGH RISK** on a cal.com monorepo: do per-module,
-  behind a plan, build + `type-check:ci` gated, one reviewable PR each. Resolves the
-  ❓ rules (`patterns-trigger-dev`, `patterns-app-store`, `data-prisma-feature-flags`,
-  `agents/skills/calcom-api`).
+- **Code-slimming** — analysed in [slimming-analysis.md](slimming-analysis.md):
+  attack surface is mostly **config-controlled** (app-store apps default-disabled in the
+  DB; async-tasker / webhooks / app-sync / orgs are env-gated; EE is absent in the DIY
+  edition). The real lever is **configuration hardening in `secure-docker-blueprint`**,
+  not code removal. Actual code deletion is high-risk / low-gain and optional (image size
+  only). The ❓ rules stay (kept, marked in divergence).
 - **arm64** — only if ARM deployment becomes needed (currently amd64-only by choice).
 
 ## Deferred to `secure-docker-blueprint` (separate repo, handled elsewhere)

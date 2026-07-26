@@ -18,5 +18,5 @@ Files in this directory:
 - [project-brief.md](project-brief.md) · [state.md](state.md) · [decisions.md](decisions.md) — context & durable decisions
 - [divergence.md](divergence.md) — steady-state divergence from upstream (added / removed / modified)
 - [sync-log.md](sync-log.md) — timeline of sync / security / release rounds
-- [roadmap.md](roadmap.md) — open work
+- [roadmap.md](roadmap.md) — open work · [slimming-analysis.md](slimming-analysis.md) — attack-surface analysis
 - [quality-gates.md](quality-gates.md) · [domains/release.md](domains/release.md) — gates & release domain
