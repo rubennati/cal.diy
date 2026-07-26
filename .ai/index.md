@@ -22,4 +22,5 @@ Files in this directory:
 - [architecture.md](architecture.md) — architecture + configuration map (env / DB / file), hardening levers, branding
 - [branding.md](branding.md) — branding / white-labeling (build vs runtime), edition (CE vs EE) table
 - [env-reference.md](env-reference.md) — every env var: meaning, format, priority, hardening recommendation
+- [hardening-checklist.md](hardening-checklist.md) — how/where to apply the top security actions
 - [quality-gates.md](quality-gates.md) · [domains/release.md](domains/release.md) — gates & release domain

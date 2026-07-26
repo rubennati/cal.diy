@@ -89,7 +89,31 @@ automation features are simply not here — for a hardened minimal instance that
 but multi-org admin is an enterprise concept. For a single-user hardened instance: **leave
 orgs off**. Team/org branding (logo/colors/hideBranding) only applies if enabled.
 
-## 5. To actually rebrand the image (future step, if wanted)
+## 5. UI reality: paywall, EE upsells & teams
+
+**The pay-to-upgrade paywall is already removed.** `apps/web/modules/shell/UpgradeTip.tsx`
+is a no-op — its own comment: *"In the open-source distribution there is no paywall – always
+render children"* — and it is referenced nowhere. The old cal.com "buy this Enterprise
+feature" prompts are **gone**. There is **no `LicenseRequired` UI gating** (0 usages).
+
+Residual "upgrade" surface: `getUserTopBanners` can return `teamUpgradeBanner` /
+`orgUpgradeBanner` — **billing** banners for teams/orgs, empty without billing config or
+without teams/orgs enabled. `apps/web/modules/upgrade/upgrade-view.tsx` is a leftover page,
+not linked from any paywall.
+
+**Teams / shared calendar / round-robin — mixed, likely absent:**
+- Round-robin & collective scheduling exist at the code level: `SchedulingType`
+  (`ROUND_ROBIN`/`COLLECTIVE`/`MANAGED`), `getLuckyUser` host selection, and team event-type
+  support (member assignment, team availability, API v2 team event-types).
+- **But team management is not wired up**: no `viewer/teams` CRUD router, no `createTeam`
+  mutation anywhere, no team-settings/create page — only residual i18n strings and
+  team-*consumption* handlers remain.
+- **Conclusion:** creating/managing a team through the UI is very likely **not available** in
+  this build; round-robin needs a team you cannot create in-app. If shared/team calendars
+  matter, verify hands-on (`/settings/teams`) — but expect it absent. This is a CE-stripping
+  choice, not a bug.
+
+## 6. To actually rebrand the image (future step, if wanted)
 
 1. `Dockerfile` (builder stage): add `ARG NEXT_PUBLIC_APP_NAME` + `ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME` (and `_COMPANY_NAME`, `_SUPPORT_MAIL_ADDRESS`).
 2. Pass them as `build-args` in `release-docker` / the reusable action.
