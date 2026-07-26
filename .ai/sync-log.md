@@ -12,6 +12,38 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Documented upstream base
+
+- Base: cal.com **6.2.0**; fork divergence point (merge-base `develop`↔`origin/main`) = `46eb533d`.
+- Mirror `origin/main` at `3894f37` — 44 commits past base, still 6.2.0 patch line.
+- Caveat recorded in [state.md](state.md): the repo's `v6.2.0` tag is a fork commit, not
+  the upstream release. Future syncs pin the base to the real upstream release tag/commit.
+
+---
+
+## 2026-07-26 — Release v6.2.0-2 (GHCR publish)
+
+Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
+
+- **tag:** `v6.2.0-2`
+- **source branch:** `release`
+- **source commit:** `84517bf5` (promotion of `develop` `8ef00c5d`)
+- **upstream base:** `46eb533d` (merge-base of `develop` and `origin/main`; develop is
+  consciously ~43 commits behind upstream, with security fixes cherry-picked)
+- **fork-only content:** 4 security cherry-picks, de-cruft (`.cursor`/`.changeset`/`.vscode`),
+  fork-owned rules, fork security CI (`forte-*`), `security.txt` fix
+- **image:** `ghcr.io/rubennati/cal.diy:v6.2.0-2`
+- **digest:** `sha256:f5e25e7d2512a80952ed0fdf6f9ccee2aba30d36738dc493eb4efaa1d13782e4`
+- **checks:** `yarn type-check:ci --force` green; `git diff --check` clean;
+  `yarn install --immutable` consistent; release-docker build success (run `30209106589`)
+- **follow-ups (reviewed):**
+  - `Dockerfile` `ENV NEXTAUTH_SECRET`/`CALENDSO_ENCRYPTION_KEY` are build-stage
+    placeholders (`=secret`) that do NOT persist into the final `runner` image; real
+    secrets are injected at runtime. The `SecretsUsedInArgOrEnv` warning is benign here.
+  - multi-arch: the published image is `linux/amd64` only, by choice — arm64 not needed for now.
+
+---
+
 ## 2026-07-26 — Fork de-cruft (remove cal.com-only cruft)
 
 Removed upstream paths that are cal.com-specific and unused by this fork

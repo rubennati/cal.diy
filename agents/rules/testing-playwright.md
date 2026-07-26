@@ -27,6 +27,7 @@ Always ensure Playwright tests pass locally before pushing code. The user requir
 
 ## CI Behavior
 
-- E2E tests will only run if PR has "ready-for-e2e" label
-- When E2E tests are skipped, the "required" check intentionally fails to prevent merging without E2E
-- Do not try to fix anything related to skipped E2E tests - this is expected behavior
+This fork does not run Playwright E2E in CI — the upstream E2E workflows are disabled
+(see [.ai/divergence.md](../../.ai/divergence.md) → CI policy). E2E is a **local** tool:
+run the relevant specs locally before pushing changes that touch booking / auth /
+calendar flows. Fork CI (`forte-ci`) covers type-check + lint only.

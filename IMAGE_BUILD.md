@@ -34,7 +34,12 @@ That means:
 
 ## Current Behavior Summary
 
-- The release workflow builds amd64 and arm64 variants.
+- The release builds both amd64 and arm64 but publishes them as **separate tags**
+  (`vX.Y.Z` = amd64, `vX.Y.Z-arm` = arm64) — there is no merged multi-arch manifest, so
+  `vX.Y.Z` alone resolves to amd64 (confirmed on `v6.2.0-2`). arm64 consumers must pin
+  the `-arm` tag. A true multi-arch manifest would need a manifest-merge step; not needed for now.
+- A **Trivy image-gate** in the reusable action scans the built image before the push
+  step and blocks the publish on fixable CRITICAL vulnerabilities (exceptions via `.trivyignore`).
 - The reusable action publishes to `ghcr.io/rubennati/cal.diy`.
 - The workflow currently builds from the root [Dockerfile](/Users/rb3nt/Code/cal.diy/Dockerfile:1).
 - The API v2 Dockerfile exists, but it is not the current fork GHCR release artifact.

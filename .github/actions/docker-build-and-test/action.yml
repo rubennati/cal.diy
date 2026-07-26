@@ -98,6 +98,7 @@ runs:
           NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
           NEXT_PUBLIC_API_V2_URL=http://localhost:5555/api/v2
           NEXT_PUBLIC_LICENSE_CONSENT=agree
+          NEXT_PUBLIC_APP_NAME=cal.forte
           DATABASE_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
           DATABASE_DIRECT_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
 
@@ -142,6 +143,18 @@ runs:
         NEXTAUTH_SECRET: "EI4qqDpcfdvf4A+0aQEEx8JjHxHSy4uWiZw/F32K+pA="
         CALENDSO_ENCRYPTION_KEY: "0zfLtY99wjeLnsM7qsa8xsT+Q0oSgnOL"
 
+    # Pre-publish gate: scan the locally-loaded image before the push step below.
+    # Blocks only on FIXABLE CRITICAL vulns; accept exceptions in .trivyignore (auto-read from repo root).
+    - name: Scan image for vulnerabilities (Trivy gate)
+      uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        scan-type: image
+        image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        severity: CRITICAL
+        ignore-unfixed: true
+        exit-code: "1"
+        format: table
+
     - name: Push image
       id: docker_push
       uses: docker/build-push-action@v6
@@ -157,6 +170,7 @@ runs:
           NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
           NEXT_PUBLIC_API_V2_URL=http://localhost:5555/api/v2
           NEXT_PUBLIC_LICENSE_CONSENT=agree
+          NEXT_PUBLIC_APP_NAME=cal.forte
           DATABASE_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
           DATABASE_DIRECT_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
 
