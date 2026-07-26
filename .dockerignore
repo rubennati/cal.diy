@@ -22,6 +22,17 @@ test-results
 .turbo
 **/.turbo
 
+# Test sources — not used at container runtime (cal.forte slim, Stage 1).
+# Note: playwright.config.ts stays (the Dockerfile copies it explicitly).
+**/playwright
+**/e2e
+**/__tests__
+**/__mocks__
+**/__fixtures__
+**/*.test.*
+**/*.spec.*
+**/*.e2e.*
+
 # Logs
 *.log
 npm-debug.log*

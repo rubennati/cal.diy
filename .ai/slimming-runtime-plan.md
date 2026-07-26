@@ -23,9 +23,10 @@ the staging below.
 
 ## Staged plan (low → high risk; each gated by a test build)
 
-### Stage 1 — exclude test files (low-risk, do first)
-`.dockerignore` currently excludes `.next`, `node_modules`, coverage, `.turbo`, docs — but
-NOT tests. Add:
+### Stage 1 — exclude test files ✅ done
+`.dockerignore` now also excludes test sources (added `**/playwright`, `**/e2e`,
+`**/__tests__`, `**/__mocks__`, `**/__fixtures__`, `**/*.test.*`, `**/*.spec.*`, `**/*.e2e.*`).
+Verify with a non-publishing build before the next release. Original set was:
 
 ```
 **/playwright
