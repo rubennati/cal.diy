@@ -19,4 +19,5 @@ Files in this directory:
 - [divergence.md](divergence.md) — steady-state divergence from upstream (added / removed / modified)
 - [sync-log.md](sync-log.md) — timeline of sync / security / release rounds
 - [roadmap.md](roadmap.md) — open work · [slimming-analysis.md](slimming-analysis.md) — attack-surface analysis
+- [architecture.md](architecture.md) — architecture + configuration map (env / DB / file), hardening levers, branding
 - [quality-gates.md](quality-gates.md) · [domains/release.md](domains/release.md) — gates & release domain
