@@ -50,6 +50,7 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | Doc | What |
 |-----|------|
 | [.ai/hardening-checklist.md](.ai/hardening-checklist.md) | how/where to apply the top security actions |
+| [config/cal.forte.env.example](config/cal.forte.env.example) | ready-to-use hardened env template (Brevo · MS · Zoom · Apple) |
 | [.ai/slimming-analysis.md](.ai/slimming-analysis.md) | attack surface is config-controlled, not code |
 
 **Operational layer (`.ai/`)**

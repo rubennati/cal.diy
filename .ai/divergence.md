@@ -27,7 +27,7 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `.well-known/security.txt` — fork security contact, not cal.com [guarded]
 - `AGENTS.md` (+ `CLAUDE.md` symlink) — fork-owned AI guide (cal.com team/process stripped)
 - `agents/rules/README.md`, `agents/rules/_sections.md` — fork-owned rules index
-- `Dockerfile` — cal.forte branding build-args (`NEXT_PUBLIC_APP_NAME` etc.)
+- `Dockerfile` — cal.forte branding build-args + hardened runtime defaults (telemetry/ads off)
 - `.github/actions/docker-build-and-test/action.yml` — Trivy image-gate + branding build-arg
 
 ## Fork-added paths (ours; upstream has none)
@@ -37,6 +37,7 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `.github/workflows/release-docker.yaml` — fork release CI (GHCR)
 - `.github/workflows/forte-{ci,codeql,trivy,scorecard}.yml` — fork security CI (develop/release only)
 - `.github/dependabot.yml` — dependency + GitHub-Actions update config
+- `config/cal.forte.env.example` — hardened first-instance env template
 - process docs: `FORK_PROCESS.md`, `UPSTREAM_SYNC.md`, `RELEASE_PROCESS.md`,
   `IMAGE_BUILD.md`, `SECURITY_REVIEW.md`, `CALDIY_RELEASE_CONTRACT.md`
 

@@ -95,6 +95,12 @@ ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL \
   BUILT_NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
 
 ENV NODE_ENV=production
+
+# cal.forte hardened defaults — privacy-by-default; override via runtime env if ever needed
+ENV CALCOM_TELEMETRY_DISABLED=1 \
+  GOOGLE_ADS_ENABLED=0 \
+  LINKEDIN_ADS_ENABLED=0
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=30s --retries=5 \

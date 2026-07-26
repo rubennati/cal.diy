@@ -52,3 +52,34 @@ calendar/video credentials you actually use (architecture.md §3, env-reference.
 
 > Reminder: `NEXT_PUBLIC_*` levers are build-time — they need build-args in `release-docker`
 > (see the branding change in the Dockerfile). Non-`NEXT_PUBLIC_*` levers are runtime env.
+
+## 7. Ready-to-use config
+
+A curated, public-safe env template with hardened defaults for the common calendar use-case
+(Brevo SMTP · Microsoft Outlook/Teams · Zoom · Apple/CalDAV · optional Google) lives at
+[`../config/cal.forte.env.example`](../config/cal.forte.env.example). Copy it into your private
+deployment, fill the placeholders, inject secrets as Docker secrets.
+
+The image already ships **telemetry + ad-tracking OFF by default** (runner-stage ENV) — no need
+to set those; override via runtime env only if you ever want them on.
+
+## 8. First run (don't lock yourself out)
+
+`NEXT_PUBLIC_DISABLE_SIGNUP` is build-time (client-baked). On a fresh instance: keep **signup
+enabled**, create your admin account, *then* bake `DISABLE_SIGNUP=true` into a later image build.
+Disabling signup before the first account exists locks you out.
+
+## 9. Overriding baked-in files (logos) without wiping the folder
+
+Mounting a volume over a **directory** shadows everything in it — the container's default assets
+vanish. So **mount individual files**, never the whole `public/` folder:
+
+```yaml
+# secure-docker-blueprint docker-compose — override just the logo files, siblings intact
+volumes:
+  - ./branding/logo-white-word.svg:/calcom/apps/web/public/calcom-logo-white-word.svg:ro
+  - ./branding/logo-word-black.svg:/calcom/apps/web/public/cal-logo-word-black.svg:ro
+  - ./branding/icon.svg:/calcom/apps/web/public/cal-com-icon-white.svg:ro
+```
+
+Mounting over `/calcom/apps/web/public` as a whole would blank out every other public asset.
