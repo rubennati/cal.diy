@@ -32,7 +32,9 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 
 - `.ai/` — fork operational layer for AI tools
 - `.github/copilot-instructions.md`
-- `.github/workflows/release-docker.yaml` — fork CI (GHCR)
+- `.github/workflows/release-docker.yaml` — fork release CI (GHCR)
+- `.github/workflows/forte-{ci,codeql,trivy,scorecard}.yml` — fork security CI (develop/release only)
+- `.github/dependabot.yml` — dependency + GitHub-Actions update config
 - process docs: `FORK_PROCESS.md`, `UPSTREAM_SYNC.md`, `RELEASE_PROCESS.md`,
   `IMAGE_BUILD.md`, `SECURITY_REVIEW.md`, `CALDIY_RELEASE_CONTRACT.md`
 
@@ -46,9 +48,14 @@ describe how to safely maintain this codebase. Manifesto/blog framing removed.
 
 Upstream workflows on `main` are disabled at the GitHub Actions level (not by editing
 `main`, which stays a pristine mirror): `changesets.yml`, `i18n.yml`,
-`nextjs-bundle-analysis.yml`. Only `release-docker.yaml` (fork CI) stays active.
+`nextjs-bundle-analysis.yml`. Only `release-docker.yaml` and the fork's own
+`forte-*` security workflows stay active.
 Re-check for newly-triggered upstream workflows after each mirror update
 (`gh workflow list --all`).
+
+The fork's own security CI (`forte-ci` lint+type-check, `forte-codeql`, `forte-trivy`,
+`forte-scorecard`) runs on `develop`/`release` only, never `main`. Findings surface
+under Security → Code scanning.
 
 ## Pending slimming decision (decide when the codebase is slimmed)
 
