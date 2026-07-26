@@ -22,6 +22,14 @@ test-results
 .turbo
 **/.turbo
 
+# E2E test suites — not imported by the app build (cal.forte slim, Stage 1).
+# NOTE: __mocks__ / __fixtures__ / *.test / *.spec are intentionally NOT excluded — some
+# are imported by app code at build time (e.g. @calcom/testing/lib/__mocks__/prisma), so
+# excluding them breaks `next build`. playwright.config.ts stays (copied explicitly).
+**/playwright
+**/e2e
+**/*.e2e.*
+
 # Logs
 *.log
 npm-debug.log*
