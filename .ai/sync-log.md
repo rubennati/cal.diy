@@ -12,6 +12,28 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Release v6.2.0-2 (GHCR publish)
+
+Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
+
+- **tag:** `v6.2.0-2`
+- **source branch:** `release`
+- **source commit:** `84517bf5` (promotion of `develop` `8ef00c5d`)
+- **upstream base:** `46eb533d` (merge-base of `develop` and `origin/main`; develop is
+  consciously ~43 commits behind upstream, with security fixes cherry-picked)
+- **fork-only content:** 4 security cherry-picks, de-cruft (`.cursor`/`.changeset`/`.vscode`),
+  fork-owned rules, fork security CI (`forte-*`), `security.txt` fix
+- **image:** `ghcr.io/rubennati/cal.diy:v6.2.0-2`
+- **digest:** `sha256:f5e25e7d2512a80952ed0fdf6f9ccee2aba30d36738dc493eb4efaa1d13782e4`
+- **checks:** `yarn type-check:ci --force` green; `git diff --check` clean;
+  `yarn install --immutable` consistent; release-docker build success (run `30209106589`)
+- **known follow-ups:**
+  - `Dockerfile:21` uses `ENV NEXTAUTH_SECRET` (build warning `SecretsUsedInArgOrEnv`) —
+    review before treating the image as fully hardened
+  - verify multi-arch: the published index showed `amd64` + an attestation; confirm `arm64`
+
+---
+
 ## 2026-07-26 — Fork de-cruft (remove cal.com-only cruft)
 
 Removed upstream paths that are cal.com-specific and unused by this fork
