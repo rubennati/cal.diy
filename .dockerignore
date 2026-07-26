@@ -22,15 +22,12 @@ test-results
 .turbo
 **/.turbo
 
-# Test sources — not used at container runtime (cal.forte slim, Stage 1).
-# Note: playwright.config.ts stays (the Dockerfile copies it explicitly).
+# E2E test suites — not imported by the app build (cal.forte slim, Stage 1).
+# NOTE: __mocks__ / __fixtures__ / *.test / *.spec are intentionally NOT excluded — some
+# are imported by app code at build time (e.g. @calcom/testing/lib/__mocks__/prisma), so
+# excluding them breaks `next build`. playwright.config.ts stays (copied explicitly).
 **/playwright
 **/e2e
-**/__tests__
-**/__mocks__
-**/__fixtures__
-**/*.test.*
-**/*.spec.*
 **/*.e2e.*
 
 # Logs

@@ -23,10 +23,12 @@ the staging below.
 
 ## Staged plan (low → high risk; each gated by a test build)
 
-### Stage 1 — exclude test files ✅ done
-`.dockerignore` now also excludes test sources (added `**/playwright`, `**/e2e`,
-`**/__tests__`, `**/__mocks__`, `**/__fixtures__`, `**/*.test.*`, `**/*.spec.*`, `**/*.e2e.*`).
-Verify with a non-publishing build before the next release. Original set was:
+### Stage 1 — exclude E2E test suites (conservative set; re-test pending)
+`.dockerignore` excludes `**/playwright`, `**/e2e`, `**/*.e2e.*` — this removes
+`apps/web/playwright/` (81 files, incl. the Trivy "Stripe secret" false positives).
+**Learning from the first attempt:** `__mocks__` / `__fixtures__` / `*.test` / `*.spec` are
+imported by app code at build time (e.g. `@calcom/testing/lib/__mocks__/prisma`), so
+excluding them breaks `next build` — do NOT exclude those. Original context excluded only:
 
 ```
 **/playwright
