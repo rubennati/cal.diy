@@ -1,0 +1,37 @@
+name: forte-ci
+
+# Fork-owned CI. Runs only on the fork's working branches, never on `main`
+# (the pristine upstream mirror). Additive: upstream has no forte-* workflows.
+
+on:
+  pull_request:
+    branches: [develop, release]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forte-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack (yarn 4)
+        run: corepack enable
+      - name: Install (immutable)
+        run: yarn install --immutable
+      - name: Type check
+        run: yarn type-check:ci --force
+      - name: Lint (Biome)
+        # Report-only until the inherited baseline is clean; then remove continue-on-error.
+        run: yarn biome ci .
+        continue-on-error: true
