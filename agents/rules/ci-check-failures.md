@@ -7,27 +7,32 @@ tags: ci, debugging, workflow
 
 # CI Check Failure Handling
 
-## What to Focus On
+## The fork's CI
 
-When reviewing CI check failures in Cal.diy:
+Only fork-owned workflows run — the upstream workflows are disabled on `main`
+(see [.ai/divergence.md](../../.ai/divergence.md) → CI policy):
 
-1. **E2E tests can be flaky** and may fail intermittently
-2. **Focus only on CI failures that are directly related to your code changes**
-3. Infrastructure-related failures (like dependency installation issues) can be disregarded if all code-specific checks pass
+- **`forte-ci`** — `yarn type-check:ci` (blocking) + Biome lint (report-only for now)
+- **`forte-codeql` / `forte-trivy` / `forte-scorecard`** — security scans; findings go to
+  **Security → Code scanning** and do not block merges
+- **`release-docker`** — builds and publishes the GHCR image on `v*` tags only
 
-## Known CI Issues to Ignore
+## What to focus on
 
-These errors are related to SAML database misconfiguration on CI and should be ignored:
-- "password authentication failed for user postgres"
-- "Invalid URL"
+1. A red **`forte-ci`** run is the one that matters — start with the type-check step.
+2. Security-scan findings surface in the Security tab; triage them there, they are not
+   PR blockers.
+3. Fix type errors first — they are often the root cause and can surface through
+   dependencies or type inference even in files you did not touch.
 
-## E2E Tests Skipping
+## Before blaming CI
 
-**E2E tests skipping is expected behavior:**
-- When E2E tests are skipped, it's because the `ready-for-e2e` label has not been added to the PR
-- The "required" check intentionally fails when E2E tests are skipped to prevent merging without E2E
-- Do not try to fix anything related to skipped E2E tests - this is completely expected and normal
+Reproduce locally first:
 
-## Before Blaming CI
+```bash
+yarn install --immutable
+yarn type-check:ci --force
+```
 
-Always run type checks locally using `yarn type-check:ci --force` before concluding that CI failures are unrelated to your changes. Even if errors appear in files you haven't directly modified, your changes might still be causing type issues through dependencies or type inference.
+If it passes locally but fails in CI, compare the runner's Node/yarn setup against
+`.github/workflows/forte-ci.yml` before assuming a real regression.
