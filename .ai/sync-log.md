@@ -12,6 +12,26 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Runtime-image slimming, Stage 1 (E2E suites out of the image)
+
+Added `**/playwright`, `**/e2e`, `**/*.e2e.*` to `.dockerignore` so E2E test sources
+(81 files under `apps/web/playwright`, incl. fake Stripe tokens that Trivy flagged) no
+longer enter the build context.
+
+**Failed first attempt (kept as a lesson):** the initial exclusion also covered
+`__mocks__`, `__fixtures__`, `*.test.*`, `*.spec.*` — that broke `next build`
+(`Cannot find module '@calcom/testing/lib/__mocks__/prisma'`), because app code imports
+those at build time. A **non-publishing test build caught it before any image was pushed**.
+Narrowed to E2E-only.
+
+**Verified:** non-publishing build (run `30218363330`, `PUSH_IMAGE=false`) — image builds and
+the runtime health-check passes. Not yet in a released image (next release will carry it).
+
+Next lever: Stage 2 (pre-compile the boot seed → drop dev dependencies) —
+[slimming-runtime-plan.md](slimming-runtime-plan.md).
+
+---
+
 ## 2026-07-26 — Release v6.2.0-3 (GHCR publish)
 
 Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
