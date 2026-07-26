@@ -5,8 +5,14 @@ Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md]
 
 ## Now / next (in cal.forte)
 
-_Base documented in [state.md](state.md) (cal.com 6.2.0, merge-base `46eb533d`). The one
-remaining big item is code-slimming below._
+- **Slim the runtime image** — the built image still ships dev/build tooling (vitest,
+  esbuild, `@depot/cli`, trigger.dev) + Playwright test files, inflating both image size and
+  the CVE count. Prune them from the runner stage. This is the prerequisite for flipping the
+  Trivy image-scan from **report-only** back to a **blocking** gate (see the note in
+  `.github/actions/docker-build-and-test/action.yml`).
+
+_Base documented in [state.md](state.md) (cal.com 6.2.0, merge-base `46eb533d`). The other
+big item is feature code-slimming below._
 
 ## Later (bigger — needs its own sub-plan before touching)
 

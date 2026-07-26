@@ -12,6 +12,26 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Trivy gate → report-only + next-auth fix
+
+The first Trivy-gated release build (`v6.2.0-3`) **blocked the publish** — the image scan
+found CRITICALs. Most were **not our app code**: base-OS (node:20 Debian — mariadb,
+imagemagick, kernel), dev/build tooling in `node_modules` (vitest, esbuild, `@depot/cli`,
+trigger.dev), and 3 false-positive "Stripe secrets" in a Playwright test fixture.
+
+Actions:
+- Fixed the one real runtime app vuln: **next-auth `4.24.13` → `4.24.15`**
+  (GHSA-7rqj-j65f-68wh, auth email-homoglyph) via resolution; also bumped `tar`
+  `7.5.11` → `7.5.19` (CVE-2026-59873).
+- Re-scoped the scan to `scanners: vuln`, `vuln-type: library` (drops secret-scanner
+  false positives + base-OS noise) and set it **report-only** (exit-code 0) until the
+  runtime image is slimmed (see roadmap) — a hard block on the inherited bloated image
+  would fail every release.
+
+Tag `v6.2.0-3` produced no image (build failed); it will be re-tagged after this fix.
+
+---
+
 ## 2026-07-26 — Documented upstream base
 
 - Base: cal.com **6.2.0**; fork divergence point (merge-base `develop`↔`origin/main`) = `46eb533d`.
