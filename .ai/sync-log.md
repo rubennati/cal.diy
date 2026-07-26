@@ -1,12 +1,34 @@
 # Sync Log
 
-Running record of upstream-sync and security-cherry-pick rounds for this fork.
-Newest first. This is the **"why"** companion to the raw git history: what was
-taken from upstream, what was intentionally skipped, and the reason.
+Running record of upstream-sync, security-cherry-pick, and de-cruft rounds for this
+fork. Newest first. This is the **"why"** companion to the raw git history: what was
+taken from upstream, what was intentionally skipped or removed, and the reason.
 
 Security-labelled upstream commits are taken by default
 (see [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md) → Security Fix Priority).
-Durable principles live in [decisions.md](decisions.md); this file is the timeline.
+Durable principles live in [decisions.md](decisions.md); the steady-state divergence
+(added / removed / kept-divergent paths) lives in [divergence.md](divergence.md);
+this file is the timeline.
+
+---
+
+## 2026-07-26 — Fork de-cruft (remove cal.com-only cruft)
+
+Removed upstream paths that are cal.com-specific and unused by this fork
+(now tracked in [divergence.md](divergence.md) so future syncs re-apply the cut):
+
+- `.cursor/` — cal.com Cursor AI rules/skills (fork uses Claude Code)
+- `.changeset/` — cal.com NPM release machinery (fork does not publish to NPM)
+- `.vscode/` — cal.com editor settings
+
+Fixed:
+
+- `.well-known/security.txt` — replaced cal.com security contact with the fork's own
+  (the file is served on the running instance and was misdirecting vulnerability
+  reports to cal.com). Guarded via `.gitattributes` (`merge=ours`).
+
+Note: `package.json` still carries inert `changesets-*` scripts; left in place to avoid
+upstream merge friction — candidate for a later package.json cleanup.
 
 ---
 
@@ -36,8 +58,8 @@ already covered by the earlier `security:` cherry-pick `75c8f5c1`:
 **Intentionally NOT taken this round:** the remaining ~37 non-security upstream
 commits — deferred to a deliberate full sync.
 
-**Checks:** `git diff --check` clean. `yarn type-check:ci --force` and a
-`yarn install` lockfile verification are to be run before the next release promotion.
+**Checks:** `git diff --check` clean; `yarn type-check:ci --force` green (9/9);
+`yarn install --immutable` lockfile-consistent.
 
 ---
 

@@ -1,4 +1,8 @@
-Contact: security@cal.com
-Preferred-Languages: en
-Canonical: https://cal.com/.well-known/security.txt
-Policy: https://github.com/calcom/cal.diy/security/policy
+# cal.forte fork security contact — replaces the upstream cal.com file.
+# TODO(operator): set Contact + Canonical to your own channel/domain, enable GitHub
+# private vulnerability reporting (or use a monitored mailbox), then drop these TODO lines.
+Contact: https://github.com/rubennati/cal.diy/security/advisories/new
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en, de
+Canonical: https://github.com/rubennati/cal.diy/.well-known/security.txt
+Policy: https://github.com/rubennati/cal.diy/security/policy

@@ -3,12 +3,13 @@
 /.yarn/plugins/**/*  binary
 /.pnp.*              binary linguist-generated
 
-# cal.forte fork: keep the fork's own README on develop/release. Never let an
-# upstream README overwrite it during a sync merge.
+# cal.forte fork: keep the fork's own versions of these files on develop/release.
+# Never let an upstream version overwrite them during a sync merge.
 #
 # One-time local setup per clone (documented in UPSTREAM_SYNC.md):
 #   git config merge.ours.driver true
 #
 # Without that config the attribute is inert and merges fall back to normal
 # behaviour, so this is safe to commit even on a fresh clone.
-README.md merge=ours
+README.md                 merge=ours
+.well-known/security.txt  merge=ours
