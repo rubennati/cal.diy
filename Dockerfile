@@ -83,6 +83,20 @@ ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL \
 
 RUN scripts/replace-placeholder.sh http://NEXT_PUBLIC_WEBAPP_URL_PLACEHOLDER ${NEXT_PUBLIC_WEBAPP_URL}
 
+# cal.forte slim (Stage 2): drop dev-only CLI/test tooling before the runner copies the tree,
+# so it shrinks the shipped image and its CVE surface.
+# Kept on purpose — these ARE needed at runtime:
+#   turbo            -> start.sh runs `yarn start` = `turbo run start --filter=@calcom/web`
+#   ts-node          -> start.sh runs the app-store seed via ts-node
+#   @trigger.dev/sdk -> prod dependency imported by app code (the CLI `trigger.dev` is not)
+RUN rm -rf \
+  node_modules/trigger.dev \
+  node_modules/@depot \
+  node_modules/vitest node_modules/@vitest \
+  node_modules/playwright node_modules/playwright-core node_modules/@playwright \
+  node_modules/@biomejs \
+  || true
+
 FROM node:20 AS runner
 
 WORKDIR /calcom
