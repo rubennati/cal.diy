@@ -6,10 +6,17 @@ Start here, then read the authoritative docs:
 
 - [../AGENTS.md](../AGENTS.md)
 - [../FORK_PROCESS.md](../FORK_PROCESS.md)
+- [../FORK_STRATEGY.md](../FORK_STRATEGY.md)
 - [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)
 - [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md)
 - [../IMAGE_BUILD.md](../IMAGE_BUILD.md)
 - [../SECURITY_REVIEW.md](../SECURITY_REVIEW.md)
 - [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md)
 
-Use the files in this directory for current fork context, durable decisions, and release-specific operating rules.
+Files in this directory:
+
+- [project-brief.md](project-brief.md) · [state.md](state.md) · [decisions.md](decisions.md) — context & durable decisions
+- [divergence.md](divergence.md) — steady-state divergence from upstream (added / removed / modified)
+- [sync-log.md](sync-log.md) — timeline of sync / security / release rounds
+- [roadmap.md](roadmap.md) — open work
+- [quality-gates.md](quality-gates.md) · [domains/release.md](domains/release.md) — gates & release domain
