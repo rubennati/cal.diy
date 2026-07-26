@@ -5,11 +5,6 @@ Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md]
 
 ## Now / next (in cal.forte)
 
-- **Phase 3c — adapt inherited rules**: fine-tune the 8 "adapt" rule files to fork
-  reality (paths, CI, disabled workflows): `reference-file-locations`,
-  `reference-local-dev`, `ci-type-check-first`, `ci-check-failures`, `ci-git-workflow`,
-  `data-prisma-migrations`, plus `agents/commands.md`, `agents/README.md`,
-  `agents/knowledge-base.md`.
 - **Trivy image-gate**: wire an image-layer scan into `release-docker`
   (build → scan → fail-on-critical → push) as a pre-publish gate. Touches the reusable
   `docker-build-and-test` action.
