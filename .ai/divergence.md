@@ -13,13 +13,20 @@ review (see [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)).
 - `.cursor/` — cal.com Cursor AI rules/skills; this fork uses Claude Code
 - `.changeset/` — cal.com NPM release machinery; this fork does not publish to NPM
 - `.vscode/` — cal.com editor settings
+- `SPEC-WORKFLOW.md` — cal.com spec-driven-development process
+- cal.com team-culture / PR-process rules under `agents/rules/`:
+  `culture-accountability`, `culture-leverage-ai`, `quality-thorough-code-review`,
+  `quality-no-followup-prs`, `quality-pr-creation`, `quality-review-checklist`,
+  `quality-code-review`, `_template`
 
 ## Fork-modified upstream files (keep OUR version on merge)
 
-Protected via `.gitattributes` (`merge=ours`) so upstream merges don't overwrite them:
+Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 
-- `README.md` — cal.forte identity (branch-specific)
-- `.well-known/security.txt` — fork security contact, not cal.com
+- `README.md` — cal.forte identity (branch-specific) [guarded]
+- `.well-known/security.txt` — fork security contact, not cal.com [guarded]
+- `AGENTS.md` (+ `CLAUDE.md` symlink) — fork-owned AI guide (cal.com team/process stripped)
+- `agents/rules/README.md`, `agents/rules/_sections.md` — fork-owned rules index
 
 ## Fork-added paths (ours; upstream has none)
 
@@ -29,10 +36,23 @@ Protected via `.gitattributes` (`merge=ours`) so upstream merges don't overwrite
 - process docs: `FORK_PROCESS.md`, `UPSTREAM_SYNC.md`, `RELEASE_PROCESS.md`,
   `IMAGE_BUILD.md`, `SECURITY_REVIEW.md`, `CALDIY_RELEASE_CONTRACT.md`
 
-## Under review (inherited from upstream, decision pending)
+## Kept engineering rules (adopted from upstream)
 
-- `agents/rules/`, `CLAUDE.md`, `AGENTS.md`, `SPEC-WORKFLOW.md` — these are **cal.com's**
-  engineering/AI rules, not fork-authored. Planned: migrate to the fork's own
-  standard (`rubennati/ai-project-standard`) and thin out cal.com-specific guidance.
-- `package.json` — still carries inert `changesets-*` scripts (NPM release); left in
-  place to avoid merge friction, candidate for removal in a later package.json pass.
+The ~37 remaining `agents/rules/*` (architecture, data, api, performance, quality,
+testing, patterns, ci, reference) are cal.com's engineering rules, kept because they
+describe how to safely maintain this codebase. Manifesto/blog framing removed.
+
+## CI policy
+
+Upstream workflows on `main` are disabled at the GitHub Actions level (not by editing
+`main`, which stays a pristine mirror): `changesets.yml`, `i18n.yml`,
+`nextjs-bundle-analysis.yml`. Only `release-docker.yaml` (fork CI) stays active.
+Re-check for newly-triggered upstream workflows after each mirror update
+(`gh workflow list --all`).
+
+## Pending slimming decision (decide when the codebase is slimmed)
+
+- `agents/rules/patterns-trigger-dev` — only if Trigger.dev is kept
+- `agents/rules/patterns-app-store`, `agents/rules/data-prisma-feature-flags` — only if kept
+- `agents/skills/calcom-api` — only if the Cal API is used
+- `package.json` — inert `changesets-*` scripts (NPM release); remove in a later package.json pass
