@@ -23,7 +23,9 @@ the staging below.
 
 ## Staged plan (low → high risk; each gated by a test build)
 
-### Stage 1 — exclude E2E test suites (conservative set; re-test pending)
+### Stage 1 — exclude E2E test suites ✅ done & verified
+Verified by a non-publishing build (run `30218363330`, `PUSH_IMAGE=false`): image builds and
+the runtime health-check passes with the exclusions in place.
 `.dockerignore` excludes `**/playwright`, `**/e2e`, `**/*.e2e.*` — this removes
 `apps/web/playwright/` (81 files, incl. the Trivy "Stripe secret" false positives).
 **Learning from the first attempt:** `__mocks__` / `__fixtures__` / `*.test` / `*.spec` are
