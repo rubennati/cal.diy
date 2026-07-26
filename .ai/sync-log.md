@@ -27,10 +27,11 @@ Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
 - **digest:** `sha256:f5e25e7d2512a80952ed0fdf6f9ccee2aba30d36738dc493eb4efaa1d13782e4`
 - **checks:** `yarn type-check:ci --force` green; `git diff --check` clean;
   `yarn install --immutable` consistent; release-docker build success (run `30209106589`)
-- **known follow-ups:**
-  - `Dockerfile:21` uses `ENV NEXTAUTH_SECRET` (build warning `SecretsUsedInArgOrEnv`) —
-    review before treating the image as fully hardened
-  - verify multi-arch: the published index showed `amd64` + an attestation; confirm `arm64`
+- **follow-ups (reviewed):**
+  - `Dockerfile` `ENV NEXTAUTH_SECRET`/`CALENDSO_ENCRYPTION_KEY` are build-stage
+    placeholders (`=secret`) that do NOT persist into the final `runner` image; real
+    secrets are injected at runtime. The `SecretsUsedInArgOrEnv` warning is benign here.
+  - multi-arch: the published image is `linux/amd64` only, by choice — arm64 not needed for now.
 
 ---
 

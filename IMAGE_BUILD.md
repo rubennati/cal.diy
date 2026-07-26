@@ -34,7 +34,9 @@ That means:
 
 ## Current Behavior Summary
 
-- The release workflow builds amd64 and arm64 variants.
+- The published release image is currently `linux/amd64` only (verified on the
+  `v6.2.0-2` manifest: amd64 + a build attestation, no arm64). arm64 is not required
+  for now; revisit the reusable action's multi-arch output if ARM deployment is needed.
 - The reusable action publishes to `ghcr.io/rubennati/cal.diy`.
 - The workflow currently builds from the root [Dockerfile](/Users/rb3nt/Code/cal.diy/Dockerfile:1).
 - The API v2 Dockerfile exists, but it is not the current fork GHCR release artifact.
