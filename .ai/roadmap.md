@@ -5,8 +5,8 @@ Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md]
 
 ## Now / next (in cal.forte)
 
-- **Pin `develop` base to an upstream release tag** (FORK_STRATEGY → Upstream base) and
-  record it in the sync-log.
+_Base documented in [state.md](state.md) (cal.com 6.2.0, merge-base `46eb533d`). The one
+remaining big item is code-slimming below._
 
 ## Later (bigger — needs its own sub-plan before touching)
 

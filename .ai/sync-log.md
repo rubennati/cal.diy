@@ -12,6 +12,15 @@ this file is the timeline.
 
 ---
 
+## 2026-07-26 — Documented upstream base
+
+- Base: cal.com **6.2.0**; fork divergence point (merge-base `develop`↔`origin/main`) = `46eb533d`.
+- Mirror `origin/main` at `3894f37` — 44 commits past base, still 6.2.0 patch line.
+- Caveat recorded in [state.md](state.md): the repo's `v6.2.0` tag is a fork commit, not
+  the upstream release. Future syncs pin the base to the real upstream release tag/commit.
+
+---
+
 ## 2026-07-26 — Release v6.2.0-2 (GHCR publish)
 
 Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
