@@ -2,3 +2,7 @@
 /.yarn/releases/*    binary
 /.yarn/plugins/**/*  binary
 /.pnp.*              binary linguist-generated
+
+# cal.forte fork: keep this branch's own README on merges (branch-specific identity).
+# One-time local: git config merge.ours.driver true  (see UPSTREAM_SYNC.md)
+README.md  merge=ours
