@@ -27,6 +27,8 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `.well-known/security.txt` — fork security contact, not cal.com [guarded]
 - `AGENTS.md` (+ `CLAUDE.md` symlink) — fork-owned AI guide (cal.com team/process stripped)
 - `agents/rules/README.md`, `agents/rules/_sections.md` — fork-owned rules index
+- `Dockerfile` — cal.forte branding build-args (`NEXT_PUBLIC_APP_NAME` etc.)
+- `.github/actions/docker-build-and-test/action.yml` — Trivy image-gate + branding build-arg
 
 ## Fork-added paths (ours; upstream has none)
 
