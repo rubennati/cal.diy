@@ -29,5 +29,10 @@ big item is feature code-slimming below._
 
 - Runtime resource limits validated vs Cal.com reqs (min 2 vCPU / 4 GB, rec 4 vCPU / 8 GB;
   build needs ~6 GB heap, runtime is lighter — don't set the app container too low)
-- Secret management (SOPS+age → Infisical when multi-service)
+- Secret management: keep injecting secrets at **runtime** (Docker secrets) — they must never
+  enter git or the image. **Do NOT use git-committed encrypted secrets (SOPS/git-crypt):**
+  `secure-docker-blueprint` is a *public* repo, so ciphertext would be permanently
+  harvestable and the history unerasable. If central management is ever needed, use a
+  **secrets store outside git** (e.g. self-hosted Infisical, Vault) that still hands the app
+  runtime-injected secrets.
 - Local `compose.local.yml` (no Traefik) for quick local testing
