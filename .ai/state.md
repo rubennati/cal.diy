@@ -22,10 +22,11 @@ steady-state divergence: [divergence.md](divergence.md).
 **Branches:** `main` = untouched upstream mirror · `develop` = integration/review ·
 `release` = reviewed source for the GHCR image (currently `11cbb281`).
 
-**Latest release:** `v6.2.0-3` — `ghcr.io/rubennati/cal.diy:v6.2.0-3`,
-digest `sha256:e5311b428005b74e3c1771b58d8429adf436e5da48b33b0f12bb037cfb8c627a`
+**Latest release:** `v6.2.0-4` — `ghcr.io/rubennati/cal.diy:v6.2.0-4`,
+digest `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8`
 (amd64; arm64 is published as a separate `-arm` tag, no merged multi-arch manifest).
-Contains: cal.forte branding, hardened defaults (telemetry/ads off), next-auth 4.24.15.
+Contains: cal.forte branding, hardened defaults (telemetry/ads off), next-auth 4.24.15,
+websocket-driver 0.7.5, and a slimmed image (Stage 1 + 2).
 
 **Security posture:**
 - Security fixes are taken from upstream by default; validate they are *real* fixes
@@ -38,8 +39,10 @@ Contains: cal.forte branding, hardened defaults (telemetry/ads off), next-auth 4
 
 **Slimming:** feature/code removal was analysed and rejected (attack surface is
 config-controlled — [slimming-analysis.md](slimming-analysis.md)). Runtime-image slimming
-Stage 1 (E2E suites out of the image) is **done and verified**; Stage 2 (drop dev deps,
-needs the boot seed pre-compiled) is the next lever.
+**Stage 1 + 2 are done, verified and shipped** in `v6.2.0-4` (CRITICALs 8 → 4). Stage 3
+(full Next.js standalone) is **deliberately not pursued**: it would rewrite the boot chain
+(`turbo run start`, `ts-node` seed, `prisma migrate`) for mostly a size win —
+[slimming-runtime-plan.md](slimming-runtime-plan.md).
 
 **Not in this edition:** Workflows, Insights, SAML/SSO, audit logs, and **team creation**
 (no UI/wizard/CLI/API) → no team calendars / round-robin. The Enterprise paywall/upsell UI is

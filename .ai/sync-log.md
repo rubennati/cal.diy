@@ -12,6 +12,28 @@ this file is the timeline.
 
 ---
 
+## 2026-07-27 — Release v6.2.0-4 (GHCR publish)
+
+Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
+
+- **tag:** `v6.2.0-4` · **source branch:** `release` · **source commit:** `f99367c3`
+  (promotion of `develop` `8b4a9cd8`)
+- **upstream base:** cal.com 6.2.0 (merge-base `46eb533d`) — unchanged
+- **new since v6.2.0-3:** runtime-image slimming Stage 1 (E2E suites out of the build
+  context) + Stage 2 (dev CLI/test tooling pruned: `trigger.dev`, `@depot`, `vitest`,
+  `playwright`, `@biomejs`); `websocket-driver` 0.7.5 (CVE-2026-54466); corrected
+  signup-hardening docs (runtime DB flag, not a rebuild).
+- **image:** `ghcr.io/rubennati/cal.diy:v6.2.0-4` (amd64; arm64 as `v6.2.0-4-arm`)
+- **digest:** `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8`
+- **checks:** non-publishing validation builds for Stage 1 (`30218363330`) and Stage 2
+  (`30222509498`); release build `30223216533` success (build + runtime health-check on
+  both amd64 and arm). Trivy image scan still report-only.
+- **effect:** node-pkg CRITICALs 8 → 4; the gobinary findings (`@depot`/esbuild → docker,
+  grpc, Go stdlib) are gone. Remaining findings are nested dev-dependency copies
+  (`vitest`, `tar`) with no runtime path.
+
+---
+
 ## 2026-07-26 — Runtime-image slimming, Stage 1 (E2E suites out of the image)
 
 Added `**/playwright`, `**/e2e`, `**/*.e2e.*` to `.dockerignore` so E2E test sources
