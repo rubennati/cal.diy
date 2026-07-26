@@ -114,11 +114,19 @@ not linked from any paywall.
   DB-inserted `Team` row likely wouldn't surface either — no team pages). Re-adding teams
   would be a feature project, not a config toggle. A CE-stripping choice, not a bug.
 
-## 6. To actually rebrand the image (future step, if wanted)
+## 6. Rebranding — done, and the public-vs-private line
 
-1. `Dockerfile` (builder stage): add `ARG NEXT_PUBLIC_APP_NAME` + `ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME` (and `_COMPANY_NAME`, `_SUPPORT_MAIL_ADDRESS`).
-2. Pass them as `build-args` in `release-docker` / the reusable action.
-3. Replace `apps/web/public/calcom-logo-*.svg` + favicons with your assets.
-4. Optionally set `EMAIL_FROM_NAME` at runtime (blueprint env).
+**Done (public):** the image builds with `NEXT_PUBLIC_APP_NAME=cal.forte` (build-arg in the
+reusable action). "cal.forte" is the fork's public identity — not personal data — so it stays
+in the public repo. Dockerfile ARGs for `NEXT_PUBLIC_COMPANY_NAME` / `_SUPPORT_MAIL_ADDRESS`
+exist but are left unset (no real data committed).
 
-A small, reviewable code + build change — flagged here, not done.
+**Do NOT put real / personal data in this public repo** (real company name, support email,
+personal logo). Personalise those at **deployment** in `secure-docker-blueprint`:
+
+- **Logo**: volume-mount your files over `/calcom/apps/web/public/calcom-logo-*.svg` (+ favicons)
+  — no rebuild, no public commit.
+- **Company / support email**: `NEXT_PUBLIC_*` are client-baked → cannot be overridden at runtime
+  on a prebuilt image. Either accept the generic public brand, or do a **private** build (in the
+  deployment) that sets those build-args — real values stay out of the public repo.
+- `EMAIL_FROM_NAME` is server-side → set it at runtime (blueprint env).
