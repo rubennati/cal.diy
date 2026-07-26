@@ -61,8 +61,11 @@ Categories (attack-surface planning): `calendar` (4), `conferencing` (24), `anal
 `crm` (6), `automation` (6), `payment` (5), `messaging` (3), `other` (6). A simple calendar
 instance needs `calendar` + maybe one `conferencing`; everything else can stay disabled.
 
-> Note: `scripts/seed-app-store.ts` is `@deprecated` (E2E only). In production, app rows are
-> managed via the admin UI + the credential gate above — not a build-time hard-coded seed.
+> Note: the container entrypoint `scripts/start.sh` runs `seed-app-store.ts` at **every
+> boot** — it upserts app rows and sets `enabled` via the credential gate. So the active
+> app set is (re)established from your provided credentials on each start; the admin UI can
+> further toggle `App.enabled` at runtime. (The seed file's `@deprecated` header refers to
+> its old E2E role; the entrypoint still executes it.)
 
 ## 4. Hardening levers (all configuration, no code changes)
 

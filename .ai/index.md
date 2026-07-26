@@ -20,4 +20,5 @@ Files in this directory:
 - [sync-log.md](sync-log.md) — timeline of sync / security / release rounds
 - [roadmap.md](roadmap.md) — open work · [slimming-analysis.md](slimming-analysis.md) — attack-surface analysis
 - [architecture.md](architecture.md) — architecture + configuration map (env / DB / file), hardening levers, branding
+- [branding.md](branding.md) — branding / white-labeling (build vs runtime), edition (CE vs EE) table
 - [quality-gates.md](quality-gates.md) · [domains/release.md](domains/release.md) — gates & release domain
