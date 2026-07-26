@@ -15,6 +15,8 @@ Before starting a sync:
 - current fork-only changes are understood
 - the upstream target commit or tag is known
 - the operator has time to review the diff, not just merge it
+- the fork README merge guard is active in this clone (one-time):
+  `git config merge.ours.driver true` (keeps the fork's own README; see `.gitattributes`)
 
 ## Remote Layout Target
 
@@ -70,6 +72,23 @@ Review at least these areas in the upstream diff:
 - dependency and lockfile changes
 - example env files
 
+## Security Fix Priority
+
+Being behind upstream on security fixes is the one drift this fork does not tolerate.
+
+- Every sync review scans the pending upstream commits for security-relevant work
+  before deciding what to defer.
+- Security-relevant upstream commits are **taken by default**, even when a full sync
+  is deferred and `develop` otherwise stays consciously curated.
+- If a security-relevant commit is intentionally not taken, the reason is recorded in
+  [.ai/sync-log.md](.ai/sync-log.md).
+- Quick scan for pending security-relevant commits:
+
+```bash
+git log --oneline --no-merges develop..origin/main \
+  | grep -iE "secur|password|auth|session|token|xss|csrf|inject|sanitiz|escap|audit|shell-quote|401|403"
+```
+
 ## Branch Update Discipline
 
 - Update `main` first.
@@ -108,6 +127,8 @@ git log --oneline --decorate main..develop
 - fork-only files kept intentionally divergent
 - security-sensitive upstream areas reviewed
 - checks run before release promotion
+- an entry appended to [.ai/sync-log.md](.ai/sync-log.md): what was taken, what was
+  intentionally skipped, and why
 
 ## Things Not To Do
 
