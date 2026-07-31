@@ -22,11 +22,18 @@ report() {
 
 # Only tracked files, so a stray local build artefact or an unrelated node_modules copy
 # cannot fail the build.
+#
+# The exclusions are the places that must be able to *name* what was removed in order to
+# document it — this guard itself, the fork's operational layer, the workflow that runs it,
+# and the README section explaining the removal. Everything else, including the other
+# hardening docs, stays in scope: re-advertising CALCOM_TELEMETRY_DISABLED as a control in
+# hardening-checklist.md is exactly the regression worth failing on.
 tracked_grep() {
   git grep -n --fixed-strings -- "$1" -- \
     ':!scripts/fork-guard-telemetry.sh' \
     ':!.ai/' \
     ':!.github/workflows/forte-ci.yml' \
+    ':!README.md' \
     2>/dev/null || true
 }
 

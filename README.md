@@ -72,6 +72,24 @@ Security-relevant upstream commits are taken by default — even when a full syn
 Validate they are *real* fixes (CVE/advisory + diff, not just the commit title):
 [FORK_STRATEGY.md → Security-fix validation](FORK_STRATEGY.md).
 
+## Removed from upstream — and kept out
+
+Upstream ships code that phones home. This fork removes it rather than switching it off,
+because a disabled-by-default vendor integration still has to be re-audited by every
+reviewer, and an upstream merge can silently re-arm it.
+
+- **Usage telemetry** (Jitsu, `t.calendso.com`, with a vendor write key in the source) —
+  deleted, along with the `CALCOM_TELEMETRY_DISABLED` flag, which gated nothing after
+  upstream dropped `next-collect`. **Do not re-add that flag:** it would document a privacy
+  control that does not exist. Enforced by `scripts/fork-guard-telemetry.sh`, a blocking
+  `forte-ci` step that fails if the module, endpoint, key, flag or dependency reappear.
+- **Ad-click tracking** (`gclid` / `li_fat_id`) — real and still present upstream; this fork
+  ships it **off by default** in the image (`GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`).
+
+Full list with rationale: [.ai/divergence.md](.ai/divergence.md). One caveat worth knowing
+before you audit: `type-check` runs for only 8 of 113 packages, so a green CI run is not
+proof that the whole tree compiles — [.ai/quality-gates.md](.ai/quality-gates.md).
+
 ## Edition & state at a glance
 
 - **Community Edition (MIT)** — Enterprise Edition is absent. **Present:** event types,

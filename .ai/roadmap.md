@@ -12,6 +12,23 @@ Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md]
   `.github/actions/docker-build-and-test/action.yml`). Staged plan:
   [slimming-runtime-plan.md](slimming-runtime-plan.md).
 
+- **Extend `type-check` coverage to the remaining packages.** Only 8 of 113 packages in
+  turbo's scope define the script, so files with no importers sit in no tsc program and rot
+  unnoticed — four such files were found and deleted in `packages/lib` alone (telemetry,
+  domainManager ×3, formbricks). Unmeasured, largest first: `packages/features` (971 files),
+  `packages/trpc` (823), `apps/api/v2` (624), `packages/prisma` (396). Expect the same two
+  causes as in `packages/lib`: a rotted `tsconfig` (no `lib`, missing ambient `.d.ts`, no
+  `paths` for `exports`-only packages) plus test-fixture drift. Do one package per commit
+  and record a pre-change test baseline before touching fixtures — completing a fixture can
+  legitimately change what a test asserts.
+- **Formbricks dependency cleanup** (touches `yarn.lock`, hence separate):
+  `@formbricks/api` in `packages/lib/package.json` is unused since `formbricks.ts` was
+  deleted (`packages/trpc` declares its own), and `@formbricks/js` is declared there but
+  consumed by `apps/web`, which does not declare it — move the declaration rather than
+  dropping it.
+- **Verify the deletions in a release image.** The four deleted files had no importers and
+  the full type-check is green, but no image has been built from this state yet.
+
 _Base documented in [state.md](state.md) (cal.com 6.2.0, merge-base `46eb533d`). The other
 big item is feature code-slimming below._
 

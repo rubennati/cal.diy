@@ -176,6 +176,56 @@ commits — deferred to a deliberate full sync.
 
 ---
 
+## 2026-07-31 — Remove inert upstream telemetry; close the `packages/lib` type-check gap
+
+**Context:** A review flagged `packages/lib/telemetry.ts` — upstream's Jitsu endpoint
+`t.calendso.com` plus an inherited server-to-server write key. It was already unreachable
+(upstream removed `next-collect` in #25146: no importers, no dependency, no `middleware.ts`),
+but it *read* as live, and `.env.example` plus `hardening-checklist.md` §3 advertised
+`CALCOM_TELEMETRY_DISABLED` as a privacy control that gated nothing. Investigating why no
+gate had caught it exposed the larger problem.
+
+**Taken:** three commits on `develop`.
+
+- `75a9df1812` — delete the telemetry module; drop `CALCOM_TELEMETRY_DISABLED` from
+  `.env.example`, `turbo.json`, `docker-compose.yml`, `packages/types/environment.d.ts` and
+  the Dockerfile (build ARG + runner ENV), plus `TELEMETRY_DEBUG`; correct every doc that
+  presented the flag as a control; add `scripts/fork-guard-telemetry.sh` as a **blocking**
+  `forte-ci` step. Ad-tracking flags stay — those are real (`packages/lib/tracking/server.ts`).
+- `778b4200f7` — `lint-staged` passed `.d.ts` files to Biome, which hard-ignores them, so
+  Biome exited non-zero on "No files were processed" and any commit touching a `.d.ts` failed
+  the pre-commit hook. Fixed with `--no-errors-on-unmatched`, which also covers
+  `packages/prisma/zod`, `dist`, `build`, `coverage`.
+- `88e8f9e226` — `packages/lib` now defines `type-check`/`type-check:ci`. Its `tsconfig` had
+  rotted unnoticed (no `lib` under `target: es5`; `business-days-plugin.d.ts` not included;
+  no `paths` for `@calcom/testing`, whose `exports` map `moduleResolution: node` cannot read,
+  so every `prismaMock` import resolved to `any`). Deleted three more orphaned, unfixable
+  files: `domainManager/` (its `subdomainSuffix` import died with EE in `ab21c7f805`, leaving
+  both call sites → guaranteed `ReferenceError`) and `formbricks.ts` (duplicate of the live
+  trpc feedback route, calling an API gone in `@formbricks/api@3.0.0`). 27 test-fixture type
+  errors fixed with no `as any`; typing the fixtures surfaced a real defect — one test omitted
+  the required `organizationId` argument.
+
+**Intentionally NOT taken (+ reason):**
+- Formbricks dependency cleanup — touches `yarn.lock`, and `@formbricks/js` must move to
+  `apps/web` rather than be dropped. → [roadmap.md](roadmap.md).
+- `type-check` for the other 105 uncovered packages — one package per commit, unmeasured.
+- No release cut. Nothing changed at runtime; the Dockerfile did, so this folds into the
+  next image rather than justifying its own tag.
+
+**Checks:** `tsc-absolute --noEmit` in `packages/lib` (the exact `type-check:ci` command)
+exit 0; `TZ=UTC vitest` over `packages/lib` unchanged against a pre-change baseline
+(43 files / 415 passed / 1 skipped); fork guard green on HEAD and failing on both simulated
+regressions; no `as any` introduced. Full-repo `yarn type-check:ci --force` was green before
+the final edits; the re-run was blocked by a local PATH issue, not by errors — CI covers it.
+
+**Release note for the next tag (draft):** *No functional change.* The image no longer sets
+`CALCOM_TELEMETRY_DISABLED`, because the upstream telemetry module it nominally gated has
+been removed from the fork; the flag never had a mechanism behind it. Operators who set it
+can drop it. Ad-tracking remains off by default.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>

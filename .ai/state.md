@@ -25,14 +25,25 @@ steady-state divergence: [divergence.md](divergence.md).
 **Latest release:** `v6.2.0-4` — `ghcr.io/rubennati/cal.diy:v6.2.0-4`,
 digest `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8`
 (amd64; arm64 is published as a separate `-arm` tag, no merged multi-arch manifest).
-Contains: cal.forte branding, hardened defaults (telemetry/ads off), next-auth 4.24.15,
-websocket-driver 0.7.5, and a slimmed image (Stage 1 + 2).
+Contains: cal.forte branding, hardened defaults (ad-tracking off, plus the then-still-present
+`CALCOM_TELEMETRY_DISABLED=1`), next-auth 4.24.15, websocket-driver 0.7.5, and a slimmed
+image (Stage 1 + 2).
+
+**Unreleased on `develop`:** the upstream telemetry module and the
+`CALCOM_TELEMETRY_DISABLED` flag are **gone** (the flag gated nothing — see
+[divergence.md](divergence.md)). No runtime behaviour changes, but the Dockerfile did, so
+the next image differs from `v6.2.0-4`. `packages/lib` now type-checks in CI, and four
+orphaned rotted files were deleted.
 
 **Security posture:**
 - Security fixes are taken from upstream by default; validate they are *real* fixes
   (CVE/advisory + diff) per [../FORK_STRATEGY.md](../FORK_STRATEGY.md).
-- Fork CI: `forte-ci` (install/type-check/biome), `forte-codeql`, `forte-trivy`,
-  `forte-scorecard`, Dependabot. Upstream workflows disabled on `main`.
+- Fork CI: `forte-ci` (install/**fork-guard**/type-check/biome), `forte-codeql`,
+  `forte-trivy`, `forte-scorecard`, Dependabot. Upstream workflows disabled on `main`.
+- **Known gate limitation:** `type-check:ci` covers only the 8 packages that define the
+  script, out of 113 in turbo's scope. Files with no importers are in no tsc program and rot
+  unnoticed. Do not read a green CI run as "the tree compiles" —
+  [quality-gates.md](quality-gates.md), remaining gaps in [roadmap.md](roadmap.md).
 - The **Trivy image scan is report-only** (not blocking) until the runtime image is slimmed —
   the inherited image ships dev/build tooling whose CVEs would block every release.
   Rationale + re-enable condition: [slimming-runtime-plan.md](slimming-runtime-plan.md).

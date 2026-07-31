@@ -17,6 +17,17 @@ For fork/release work:
 - no image publish without approval
 - no commit without approval
 - `git diff --check`
+- `scripts/fork-guard-telemetry.sh` — blocking step in `forte-ci`; fails if the removed
+  upstream telemetry module, its Jitsu endpoint/key, `next-collect`, or the
+  `CALCOM_TELEMETRY_DISABLED` flag reappear through a sync
+
+**Coverage caveat — `type-check:ci` does not cover the repo.** turbo has 113 packages in
+scope but only the packages that *define* the script actually run one (7 upstream + this
+fork's `packages/lib`). Files with no importers are otherwise in no tsc program at all and
+rot silently — that is how `packages/lib/telemetry.ts` kept a dangling type reference for
+months. When auditing a package for dead or rotted code, check whether it defines
+`type-check` before trusting a green CI run. Remaining gaps are listed in
+[roadmap.md](roadmap.md).
 
 For release readiness, follow:
 
