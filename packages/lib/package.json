@@ -7,7 +7,9 @@
   "scripts": {
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
-    "lint:report": "biome lint --reporter json . > ../../lint-results/lib.json"
+    "lint:report": "biome lint --reporter json . > ../../lint-results/lib.json",
+    "type-check": "tsc --pretty --noEmit",
+    "type-check:ci": "tsc-absolute --pretty --noEmit"
   },
   "dependencies": {
     "@calcom/config": "workspace:*",

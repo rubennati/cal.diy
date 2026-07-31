@@ -1,10 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
 import dayjs from "@calcom/dayjs";
-
+import { getTranslation } from "@calcom/i18n/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCalEventFromBooking } from "../buildCalEventFromBooking";
 import { parseRecurringEvent } from "../isRecurringEvent";
-import { getTranslation } from "@calcom/i18n/server";
 
 // Mock dependencies
 vi.mock("../isRecurringEvent", () => ({
@@ -14,6 +12,10 @@ vi.mock("../isRecurringEvent", () => ({
 vi.mock("@calcom/i18n/server", () => ({
   getTranslation: vi.fn(),
 }));
+
+// Derived from the function under test so fixture drift surfaces here instead of silently
+// widening to `any` — `Booking` itself is not exported.
+type BookingInput = Parameters<typeof buildCalEventFromBooking>[0]["booking"];
 
 // Helper functions
 const createOrganizer = (overrides = {}) => ({
@@ -32,7 +34,16 @@ const createAttendee = (overrides = {}) => ({
   ...overrides,
 });
 
-const createBooking = (overrides = {}) => ({
+// `eventType.recurringEvent` is a Prisma JSON column, so it can hold no Date — the value that
+// reaches this code has already been through JSON. Shared with the assertions below so the
+// expectation cannot drift from the fixture.
+const recurringEventFixture = {
+  frequency: "daily",
+  interval: 1,
+  endDate: "2023-04-01T11:00:00.000Z",
+};
+
+const createBooking = (overrides: Partial<BookingInput> = {}): BookingInput => ({
   title: "Test Booking",
   description: "Test Description",
   startTime: new Date("2023-04-01T10:00:00Z"),
@@ -44,11 +55,9 @@ const createBooking = (overrides = {}) => ({
     title: "Test Event Type",
     seatsPerTimeSlot: 5,
     seatsShowAttendees: true,
-    recurringEvent: {
-      frequency: "daily",
-      interval: 1,
-      endDate: new Date("2023-04-01T11:00:00Z"),
-    },
+    hideOrganizerEmail: false,
+    customReplyToEmail: null,
+    recurringEvent: recurringEventFixture,
   },
   destinationCalendar: null,
   user: null,
@@ -69,7 +78,10 @@ describe("buildCalEventFromBooking", () => {
       return translate;
     });
 
-    parseRecurringEvent.mockImplementation((recurringEvent) => {
+    // Deliberately not a real RecurringEvent: the assertions prove that whatever
+    // parseRecurringEvent returns is propagated untouched, so the marker has to survive.
+    // @ts-expect-error - intentional test double, see above
+    vi.mocked(parseRecurringEvent).mockImplementation((recurringEvent: object | null) => {
       if (!recurringEvent) {
         return { parsed: true };
       }
@@ -95,7 +107,7 @@ describe("buildCalEventFromBooking", () => {
 
     expect(result).toEqual({
       title: booking.title,
-      type: booking.eventType.title,
+      type: booking.eventType?.title,
       description: booking.description,
       startTime: dayjs(booking.startTime).format(),
       endTime: dayjs(booking.endTime).format(),
@@ -115,7 +127,7 @@ describe("buildCalEventFromBooking", () => {
       ],
       uid: booking.uid,
       recurringEvent: {
-        ...booking.eventType?.recurringEvent,
+        ...recurringEventFixture,
         parsed: true,
       },
       location,
@@ -123,8 +135,8 @@ describe("buildCalEventFromBooking", () => {
       destinationCalendar: [],
       seatsPerTimeSlot: booking.eventType?.seatsPerTimeSlot,
       seatsShowAttendees: true,
-      customReplyToEmail: undefined,
-      hideOrganizerEmail: undefined,
+      customReplyToEmail: null,
+      hideOrganizerEmail: false,
       iCalSequence: 0,
       iCalUID: booking.iCalUID,
       organizationId: null,
@@ -194,19 +206,23 @@ describe("buildCalEventFromBooking", () => {
   });
 
   it("should use user destination calendar when booking destination calendar is null", async () => {
+    const userDestinationCalendar = {
+      id: 1,
+      integration: "test-integration",
+      externalId: "external-id",
+      primaryEmail: "user@example.com",
+      userId: 1,
+      eventTypeId: 1,
+      credentialId: 1,
+      delegationCredentialId: null,
+      createdAt: null,
+      updatedAt: null,
+      customCalendarReminder: null,
+    };
+
     const booking = createBooking({
       destinationCalendar: null,
-      user: {
-        destinationCalendar: {
-          id: 1,
-          integration: "test-integration",
-          externalId: "external-id",
-          primaryEmail: "user@example.com",
-          userId: 1,
-          eventTypeId: 1,
-          credentialId: 1,
-        },
-      },
+      user: { destinationCalendar: userDestinationCalendar },
       iCalUID: "icaluid",
       iCalSequence: 0,
     });
@@ -218,8 +234,9 @@ describe("buildCalEventFromBooking", () => {
       organizer,
       location: "",
       conferenceCredentialId: null,
+      organizationId: null,
     });
 
-    expect(result.destinationCalendar).toEqual([booking.user.destinationCalendar]);
+    expect(result.destinationCalendar).toEqual([userDestinationCalendar]);
   });
 });

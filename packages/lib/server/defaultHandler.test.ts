@@ -1,6 +1,6 @@
+import type { NextApiRequest, NextApiResponse } from "next";
 import { createMocks } from "node-mocks-http";
-import { describe, it, expect, vi, afterEach } from "vitest";
-
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultHandler } from "./defaultHandler";
 
 describe("defaultHandler Test Suite", () => {
@@ -12,7 +12,7 @@ describe("defaultHandler Test Suite", () => {
     const handlers = {};
     const handler = defaultHandler(handlers);
 
-    const { req, res } = createMocks({
+    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: "PATCH", // Unsupported method here
     });
 
@@ -26,12 +26,14 @@ describe("defaultHandler Test Suite", () => {
 
   it("should call the correct handler for a supported method", async () => {
     const getHandler = vi.fn().mockResolvedValue(null);
+    // Handlers are declared as promises (they model dynamic `import()`); `await` unwraps a
+    // plain object identically, which is why this passed at runtime while mistyped.
     const handlers = {
-      GET: { default: getHandler },
+      GET: Promise.resolve({ default: getHandler }),
     };
     const handler = defaultHandler(handlers);
 
-    const { req, res } = createMocks({
+    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: "GET",
     });
 

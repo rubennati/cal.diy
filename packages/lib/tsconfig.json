@@ -2,9 +2,24 @@
   "extends": "@calcom/tsconfig/base.json",
   "compilerOptions": {
     "target": "es5",
+    // base.json sets no `lib`, so `target: es5` alone would expose only the ES5 standard
+    // library — matching the nextjs/react-library presets keeps `String.replaceAll` and
+    // `Intl.DateTimeFormat.formatRange` available, as they are at every call site.
+    "lib": ["dom", "dom.iterable", "esnext"],
     "jsx": "preserve",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    // @calcom/testing is reachable only through its package.json "exports" map, which
+    // `moduleResolution: node` (inherited from base.json) does not read. apps/web maps the
+    // same path explicitly; without it every prismaMock import here resolves to `any`.
+    "paths": {
+      "@calcom/testing/*": ["../testing/src/*"]
+    }
   },
-  "include": [".", "../types/next-auth.d.ts", "../types/window.d.ts"],
+  "include": [
+    ".",
+    "../types/next-auth.d.ts",
+    "../types/window.d.ts",
+    "../types/business-days-plugin.d.ts"
+  ],
   "exclude": ["dist", "build", "**/node_modules/**"]
 }

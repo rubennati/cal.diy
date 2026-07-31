@@ -25,6 +25,16 @@ review (see [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)).
   **Enforced:** `scripts/fork-guard-telemetry.sh`, blocking step in `forte-ci`.
   Note the module sat outside every gate — `packages/lib` defines no `type-check` task, which
   is why its dangling `CollectOpts` type reference went unnoticed for months.
+- `packages/lib/domainManager/` (3 files) — Vercel/Cloudflare domain automation for
+  organizations. Orphaned *and* broken: the Cal.diy refactor (`ab21c7f805`) removed the EE
+  package that exported `subdomainSuffix`, deleting the import but leaving both call sites, so
+  the code would throw a `ReferenceError` on first use. No importers anywhere.
+- `packages/lib/formbricks.ts` — orphaned duplicate of the live feedback path in
+  `packages/trpc/server/routers/viewer/feedback/_router.ts`; called `api.client.people`, which
+  no longer exists in `@formbricks/api@3.0.0`. Formbricks itself stays — it is wired up and in
+  use. `@formbricks/api` in `packages/lib/package.json` is now unused (trpc declares its own),
+  and `@formbricks/js` is declared there but consumed by `apps/web`, which does not declare it
+  — both want cleaning up in a dependency pass, not here.
 - cal.com team-culture / PR-process rules under `agents/rules/`:
   `culture-accountability`, `culture-leverage-ai`, `quality-thorough-code-review`,
   `quality-no-followup-prs`, `quality-pr-creation`, `quality-review-checklist`,

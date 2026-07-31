@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 vi.mock("@calcom/lib/next-seo.config", () => ({
   default: {
     headSeo: {

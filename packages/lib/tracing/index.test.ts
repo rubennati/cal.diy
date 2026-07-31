@@ -1,8 +1,7 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
 import type { Logger } from "tslog";
-
-import { DistributedTracing } from "./index";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IdGenerator } from "./index";
+import { DistributedTracing } from "./index";
 
 describe("DistributedTracing", () => {
   let idCounter: number;
@@ -287,7 +286,7 @@ describe("DistributedTracing", () => {
         meta: {
           userId: "user_789",
           requestId: null,
-        } as Record<string, string>,
+        },
       };
 
       tracing.getTracingLogger(context);
