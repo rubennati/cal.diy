@@ -41,6 +41,11 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `Dockerfile` — cal.forte branding build-args + hardened runtime defaults (ad-tracking off;
   no telemetry flag — the module itself is removed, see above)
 - `.github/actions/docker-build-and-test/action.yml` — Trivy image-gate + branding build-arg
+- `lint-staged.config.mjs` — adds `--no-errors-on-unmatched` to the Biome pre-commit task.
+  Its glob matches paths `biome.json` hard-ignores (`**/*.d.ts`, `packages/prisma/zod`,
+  `dist`, `build`, `coverage`), and Biome exits non-zero on "No files were processed", so
+  staging only such files failed the hook outright. Upstream carries the same mismatch;
+  re-apply if a sync overwrites it.
 
 ## Fork-added paths (ours; upstream has none)
 
