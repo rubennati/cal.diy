@@ -27,12 +27,21 @@ Never in the image / compose / git. Rotate if exposed.
 CRON_API_KEY=<openssl rand -hex 16>
 ```
 
-## 3. Kill telemetry / ad tracking (default ON) — runtime
+## 3. Kill ad tracking (default ON) — runtime
 ```
-CALCOM_TELEMETRY_DISABLED=1
 GOOGLE_ADS_ENABLED=0
 LINKEDIN_ADS_ENABLED=0
 ```
+Both are read in `packages/lib/tracking/server.ts` and gate the `gclid` / `li_fat_id`
+click-ID capture. The image already ships them as `0`.
+
+**Usage telemetry: nothing to switch off.** Upstream's telemetry module
+(`packages/lib/telemetry.ts` — Jitsu endpoint `t.calendso.com`) was already inert after
+upstream removed `next-collect` (#25146), and this fork deleted it along with the
+`CALCOM_TELEMETRY_DISABLED` flag, which never had a mechanism behind it. Do **not**
+re-introduce that flag as a hardening step — it would document a control that does not
+exist. `scripts/fork-guard-telemetry.sh` (blocking step in `forte-ci`) fails the build if
+an upstream sync brings the module, the endpoint, or `next-collect` back.
 
 ## 4. Lock down access
 | Lever | Value | Where |
@@ -61,8 +70,9 @@ A curated, public-safe env template with hardened defaults for the common calend
 [`../config/cal.forte.env.example`](../config/cal.forte.env.example). Copy it into your private
 deployment, fill the placeholders, inject secrets as Docker secrets.
 
-The image already ships **telemetry + ad-tracking OFF by default** (runner-stage ENV) — no need
-to set those; override via runtime env only if you ever want them on.
+The image already ships **ad-tracking OFF by default** (runner-stage ENV) — no need to set those;
+override via runtime env only if you ever want them on. Usage telemetry is not a runtime toggle
+in this fork: the module is gone (§3).
 
 ## 8. First run (don't lock yourself out) — do this immediately after deploy
 

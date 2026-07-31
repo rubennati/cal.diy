@@ -21,8 +21,9 @@ Priority legend: 🔴 required · 🟠 security/hardening · 🟡 branding · �
 2. **Override `CRON_API_KEY`** — `.env.example` ships a **public default**
    (`0cc0e6c35519bba620c9360cfe3e68d0`). If left as-is, anyone can call cron endpoints.
    Set a random value.
-3. **Kill telemetry / ad tracking** (default ON): `CALCOM_TELEMETRY_DISABLED=1`,
-   `GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`.
+3. **Kill ad tracking** (default ON): `GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`.
+   Usage telemetry needs no flag — the module is removed from this fork
+   (hardening-checklist.md §3).
 4. **Lock down**: `NEXT_PUBLIC_DISABLE_SIGNUP=true` (build), `ALLOWED_HOSTNAMES` = your
    domain only, `CSP_POLICY=non-strict`, `NEXTAUTH_COOKIE_DOMAIN` = your domain.
 5. **Leave every unused integration empty** — an empty key = the app stays disabled and makes
@@ -53,10 +54,9 @@ Priority legend: 🔴 required · 🟠 security/hardening · 🟡 branding · �
 | `ALLOWED_HOSTNAMES` | Accepted Host headers | `'"your-domain"'` — anti host-header injection |
 | `CSP_POLICY` | Content-Security-Policy | `non-strict` (only value supported) |
 | `NEXTAUTH_COOKIE_DOMAIN` | Auth cookie scope | your domain |
-| `CALCOM_TELEMETRY_DISABLED` | Anonymous usage telemetry | `1` (disable) |
 | `GOOGLE_ADS_ENABLED` / `LINKEDIN_ADS_ENABLED` | Ad-click tracking (**default `1`**) | `0` (disable — no external tracking) |
 | `BLACKLISTED_GUEST_EMAILS` | Block emails from being booking guests | optional allow/deny hardening |
-| `CALCOM_TELEMETRY_DISABLED` | (see above) | `1` |
+| ~~`CALCOM_TELEMETRY_DISABLED`~~ | **Removed in this fork** — the telemetry module it gated is gone; the flag was a no-op | do not set / do not re-add |
 | `UNKEY_ROOT_KEY` | Rate-limiting via Unkey | optional; set to enable throttling |
 | `NEXT_PUBLIC_CLOUDFLARE_SITEKEY` / `CLOUDFLARE_TURNSTILE_SECRET` | Turnstile CAPTCHA | optional anti-bot on booker/signup |
 | `NEXT_PUBLIC_CLOUDFLARE_USE_TURNSTILE_IN_BOOKER` | Enable Turnstile in booker | `1` if using Turnstile |

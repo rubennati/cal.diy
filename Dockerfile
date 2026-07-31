@@ -6,7 +6,6 @@ WORKDIR /calcom
 ARG NEXT_PUBLIC_LICENSE_CONSENT
 ARG NEXT_PUBLIC_WEBSITE_TERMS_URL
 ARG NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL
-ARG CALCOM_TELEMETRY_DISABLED
 ARG DATABASE_URL
 ARG NEXTAUTH_SECRET=secret
 ARG CALENDSO_ENCRYPTION_KEY=secret
@@ -29,7 +28,6 @@ ENV NEXT_PUBLIC_WEBAPP_URL=http://NEXT_PUBLIC_WEBAPP_URL_PLACEHOLDER \
   NEXT_PUBLIC_LICENSE_CONSENT=$NEXT_PUBLIC_LICENSE_CONSENT \
   NEXT_PUBLIC_WEBSITE_TERMS_URL=$NEXT_PUBLIC_WEBSITE_TERMS_URL \
   NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL=$NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL \
-  CALCOM_TELEMETRY_DISABLED=$CALCOM_TELEMETRY_DISABLED \
   DATABASE_URL=$DATABASE_URL \
   DATABASE_DIRECT_URL=$DATABASE_URL \
   NEXTAUTH_SECRET=${NEXTAUTH_SECRET} \
@@ -110,9 +108,11 @@ ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL \
 
 ENV NODE_ENV=production
 
-# cal.forte hardened defaults — privacy-by-default; override via runtime env if ever needed
-ENV CALCOM_TELEMETRY_DISABLED=1 \
-  GOOGLE_ADS_ENABLED=0 \
+# cal.forte hardened defaults — privacy-by-default; override via runtime env if ever needed.
+# No usage-telemetry flag here on purpose: the upstream telemetry module is deleted in this
+# fork, so a flag would document a control that does not exist. See .ai/hardening-checklist.md
+# §3 and scripts/fork-guard-telemetry.sh.
+ENV GOOGLE_ADS_ENABLED=0 \
   LINKEDIN_ADS_ENABLED=0
 
 EXPOSE 3000

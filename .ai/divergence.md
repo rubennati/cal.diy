@@ -14,6 +14,17 @@ review (see [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)).
 - `.changeset/` — cal.com NPM release machinery; this fork does not publish to NPM
 - `.vscode/` — cal.com editor settings
 - `SPEC-WORKFLOW.md` — cal.com spec-driven-development process
+- `packages/lib/telemetry.ts` — upstream's Jitsu usage telemetry (endpoint `t.calendso.com`
+  + inherited server-to-server write key). Already inert upstream after `next-collect` was
+  removed (#25146): no importers, no dependency, no `middleware.ts` — but it read as live to
+  anyone auditing the fork, and a sync restoring any of those pieces would have re-armed it
+  silently. Removed together with the `CALCOM_TELEMETRY_DISABLED` flag (`.env.example`,
+  `turbo.json`, `docker-compose.yml`, `packages/types/environment.d.ts`, `Dockerfile`) and
+  `TELEMETRY_DEBUG`, which only that module read. The flag was documented as a hardening step
+  while gating nothing — do not re-add it as one.
+  **Enforced:** `scripts/fork-guard-telemetry.sh`, blocking step in `forte-ci`.
+  Note the module sat outside every gate — `packages/lib` defines no `type-check` task, which
+  is why its dangling `CollectOpts` type reference went unnoticed for months.
 - cal.com team-culture / PR-process rules under `agents/rules/`:
   `culture-accountability`, `culture-leverage-ai`, `quality-thorough-code-review`,
   `quality-no-followup-prs`, `quality-pr-creation`, `quality-review-checklist`,
@@ -27,7 +38,8 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `.well-known/security.txt` — fork security contact, not cal.com [guarded]
 - `AGENTS.md` (+ `CLAUDE.md` symlink) — fork-owned AI guide (cal.com team/process stripped)
 - `agents/rules/README.md`, `agents/rules/_sections.md` — fork-owned rules index
-- `Dockerfile` — cal.forte branding build-args + hardened runtime defaults (telemetry/ads off)
+- `Dockerfile` — cal.forte branding build-args + hardened runtime defaults (ad-tracking off;
+  no telemetry flag — the module itself is removed, see above)
 - `.github/actions/docker-build-and-test/action.yml` — Trivy image-gate + branding build-arg
 
 ## Fork-added paths (ours; upstream has none)
@@ -36,6 +48,7 @@ Protected via `.gitattributes` (`merge=ours`) where marked [guarded]:
 - `.github/copilot-instructions.md`
 - `.github/workflows/release-docker.yaml` — fork release CI (GHCR)
 - `.github/workflows/forte-{ci,codeql,trivy,scorecard}.yml` — fork security CI (develop/release only)
+- `scripts/fork-guard-telemetry.sh` — blocking CI guard for the removed telemetry module
 - `.github/dependabot.yml` — dependency + GitHub-Actions update config
 - `config/cal.forte.env.example` — hardened first-instance env template
 - process docs: `FORK_PROCESS.md`, `UPSTREAM_SYNC.md`, `RELEASE_PROCESS.md`,
