@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:20 AS builder
+FROM --platform=$BUILDPLATFORM node:20@sha256:8f693eaa7e0a8e71560c9a82b55fd54c2ae920a2ba5d2cde28bac7d1c01c9ba5 AS builder
 
 WORKDIR /calcom
 
@@ -48,8 +48,7 @@ COPY apps/api/v2 ./apps/api/v2
 COPY packages ./packages
 
 RUN yarn config set httpTimeout 1200000
-RUN npx turbo prune --scope=@calcom/web --scope=@calcom/trpc --docker
-RUN yarn install
+RUN yarn install --immutable
 # Build and make embed servable from web/public/embed folder
 RUN yarn workspace @calcom/trpc run build
 RUN yarn --cwd packages/embeds/embed-core workspace @calcom/embed-core run build
@@ -57,7 +56,7 @@ RUN yarn --cwd apps/web workspace @calcom/web run copy-app-store-static
 RUN yarn --cwd apps/web workspace @calcom/web run build
 RUN rm -rf node_modules/.cache .yarn/cache apps/web/.next/cache
 
-FROM node:20 AS builder-two
+FROM node:20@sha256:8f693eaa7e0a8e71560c9a82b55fd54c2ae920a2ba5d2cde28bac7d1c01c9ba5 AS builder-two
 
 WORKDIR /calcom
 ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
@@ -95,7 +94,7 @@ RUN rm -rf \
   node_modules/@biomejs \
   || true
 
-FROM node:20 AS runner
+FROM node:20@sha256:8f693eaa7e0a8e71560c9a82b55fd54c2ae920a2ba5d2cde28bac7d1c01c9ba5 AS runner
 
 WORKDIR /calcom
 
