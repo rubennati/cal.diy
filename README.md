@@ -10,6 +10,8 @@ Goal: a stable, hardened, **auditable** self-host — stay current on upstream s
 fixes, keep fork drift small, and shrink the attack surface. Born out of a real self-host
 compromise; every change here is deliberate and documented.
 
+**Upstream review:** Last checked **2026-08-10** through [`176037d0af`](https://github.com/rubennati/cal.diy/commit/176037d0afbe572f870a3c702985e7cd83fe6c0c). [Full fork status →](FORK_STATUS.md)
+
 ## Branch model
 
 | Branch    | Purpose                                   | Deploy?           |
