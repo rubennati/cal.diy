@@ -17,7 +17,7 @@ Last verified: **2026-08-10**
 | Upstream reviewed through | `176037d0af` on 2026-08-10 |
 | Latest review range | [`3894f37e14...176037d0af`](https://github.com/rubennati/cal.diy/compare/3894f37e14...176037d0af) (6 commits) |
 | Integrated upstream base | [`46eb533dbd`](https://github.com/rubennati/cal.diy/commit/46eb533dbd20b74686efa520684e662c0f21051c) (Cal.com 6.2.0 base) |
-| Reviewed `develop` content baseline | [`7927cd2ac7`](https://github.com/rubennati/cal.diy/commit/7927cd2ac7049c7c3e009b2da8fed4da664b603f) (before this status documentation) |
+| Reviewed `develop` content baseline | [`99f4021d29`](https://github.com/rubennati/cal.diy/commit/99f4021d2921279b74e1ae4c902e370a26966c76) (before the IP-banlist integration) |
 | Reviewed release source | `release` at [`f99367c3a7`](https://github.com/rubennati/cal.diy/commit/f99367c3a75a0b69b59a058caf5e2114c5c0fb7d) |
 | Latest published release | [`v6.2.0-4`](https://github.com/rubennati/cal.diy/tree/v6.2.0-4) |
 | Published image | `ghcr.io/rubennati/cal.diy:v6.2.0-4` |
@@ -48,15 +48,15 @@ full sync, and an integration does not imply that an image was published.
 
 | Upstream commit | Area | Review result |
 | --- | --- | --- |
-| `038381aeca` | IP parsing / banlist enforcement | **Security-relevant; pending integration review.** Trims forwarded-header whitespace to prevent an IP-banlist bypass. |
+| `038381aeca` | IP parsing / banlist enforcement | **Integrated in full on 2026-08-10 as `29d686fa67`.** Trims forwarded-header whitespace to prevent an IP-banlist bypass. Not yet released. |
 | `176037d0af` | Email reply-to handling | Relevant functional fix; candidate for selective integration. |
 | `5e3fe3cbe6` | Booking phone input | Useful fallback fix; lower priority. |
 | `b2c28a23ab` | Language settings | Functional UI fix; deferred pending need. |
 | `8418db70c7` | Clara app listing | New integration/feature; not required by the hardened fork. |
 | `ab0b9e1fb5` | Booker lint cleanup | No runtime impact; deferred. |
 
-No commit from this review range has been represented as integrated merely because it was
-reviewed. The IP-banlist fix should be handled first in the next selective upstream round.
+Only the IP-banlist fix from this review range has been integrated. The other five commits
+retain their recorded candidate, deferred, or rejected status.
 
 ## Integrated Fork State
 
@@ -98,8 +98,8 @@ defined in [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md).
   [.ai/quality-gates.md](.ai/quality-gates.md).
 - The Trivy image scan is currently report-only while inherited runtime-image findings are
   reduced; see [.ai/slimming-runtime-plan.md](.ai/slimming-runtime-plan.md).
-- The latest reviewed upstream range contains a security-relevant IP-banlist fix that is not
-  yet recorded as integrated.
+- The IP-banlist fix is integrated on `develop` but is not included in the latest published
+  release image until the next reviewed release promotion completes.
 - ARM64 is published under a separate `-arm` tag rather than a combined multi-architecture
   manifest.
 

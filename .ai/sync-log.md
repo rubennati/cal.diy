@@ -13,6 +13,33 @@ this file is the timeline.
 
 ---
 
+## 2026-08-10 — Integrated upstream IP-banlist bypass fix
+
+**Context:** Commit `038381aeca` was the only security-relevant change in the six-commit
+upstream review range `3894f37e14...176037d0af`. A padded forwarded-IP header could fail an
+exact string comparison against `IP_BANLIST`, allowing a listed address to bypass the
+banlist check.
+
+**Integrated:** the complete upstream patch was cherry-picked with `-x` as `29d686fa67`.
+It changes only `packages/lib/getIP.ts` and its targeted test: the selected first IP is
+trimmed, an empty header array returns an empty string, and regression coverage includes
+padded strings, arrays, tabs, and the end-to-end banlist lookup. No other commit from the
+upstream review range was applied. Fork formatting was isolated in follow-up commit
+`2ea6ff49b0` (one blank line and final newlines only).
+
+**Security assessment:** the change closes the documented whitespace/exact-match bypass and
+introduces no new logging, raw error output, dependency, or secret handling. It preserves
+the existing header priority and first-address behavior. It does not establish whether a
+deployment's proxy headers are trustworthy; operators must still ensure that Cloudflare or
+another trusted proxy overwrites client-supplied forwarding headers.
+
+**Checks:** `packages/lib/getIP.test.ts` passed (23/23); filtered `@calcom/lib`
+`type-check:ci` passed through the root Turbo command; Biome formatting was applied only in
+the separate follow-up commit. No generated files changed.
+
+**Release status:** integrated for `develop` review, but not yet promoted to `release`,
+tagged, or published as an image.
+
 ## 2026-07-27 — Release v6.2.0-4 (GHCR publish)
 
 Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
