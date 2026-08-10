@@ -114,6 +114,13 @@ ENV NODE_ENV=production
 ENV GOOGLE_ADS_ENABLED=0 \
   LINKEDIN_ADS_ENABLED=0
 
+# Runtime URL replacement and Turbo/Next caches need these paths writable without granting
+# ownership of the complete application tree.
+RUN mkdir -p /calcom/.turbo \
+  && chown -R node:node /calcom/.turbo /calcom/apps/web/.next /calcom/apps/web/public
+
+USER node
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=30s --retries=5 \

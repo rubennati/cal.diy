@@ -21,6 +21,11 @@ RUN yarn workspace @calcom/api-v2 run generate-schemas
 RUN yarn workspace @calcom/api-v2 run build:docker
 RUN yarn workspace @calcom/api-v2 run build
 
+USER node
+
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
+  CMD node -e "fetch('http://localhost:' + (process.env.API_PORT || '5555') + '/health').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))"
 
 CMD [ "yarn", "workspace", "@calcom/api-v2", "start:prod"]
