@@ -78,6 +78,20 @@ runs:
         echo "image_ref=ghcr.io/rubennati/cal.diy:${IMAGE_TAG}${PLATFORM_SUFFIX}" >> "$GITHUB_OUTPUT"
         echo "sbom_path=$sbom_path" >> "$GITHUB_OUTPUT"
 
+    - name: Prepare Compose environment file
+      id: compose-env
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ -e .env ]]; then
+          echo "created=false" >> "$GITHUB_OUTPUT"
+        else
+          # Compose validates service-level env_file references even when only the
+          # database service is selected. Runtime secrets are supplied separately.
+          : > .env
+          echo "created=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Start ephemeral database
       shell: bash
       run: |
@@ -226,4 +240,9 @@ runs:
       if: always()
       shell: bash
       run: |
-        docker compose down --volumes
+        cleanup_status=0
+        docker compose down --volumes || cleanup_status=$?
+        if [[ "${{ steps.compose-env.outputs.created }}" == "true" ]]; then
+          rm -f .env
+        fi
+        exit "$cleanup_status"
