@@ -1,95 +1,87 @@
 # Image Build
 
-## Purpose
+## Source Of Truth
 
-This document describes the current image build assets in this repository and the intended release source of truth.
+The deployable artifact is the GHCR image produced from a validated annotated tag on
+`release` by [.github/workflows/release-docker.yaml](.github/workflows/release-docker.yaml).
+The root [Dockerfile](Dockerfile) builds the web image; the API v2 Dockerfile is not part of
+the current fork release artifact.
 
-## Current Build Assets
+## Workflow Modes
 
-Web image build:
+### Manual validation
 
-- [Dockerfile](/Users/rb3nt/Code/cal.diy/Dockerfile:1)
+`workflow_dispatch` checks out the selected ref and builds AMD64 and ARM64 with synthetic
+validation tags. It runtime-tests, scans, and generates SBOMs but has read-only package
+permissions and cannot publish.
 
-API v2 image build:
+### Tag publication
 
-- [apps/api/v2/Dockerfile](/Users/rb3nt/Code/cal.diy/apps/api/v2/Dockerfile:1)
+A pushed tag publishes only if all source-identity checks pass:
 
-Release workflow:
+- annotated tag
+- exact `vX.Y.Z-N` format
+- tag commit equals current `origin/release` HEAD
+- no existing architecture tag would be overwritten
 
-- [.github/workflows/release-docker.yaml](/Users/rb3nt/Code/cal.diy/.github/workflows/release-docker.yaml:1)
+Architecture jobs push the exact tested images under unique workflow staging tags. Only
+after both succeed does the finalizer create `vX.Y.Z-N` for AMD64 and `vX.Y.Z-N-arm` for
+ARM64. The finalizer then moves `latest` to AMD64. Registry retagging is not transactional:
+if finalization fails between tag operations, treat the release as incomplete and inspect
+all public tags before retrying. `latest` is convenience only and is not a downstream trust
+input.
 
-Reusable build helper:
+## Artifact Integrity
 
-- [.github/actions/docker-build-and-test/action.yml](/Users/rb3nt/Code/cal.diy/.github/actions/docker-build-and-test/action.yml:1)
+Each architecture is built once. The same local image is runtime-tested, scanned, assigned
+an SBOM, and then pushed with `docker push`; there is no second untested rebuild. The
+registry digest is read after push and exposed as a job output.
 
-## Current Release Source Of Truth
+The release finalizer uploads `release-record.json` containing source SHA, architecture
+image references, architecture digests, workflow run ID, and the convenience `latest`
+digest. GitHub build-provenance attestations are pushed for both architecture images.
 
-For the fork release process, the source of truth is the GHCR image produced by the release workflow from a reviewed tag on `release`.
+## Current Security Gates
 
-That means:
+- Runtime health check: blocking.
+- Existing-tag overwrite protection: blocking.
+- Tag/source identity validation: blocking.
+- `forte-ci` install/source-clean check, fork guard, and typecheck: blocking.
+- Trivy image scan: **report-only** (`exit-code: 0`) while inherited runtime findings remain.
+- Biome in `forte-ci`: report-only until inherited baseline findings are resolved.
 
-- the workflow output is the deployable artifact
-- the tag identifies the reviewed source state
-- the digest identifies the exact image to deploy
+Do not describe report-only checks as release gates. Accepted findings and re-enable
+conditions are tracked in [.ai/slimming-runtime-plan.md](.ai/slimming-runtime-plan.md).
 
-## Current Behavior Summary
+## Reproducibility Rules
 
-- The release builds both amd64 and arm64 but publishes them as **separate tags**
-  (`vX.Y.Z` = amd64, `vX.Y.Z-arm` = arm64) — there is no merged multi-arch manifest, so
-  `vX.Y.Z` alone resolves to amd64 (confirmed on `v6.2.0-2`). arm64 consumers must pin
-  the `-arm` tag. A true multi-arch manifest would need a manifest-merge step; not needed for now.
-- A **Trivy image-gate** in the reusable action scans the built image before the push
-  step and blocks the publish on fixable CRITICAL vulnerabilities (exceptions via `.trivyignore`).
-- The reusable action publishes to `ghcr.io/rubennati/cal.diy`.
-- The workflow currently builds from the root [Dockerfile](/Users/rb3nt/Code/cal.diy/Dockerfile:1).
-- The API v2 Dockerfile exists, but it is not the current fork GHCR release artifact.
+- Yarn installs use `--immutable`.
+- Docker builds must not download an unpinned build CLI through `npx`.
+- Lifecycle generation must leave tracked source clean; `forte-ci` fails otherwise.
+- Base images and third-party Actions should be pinned to immutable digests/commit SHAs and
+  updated deliberately.
+- Build args contain synthetic test/database values only; runtime secrets are generated per
+  workflow run and masked.
+- `.env.example` is not evaluated as shell code by the release workflow.
 
-## Release Guidance
+## Downstream Handoff
 
-- Use reviewed version tags for release publication.
-- Prefer digests for downstream secure deployment.
-- Do not rely on `latest` for secure deployment.
-- Treat branch-based workflow dispatch outputs as test artifacts unless explicitly promoted later.
-
-## Build Inputs To Watch
-
-During every release review, inspect:
-
-- workflow tag source
-- image name and registry
-- build arguments
-- runtime environment expectations
-- test step behavior
-- whether any secret-like value is used during build
-
-## Current Known Follow-Up Items
-
-These are not changed in this pass, but they should be corrected later:
-
-- README still references upstream DockerHub
-- docker docs still reference upstream DockerHub
-- `docker-compose.yml` still points at upstream image names
-- workflow wording still needs to stay aligned with actual GHCR behavior
-
-## What This Repository Should Hand To Downstream
-
-Downstream secure deployment should receive:
-
-- reviewed release tag
-- GHCR image reference
-- image digest
-- short release note describing the source commit and checks run
-
-## Practical Release Output Format
-
-Use a simple release record like:
+Provide:
 
 ```text
-tag: vX.Y.Z
-source branch: release
-source commit: <sha>
-upstream base: <sha-or-tag>
-image: ghcr.io/rubennati/cal.diy:vX.Y.Z
-digest: sha256:<digest>
-checks: type-check, tests, smoke-check
+tag:
+source commit:
+amd64 image:
+amd64 digest:
+arm64 image:
+arm64 digest:
+workflow run:
+SBOM artifacts:
+provenance attestations:
+checks:
+known risks:
+rollback digest:
 ```
+
+`secure-docker-blueprint` chooses the required architecture and pins the corresponding
+digest. It remains a separate repository with separate deployment responsibility.

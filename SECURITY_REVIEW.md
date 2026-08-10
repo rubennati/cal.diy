@@ -28,6 +28,9 @@ Focus on these areas first:
 - inspect auth and mail logging changes
 - inspect cron and webhook auth changes
 - inspect dependency and lockfile changes
+- reconcile every observed upstream commit in `UPSTREAM_REVIEW_LEDGER.md`
+- confirm the current intake did not squash multiple upstream commits into one local commit
+- confirm partial upstream intake lists exact retained and omitted behavior
 
 ## Minimum Checks Before A Release Tag
 
@@ -36,6 +39,10 @@ Focus on these areas first:
 - `git diff --check`
 - manual review of release workflow and image destination
 - manual smoke check plan for the resulting image
+- lifecycle/install source-clean check
+- non-publishing AMD64 and ARM64 workflow validation
+- exact release-tag-to-`origin/release` identity check
+- architecture-specific digest, SBOM, and provenance capture plan
 
 ## Release Blocking Conditions
 
@@ -47,6 +54,10 @@ Do not approve a release image for downstream use if any of these are true:
 - only `latest` is available and the digest is not recorded
 - a security-sensitive change is present without review
 - a known secret-handling issue is accepted without documentation
+- the release tag does not point exactly to the reviewed `origin/release` head
+- the published digest is not the digest of the tested image
+- either architecture or the release finalizer failed
+- generated tracked files differ after install/lifecycle scripts
 
 ## Incident-Oriented Checks
 
