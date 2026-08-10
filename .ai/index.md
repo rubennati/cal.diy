@@ -7,6 +7,7 @@ Start here, then read the authoritative docs:
 - [../AGENTS.md](../AGENTS.md)
 - [../FORK_PROCESS.md](../FORK_PROCESS.md)
 - [../FORK_STATUS.md](../FORK_STATUS.md)
+- [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md)
 - [../FORK_STRATEGY.md](../FORK_STRATEGY.md)
 - [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)
 - [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md)
@@ -18,7 +19,7 @@ Start here, then read the authoritative docs:
 Files in this directory:
 
 - [project-brief.md](project-brief.md) · [state.md](state.md) · [decisions.md](decisions.md) — context & durable decisions
-- [divergence.md](divergence.md) — steady-state divergence from upstream (added / removed / modified)
+- [divergence.md](divergence.md) — compatibility pointer to the public divergence register
 - [sync-log.md](sync-log.md) — timeline of sync / security / release rounds
 - [roadmap.md](roadmap.md) — open work · [slimming-analysis.md](slimming-analysis.md) — attack-surface analysis · [slimming-runtime-plan.md](slimming-runtime-plan.md) — runtime-image slim plan
 - [architecture.md](architecture.md) — architecture + configuration map (env / DB / file), hardening levers, branding

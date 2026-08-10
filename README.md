@@ -12,6 +12,9 @@ compromise; every change here is deliberate and documented.
 
 **Upstream review:** Last checked **2026-08-10** through [`176037d0af`](https://github.com/rubennati/cal.diy/commit/176037d0afbe572f870a3c702985e7cd83fe6c0c). [Full fork status →](FORK_STATUS.md)
 
+**Fork changes:** Security defaults, telemetry, CI, container runtime, and release handling
+intentionally differ from Cal.diy. [See the public divergence register →](FORK_DIVERGENCE.md)
+
 ## Branch model
 
 | Branch    | Purpose                                   | Deploy?           |
@@ -35,6 +38,7 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 |-----|------|
 | [FORK_PROCESS.md](FORK_PROCESS.md) | branch contract & operating cycle |
 | [FORK_STRATEGY.md](FORK_STRATEGY.md) | maintenance model, security-fix validation, sync cadence |
+| [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) | public register of fork-added, modified and removed behavior |
 | [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) | how upstream is pulled in (security-first) |
 | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) | commit-level accepted, partial, deferred and rejected upstream changes |
 | [RELEASE_PROCESS.md](RELEASE_PROCESS.md) · [IMAGE_BUILD.md](IMAGE_BUILD.md) | cutting & building a release |
@@ -60,7 +64,6 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 
 | Doc | What |
 |-----|------|
-| [.ai/divergence.md](.ai/divergence.md) | steady-state divergence (added / removed / modified) |
 | [.ai/sync-log.md](.ai/sync-log.md) | timeline of sync / security / release rounds |
 | [.ai/roadmap.md](.ai/roadmap.md) | open work |
 | [.ai/decisions.md](.ai/decisions.md) · [.ai/state.md](.ai/state.md) · [.ai/project-brief.md](.ai/project-brief.md) | durable decisions · current state · brief |
@@ -89,7 +92,7 @@ reviewer, and an upstream merge can silently re-arm it.
 - **Ad-click tracking** (`gclid` / `li_fat_id`) — real and still present upstream; this fork
   ships it **off by default** in the image (`GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`).
 
-Full list with rationale: [.ai/divergence.md](.ai/divergence.md). One caveat worth knowing
+Full list with rationale: [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md). One caveat worth knowing
 before you audit: `type-check` runs for only 8 of 113 packages, so a green CI run is not
 proof that the whole tree compiles — [.ai/quality-gates.md](.ai/quality-gates.md).
 

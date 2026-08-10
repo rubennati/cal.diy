@@ -3,7 +3,7 @@
 This page records the public maintenance status of `cal.forte`: which upstream state was
 seen and reviewed, which changes were actually integrated, and which source produced the
 latest release. It complements the chronological [sync log](.ai/sync-log.md) and the
-steady-state [divergence record](.ai/divergence.md). Commit-level accepted, partial,
+public [fork divergence register](FORK_DIVERGENCE.md). Commit-level accepted, partial,
 deferred, and rejected decisions are recorded in
 [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md).
 
@@ -66,8 +66,8 @@ reviewed. The IP-banlist fix should be handled first in the next selective upstr
 - The merge-base between `develop` and the reviewed upstream line is `46eb533dbd`.
 - Security fixes after that base are selectively cherry-picked; they are not evidence of a
   full upstream merge.
-- Intentional fork changes and removed upstream behavior are documented in
-  [.ai/divergence.md](.ai/divergence.md).
+- Intentional fork additions, modifications, and removals are documented in
+  [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md).
 
 The exact current source difference can be inspected with the
 [`main...develop` comparison](https://github.com/rubennati/cal.diy/compare/main...develop).
@@ -112,6 +112,7 @@ Record the detailed outcome in [.ai/sync-log.md](.ai/sync-log.md), including:
 - accepted and integrated commits
 - intentionally deferred commits and reasons
 - ledger status and local provenance for every reviewed upstream commit
+- additions, modifications, removals, and release-state changes in `FORK_DIVERGENCE.md`
 - checks run and known validation gaps
 - release tag, source commit, workflow run, image references, and digest when published
 

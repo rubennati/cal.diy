@@ -1,0 +1,137 @@
+# Fork Divergence Register
+
+This is the public record of what `cal.forte` deliberately adds, changes, or removes
+relative to upstream Cal.diy. It answers a different question from the upstream review
+ledger:
+
+- [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) records which upstream commits
+  were accepted, deferred, rejected, or prepared.
+- This document records behavior and maintenance work created specifically for this fork.
+- [FORK_STATUS.md](FORK_STATUS.md) records the current review and release snapshot.
+- [.ai/sync-log.md](.ai/sync-log.md) provides the chronological implementation history.
+
+MIT does not require a divergence register, but publishing one makes the fork easier to
+audit, maintain, and trust.
+
+## Current Basis
+
+Last reconciled: **2026-08-10**
+
+| Item | Value |
+| --- | --- |
+| Upstream base | Cal.com 6.2.0 at merge-base `46eb533dbd` |
+| Upstream reviewed through | `176037d0af` on 2026-08-10 |
+| Fork baseline reviewed | `develop` at `090a11b141` |
+| Latest published fork release | `v6.2.0-4` |
+| Exact source comparison | [`main...develop`](https://github.com/rubennati/cal.diy/compare/main...develop) |
+
+`Released` below names the first fork release known to contain the change. `Unreleased`
+means the change is on `develop` but is not yet represented by the latest published release.
+The source comparison remains authoritative for exact lines; this register describes
+material intent and behavior.
+
+## Identity And Operating Model
+
+| Fork divergence | Type | Reason and effect | Evidence | Release state |
+| --- | --- | --- | --- | --- |
+| `cal.forte` identity and fork-owned README | Modified | Clearly distinguishes the hardened fork from upstream and exposes branch, review, and image trust boundaries. | `6423cafece`, `5a38545dab` | Released by `v6.2.0-2`; status updates continue on `develop` |
+| Controlled `main` / `develop` / `release` model | Added | Separates the upstream mirror, reviewed integration, and image publication source. | `73a5313f2a`, process documents | Released by `v6.2.0-1`; hardened rules unreleased |
+| Public upstream decision ledger | Added | Gives every reviewed upstream commit a durable disposition and provenance record. | `679c4f058c`, `UPSTREAM_REVIEW_LEDGER.md` | Unreleased |
+| Fork-owned AI collaboration guidance | Added/modified | Replaces upstream team-process instructions with concise rules for this controlled fork. | `31b42d3fef`, `6e41b14ce8` | Introduced in `v6.2.0-1`; expanded by `v6.2.0-2` |
+| Hardened deployment environment template | Added | Documents secure defaults without committing deployment secrets or private branding. | `d057ef3915`, `config/cal.forte.env.example` | Released by `v6.2.0-3` |
+
+## Security And Privacy Changes
+
+| Fork divergence | Type | Reason and effect | Evidence | Release state |
+| --- | --- | --- | --- | --- |
+| Inert Jitsu usage-telemetry module and phantom opt-out removed | Removed | Eliminates dormant phone-home code and avoids documenting a flag that controlled nothing. A blocking guard prevents reintroduction. | `75a9df1812`, `scripts/fork-guard-telemetry.sh` | Unreleased |
+| Advertising integrations disabled by default in the image | Modified | Sets privacy-first runtime defaults for Google and LinkedIn advertising. | `d057ef3915`, root `Dockerfile` | Released by `v6.2.0-3` |
+| Fork security contact | Modified | Vulnerability reports are directed to the fork owner rather than upstream Cal.com. | `d7747a32d9`, `.well-known/security.txt` | Released by `v6.2.0-2` |
+| Fork security CI | Added | Runs fork-owned type checking, CodeQL, Trivy, Scorecard, telemetry guard, and dependency monitoring on review/release branches rather than executing the broad upstream CI estate. | `68d13f4d28`, `.github/workflows/forte-*` | Released by `v6.2.0-2`; latest hardening unreleased |
+| Explicit Trivy image policy | Added | Scans the exact runtime-tested image. Findings remain report-only while inherited runtime CVEs are reduced; accepted exceptions and the re-enable condition are documented rather than presented as a blocking gate. | `38e498f196`, `.trivyignore`, `IMAGE_BUILD.md` | Released by `v6.2.0-3`; latest pipeline hardening unreleased |
+| `packages/lib` type-check coverage repaired | Modified | Brings previously uncompiled library files into the TypeScript gate and removes code that had silently rotted outside CI. | `88e8f9e226` | Unreleased |
+
+Upstream-derived security patches are intentionally not listed as fork inventions. Their
+source and local evidence belong in
+[UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md).
+
+## Container And Deployment Changes
+
+| Fork divergence | Type | Reason and effect | Evidence | Release state |
+| --- | --- | --- | --- | --- |
+| Fork GHCR namespace | Modified | Publishes images to `ghcr.io/rubennati/cal.diy` instead of upstream Docker Hub/Scarf endpoints. | `d9dd269ed8` | Fork tag `v6.2.0` (not the upstream release tag) |
+| `cal.forte` image branding | Modified | Bakes the fork application name through explicit build arguments. | `4264193f84` | Released by `v6.2.0-3` |
+| URL-safe database-password guidance | Modified | Warns operators that URL-reserved characters break interpolated PostgreSQL URLs and recommends hexadecimal secrets. | `aa4f4bff79`, `docker-compose.yml` | Released by `v6.2.0-1` |
+| Runtime image slimming, stages 1 and 2 | Modified | Excludes tests/E2E assets and removes dev-only tooling while retaining runtime-required Turbo, Prisma, and seed tooling. | `b14e95dbea`, `78527ca3f5`, `08db6081bd` | Released by `v6.2.0-4` |
+| Immutable Docker and Action inputs | Modified | Pins base-image digests and third-party Action SHAs, uses immutable Yarn installs, and lets Dependabot propose deliberate updates. | `32aac7c9fa` | Unreleased |
+| Non-root web and API runtimes | Modified | Runs application processes as the built-in `node` user; only required Next.js/Turbo runtime paths remain writable. API v2 also gains a health check. | `6800e65e06` | Unreleased |
+| Fork image selected by Compose | Modified | Uses the fork GHCR image and supports `CALDIY_IMAGE` override so deployment can pin a reviewed digest. PostgreSQL and Redis are digest-pinned. | `32aac7c9fa`, `docker-compose.yml` | Unreleased |
+
+## Release And Supply-Chain Changes
+
+| Fork divergence | Type | Reason and effect | Evidence | Release state |
+| --- | --- | --- | --- | --- |
+| Validation-only manual Docker workflow | Modified | Manual dispatch can build, smoke-test, scan, and create SBOMs but cannot publish. | `74f8665e6a` | Unreleased |
+| Strict release identity | Added | Publication requires an annotated `vX.Y.Z-N` tag on the reviewed `release` source with a tree equal to `develop`. | `74f8665e6a` | Unreleased |
+| Build once, publish the tested image | Modified | Removes the previous post-validation rebuild; each architecture pushes the exact image that passed runtime and scan checks. | `74f8665e6a` | Unreleased |
+| Two-architecture finalization | Added | AMD64 and ARM64 publish first to unique staging references; public version tags and `latest` are finalized only after both jobs succeed. | `74f8665e6a` | Unreleased |
+| Registry evidence | Added | Captures GHCR digests, CycloneDX SBOMs, provenance attestations, workflow identity, and `release-record.json`. | `74f8665e6a` | Unreleased |
+| Secure downstream contract | Added | Requires `secure-docker-blueprint` to consume reviewed architecture tags or preferably digests, never `latest` as a trust anchor. | `73a5313f2a`, `74f8665e6a` | Contract released; latest enforcement unreleased |
+
+GHCR retagging is not transactional. A failed finalization is treated as an incomplete
+release and requires inspection before a new build-number tag is prepared.
+
+## Deliberately Removed Upstream Scope
+
+| Removed scope | Why it stays removed | Evidence / guard | Release state |
+| --- | --- | --- | --- |
+| `.cursor/`, `.changeset/`, `.vscode/`, `SPEC-WORKFLOW.md` | Upstream editor, NPM-release, and team-process machinery is not used by this fork. | `d7747a32d9` | Released by `v6.2.0-2` |
+| Upstream team-culture and PR-process AI rules | They describe Cal.com's organization rather than safe engineering of this repository. Technical rules remain. | `b8c32d0aca`, `6e41b14ce8` | Released by `v6.2.0-2` |
+| Broad upstream GitHub workflow set | It targets Cal.com's infrastructure, secrets, release process, cron operation, and test estate. Fork-owned workflows replace the required gates. Removing these workflow files does not remove the corresponding application routes; production scheduling is a deployment responsibility. | fork baseline, fork workflows | Fork baseline |
+| `packages/lib/domainManager/` | Orphaned and broken Vercel/Cloudflare organization-domain automation with no importers. | `88e8f9e226` | Unreleased |
+| `packages/lib/formbricks.ts` duplicate | Orphaned duplicate of the live feedback path and incompatible with the installed API client. The active Formbricks integration remains. | `88e8f9e226` | Unreleased |
+| `packages/lib/telemetry.ts` and related flags | Inert telemetry code and its misleading controls are removed and guarded against return. | `75a9df1812`, fork guard | Unreleased |
+
+Removal does not automatically mean an upstream feature is unsupported. Each row states
+the actual removed scope; adjacent live integrations remain unless explicitly named.
+
+## Maintenance And Developer Workflow Changes
+
+| Fork divergence | Type | Reason and effect | Evidence | Release state |
+| --- | --- | --- | --- | --- |
+| Fork-owned `CODEOWNERS` | Modified | Removes Cal.com organization ownership assumptions and assigns review responsibility within this fork. | `a39c99f5e0` | Fork tag `v6.2.0` |
+| README and security-contact merge guards | Added | `.gitattributes` marks identity/security-contact files with `merge=ours` so reviewed syncs do not silently restore upstream content. Each clone must configure the documented merge driver. | `6423cafece`, `d7747a32d9` | Released by `v6.2.0-2` |
+| Robust Biome pre-commit handling | Modified | Allows staged sets containing only Biome-ignored generated/declaration paths without incorrectly failing because no files were processed. | `778b4200f7`, `lint-staged.config.mjs` | Unreleased |
+| Public fork process documentation | Added | Defines branch ownership, upstream intake, divergence, security review, release evidence, image handling, and downstream responsibility as auditable contracts. | root `FORK_*`, `UPSTREAM_*`, `RELEASE_PROCESS.md`, `IMAGE_BUILD.md` | Introduced in `v6.2.0-1`; continuously maintained |
+
+## Intentionally Retained Upstream Components
+
+- The Cal.diy application architecture and MIT community-edition feature set remain the
+  foundation of the fork.
+- Approximately 35 upstream engineering rules remain because they describe this codebase's
+  architecture, data, testing, API, and quality constraints.
+- Formbricks remains active through its live tRPC integration; only the orphan duplicate was
+  removed.
+- Turbo, Prisma migration tooling, `ts-node` app-store seeding, and Trigger.dev's runtime SDK
+  remain because the current image startup or application imports still require them.
+- ARM64 remains a separate `-arm` image tag rather than a combined multi-architecture
+  manifest.
+
+## Maintenance Rules
+
+Update this register whenever a fork-owned change materially alters runtime behavior,
+security posture, deployment, CI, release handling, branding, or maintained source scope.
+
+For every material divergence:
+
+1. classify it as `Added`, `Modified`, or `Removed`
+2. explain the operational reason and user/security effect
+3. record the fork commit or enforceable file as evidence
+4. mark the first release containing it, or `Unreleased`
+5. identify any guard or merge rule needed to preserve it during upstream review
+6. update the release state when the change ships
+
+During every upstream review, check whether upstream now implements an equivalent solution.
+If it does, prefer converging and retire the fork divergence deliberately rather than
+maintaining duplicate behavior forever. Retired entries remain in the chronological sync
+log; this register describes the current steady state.

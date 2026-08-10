@@ -10,7 +10,7 @@ tags: ci, debugging, workflow
 ## The fork's CI
 
 Only fork-owned workflows run — the upstream workflows are disabled on `main`
-(see [.ai/divergence.md](../../.ai/divergence.md) → CI policy):
+(see [FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md) → Security And Privacy Changes):
 
 - **`forte-ci`** — `yarn type-check:ci` (blocking) + Biome lint (report-only for now)
 - **`forte-codeql` / `forte-trivy` / `forte-scorecard`** — security scans; findings go to

@@ -7,7 +7,8 @@ taken from upstream, what was intentionally skipped or removed, and the reason.
 Security-labelled upstream commits are taken by default
 (see [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md) → Security Fix Priority).
 Durable principles live in [decisions.md](decisions.md); the steady-state divergence
-(added / removed / kept-divergent paths) lives in [divergence.md](divergence.md);
+(added / removed / kept-divergent paths) lives in
+[../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md);
 this file is the timeline.
 
 ---
@@ -128,7 +129,7 @@ Per [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md):
 ## 2026-07-26 — Fork de-cruft (remove cal.com-only cruft)
 
 Removed upstream paths that are cal.com-specific and unused by this fork
-(now tracked in [divergence.md](divergence.md) so future syncs re-apply the cut):
+(now tracked in [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md) so future syncs re-apply the cut):
 
 - `.cursor/` — cal.com Cursor AI rules/skills (fork uses Claude Code)
 - `.changeset/` — cal.com NPM release machinery (fork does not publish to NPM)
