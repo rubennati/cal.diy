@@ -6,8 +6,8 @@ review rounds, while this file gives every reviewed upstream commit a durable di
 
 - Last reconciled: **2026-08-10**
 - Upstream range: `46eb533dbd..176037d0af` (50 commits)
-- Current integrated count: **8 full upstream patches**
-- Prepared but not integrated: **1**
+- Current integrated count: **9 full upstream patches**
+- Prepared but not integrated: **0**
 - Not integrated: **41**
 
 ## Status Vocabulary
@@ -51,6 +51,7 @@ reconciled against current history on **2026-08-10**.
 | `4026669e68` | `integrated-squashed` | `75c8f5c18f` | Full unauthenticated `/api/me` 401 patch. Historical aggregate. |
 | `ca03f007df` | `integrated-squashed` | `75c8f5c18f` | Full verified-phone lookup patch. Historical aggregate. |
 | `561cf889ab` | `integrated-squashed` | `75c8f5c18f` | Full Daily webhook BookingRepository patch. Historical aggregate. |
+| `038381aeca` | `integrated-full` | `29d686fa67` | Forwarded-IP whitespace / banlist-bypass fix; cherry-picked with `-x` on 2026-08-10. Fork-only formatting follow-up: `2ea6ff49b0`. Targeted tests passed (23/23) and filtered `@calcom/lib` type-check passed. Not yet released. |
 
 The four patches represented by `75c8f5c18f` have aggregate file statistics matching the
 sum of their upstream patches. No partial hunk intake was found. Their provenance is weak
@@ -102,7 +103,6 @@ on **2026-08-10**. A later status change must record its own date in the decisio
 | `f004349273` | Rename location helper | `deferred` | Refactor-only. |
 | `3894f37e14` | Hebrew duration spacing | `deferred` | Translation-only. |
 | `ab0b9e1fb5` | Remove obsolete Booker lint suppression | `deferred` | No runtime impact. |
-| `038381aeca` | Trim forwarded IP whitespace / banlist bypass | `prepared` | Security fix isolated and validated locally; not yet on `develop`. |
 | `8418db70c7` | Add Clara app | `rejected` | New external integration is outside the hardened fork scope. |
 | `5e3fe3cbe6` | Stable phone-input country fallback | `candidate` | Booking UX correctness; lower priority. |
 | `b2c28a23ab` | Language update functionality | `deferred` | UI/profile behavior; no security requirement. |
