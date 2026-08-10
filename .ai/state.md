@@ -14,32 +14,29 @@ steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md).
 - this repo is **public** → never commit real/personal data (company, support address,
   personal logo); those belong in the private deployment
 
-## Status (as of 2026-08-10)
+## Status (as of 2026-08-11)
 
 **Identity:** `cal.forte` — hardened, review-gated fork of Cal.diy (MIT community edition).
 Upstream intake is selective and recorded commit-by-commit in
 [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 
 **Branches:** `main` = untouched upstream mirror · `develop` = integration/review ·
-`release` = reviewed source for the GHCR image (currently `f99367c3`).
+`release` = reviewed source for GHCR images. The latest published source is `201b016984`.
 
-**Latest release:** `v6.2.0-4` — `ghcr.io/rubennati/cal.diy:v6.2.0-4`,
-digest `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8`
-(amd64; arm64 is published as a separate `-arm` tag, no merged multi-arch manifest).
-Contains: cal.forte branding, hardened defaults (ad-tracking off, plus the then-still-present
-`CALCOM_TELEMETRY_DISABLED=1`), next-auth 4.24.15, websocket-driver 0.7.5, and a slimmed
-image (Stage 1 + 2).
+**Latest release:** `v6.2.0-5` from `201b016984`:
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
 
-**Unreleased on `develop`:** the upstream telemetry module and the
-`CALCOM_TELEMETRY_DISABLED` flag are **gone** (the flag gated nothing — see
-[../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md)). No runtime behaviour changes, but the Dockerfile did, so
-the next image differs from `v6.2.0-4`. `packages/lib` now type-checks in CI, and four
-orphaned rotted files were deleted.
+It contains the telemetry removal and guard, repaired `packages/lib` type-check coverage,
+the IP-banlist whitespace fix, non-root runtimes, immutable build inputs, and the hardened
+two-architecture release pipeline. Release Docker run `31435807941` produced SBOMs,
+provenance, and the authoritative release record. Downstream handoff is tracked in
+`secure-docker-blueprint` issue #30.
 
-**Release topology blocker:** `origin/release` ends at `f99367c3` with five historical
-release-only commits and is not an ancestor of `origin/develop`. Complete the one-time
-content-neutral ancestry reconciliation in [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md)
-before the next fast-forward promotion; never force-push `release` to bypass it.
+**Release topology:** the one-time content-neutral ancestry reconciliation completed in
+`a4e2ff5dcd`; `develop` and `release` were source-identical at published SHA `201b016984`.
+Future promotions use the normal fast-forward process in
+[../RELEASE_PROCESS.md](../RELEASE_PROCESS.md).
 
 **Security posture:**
 - Security fixes are taken from upstream by default; validate they are *real* fixes
@@ -70,11 +67,11 @@ already removed upstream-side. Details: [branding.md](branding.md).
 - Tracks cal.com **6.2.0** (`apps/web/package.json` on `main` and `develop`).
 - Fork divergence point (merge-base `develop`↔`origin/main`): **`46eb533d`**.
 - Mirror `origin/main` last reviewed through `176037d0af`: 50 commits past base, still the
-  6.2.0 patch line. Eight complete upstream patches are integrated, one security fix is
-  prepared locally, and 41 are not integrated. Exact dispositions and historical aggregate
+  6.2.0 patch line. Nine complete upstream patches are integrated, none are prepared, and
+  41 are not integrated. Exact dispositions and historical aggregate
   provenance are in [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 - ⚠️ The repo's `v6.2.0` tag points at a **fork** commit (`a39c99f5`), **not** the upstream
-  release. Fork release tags are `v6.2.0-1..-4`. Pin bases to the merge-base / real upstream tag.
+  release. Fork release tags are `v6.2.0-1..-5`. Pin bases to the merge-base / real upstream tag.
 
 ## Knowledge base map
 

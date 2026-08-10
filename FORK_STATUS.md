@@ -9,7 +9,7 @@ deferred, and rejected decisions are recorded in
 
 ## Current Snapshot
 
-Last verified: **2026-08-10**
+Last verified: **2026-08-11**
 
 | Item | Current state |
 | --- | --- |
@@ -17,11 +17,12 @@ Last verified: **2026-08-10**
 | Upstream reviewed through | `176037d0af` on 2026-08-10 |
 | Latest review range | [`3894f37e14...176037d0af`](https://github.com/rubennati/cal.diy/compare/3894f37e14...176037d0af) (6 commits) |
 | Integrated upstream base | [`46eb533dbd`](https://github.com/rubennati/cal.diy/commit/46eb533dbd20b74686efa520684e662c0f21051c) (Cal.com 6.2.0 base) |
-| Reviewed `develop` content baseline | [`99f4021d29`](https://github.com/rubennati/cal.diy/commit/99f4021d2921279b74e1ae4c902e370a26966c76) (before the IP-banlist integration) |
-| Reviewed release source | `release` at [`f99367c3a7`](https://github.com/rubennati/cal.diy/commit/f99367c3a75a0b69b59a058caf5e2114c5c0fb7d) |
-| Latest published release | [`v6.2.0-4`](https://github.com/rubennati/cal.diy/tree/v6.2.0-4) |
-| Published image | `ghcr.io/rubennati/cal.diy:v6.2.0-4` |
-| AMD64 digest | `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8` |
+| Latest published source baseline | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
+| Reviewed publication branch | [`release`](https://github.com/rubennati/cal.diy/tree/release) |
+| Latest published release | [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5) |
+| Published AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5` |
+| AMD64 digest | `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e` |
+| ARM64 digest | `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae` |
 
 The repository is selectively maintained. **Reviewed through** means that upstream commits
 through the stated point were assessed; it does not mean that every upstream commit was
@@ -48,7 +49,7 @@ full sync, and an integration does not imply that an image was published.
 
 | Upstream commit | Area | Review result |
 | --- | --- | --- |
-| `038381aeca` | IP parsing / banlist enforcement | **Integrated in full on 2026-08-10 as `29d686fa67`.** Trims forwarded-header whitespace to prevent an IP-banlist bypass. Not yet released. |
+| `038381aeca` | IP parsing / banlist enforcement | **Integrated in full on 2026-08-10 as `29d686fa67` and released in `v6.2.0-5`.** Trims forwarded-header whitespace to prevent an IP-banlist bypass. |
 | `176037d0af` | Email reply-to handling | Relevant functional fix; candidate for selective integration. |
 | `5e3fe3cbe6` | Booking phone input | Useful fallback fix; lower priority. |
 | `b2c28a23ab` | Language settings | Functional UI fix; deferred pending need. |
@@ -63,6 +64,9 @@ retain their recorded candidate, deferred, or rejected status.
 - `main` is the upstream-near mirror.
 - `develop` is the reviewed integration branch.
 - `release` is the reviewed source for release tags and GHCR images.
+- The historical release-only commits were reconciled as content-neutral ancestry in
+  [`a4e2ff5dcd`](https://github.com/rubennati/cal.diy/commit/a4e2ff5dcd4b81c4a7731b575058892651925c73);
+  release promotion is now a normal source-identical fast-forward.
 - The merge-base between `develop` and the reviewed upstream line is `46eb533dbd`.
 - Security fixes after that base are selectively cherry-picked; they are not evidence of a
   full upstream merge.
@@ -76,14 +80,16 @@ The exact current source difference can be inspected with the
 
 | Evidence | Value |
 | --- | --- |
-| Release tag | [`v6.2.0-4`](https://github.com/rubennati/cal.diy/tree/v6.2.0-4) |
+| Release tag | [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5) |
 | Source branch | `release` |
-| Source commit | [`f99367c3a7`](https://github.com/rubennati/cal.diy/commit/f99367c3a75a0b69b59a058caf5e2114c5c0fb7d) |
-| Promoted `develop` commit | [`8b4a9cd8`](https://github.com/rubennati/cal.diy/commit/8b4a9cd8) |
-| AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-4` |
-| ARM64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-4-arm` |
-| AMD64 digest | `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8` |
-| Release workflow run | [`30223216533`](https://github.com/rubennati/cal.diy/actions/runs/30223216533) |
+| Source commit | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
+| Promoted `develop` commit | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
+| AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5` |
+| ARM64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm` |
+| AMD64 digest | `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e` |
+| ARM64 digest | `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae` |
+| Release workflow run | [`31435807941`](https://github.com/rubennati/cal.diy/actions/runs/31435807941) |
+| Downstream handoff | [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30) |
 
 Downstream deployments must use a reviewed version tag or, preferably, a recorded digest.
 They must not treat `latest` as a secure deployment target. The complete artifact rules are
@@ -91,15 +97,10 @@ defined in [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md).
 
 ## Known Limitations
 
-- `origin/release` has five historical release-only commits and is not yet an ancestor of
-  `origin/develop`; the one-time, content-neutral ancestry reconciliation in
-  [RELEASE_PROCESS.md](RELEASE_PROCESS.md) is required before the next fast-forward release.
 - `type-check:ci` does not cover every workspace package; see
   [.ai/quality-gates.md](.ai/quality-gates.md).
 - The Trivy image scan is currently report-only while inherited runtime-image findings are
   reduced; see [.ai/slimming-runtime-plan.md](.ai/slimming-runtime-plan.md).
-- The IP-banlist fix is integrated on `develop` but is not included in the latest published
-  release image until the next reviewed release promotion completes.
 - ARM64 is published under a separate `-arm` tag rather than a combined multi-architecture
   manifest.
 
