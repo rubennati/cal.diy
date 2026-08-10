@@ -22,6 +22,8 @@ Durable fork rules:
 - no upstream sync, image publish, or commit without explicit approval
 - app source changes must be minimal, evidence-based, and reviewed
 - security-relevant upstream commits are taken by default (see UPSTREAM_SYNC.md → Security Fix Priority)
+- selective upstream intake is one upstream commit per local `git cherry-pick -x`; never
+  squash multiple upstream commits into a local aggregate commit
 - secrets must never be printed, copied, committed, or exposed
 - **do NOT add the `Co-Authored-By: Claude` trailer to commits in this repo**
 - `secure-docker-blueprint` is a separate consumer repo; do not treat `latest` as a secure deploy target
@@ -47,6 +49,7 @@ Durable fork rules:
 - Never use `as any` - use proper type-safe solutions instead
 - Never expose `credential.key` field in API responses or queries
 - Never commit secrets or API keys
+- Never combine multiple upstream commits into one local cherry-pick/squash commit
 - Never modify `*.generated.ts` files directly - they're created by app-store-cli
 - Never put business logic in repositories - that belongs in Services
 - Never use barrel imports from index.ts files

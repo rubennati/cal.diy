@@ -14,13 +14,14 @@ steady-state divergence: [divergence.md](divergence.md).
 - this repo is **public** → never commit real/personal data (company, support address,
   personal logo); those belong in the private deployment
 
-## Status (as of 2026-07-26)
+## Status (as of 2026-08-10)
 
 **Identity:** `cal.forte` — hardened, review-gated fork of Cal.diy (MIT community edition).
-41 fork commits since the upstream base.
+Upstream intake is selective and recorded commit-by-commit in
+[../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 
 **Branches:** `main` = untouched upstream mirror · `develop` = integration/review ·
-`release` = reviewed source for the GHCR image (currently `11cbb281`).
+`release` = reviewed source for the GHCR image (currently `f99367c3`).
 
 **Latest release:** `v6.2.0-4` — `ghcr.io/rubennati/cal.diy:v6.2.0-4`,
 digest `sha256:9818a0be6404bbcf6b330847868d2673ded00b9786ecb6683f49e907cf77a1a8`
@@ -34,6 +35,11 @@ image (Stage 1 + 2).
 [divergence.md](divergence.md)). No runtime behaviour changes, but the Dockerfile did, so
 the next image differs from `v6.2.0-4`. `packages/lib` now type-checks in CI, and four
 orphaned rotted files were deleted.
+
+**Release topology blocker:** `origin/release` ends at `f99367c3` with five historical
+release-only commits and is not an ancestor of `origin/develop`. Complete the one-time
+content-neutral ancestry reconciliation in [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md)
+before the next fast-forward promotion; never force-push `release` to bypass it.
 
 **Security posture:**
 - Security fixes are taken from upstream by default; validate they are *real* fixes
@@ -63,10 +69,12 @@ already removed upstream-side. Details: [branding.md](branding.md).
 
 - Tracks cal.com **6.2.0** (`apps/web/package.json` on `main` and `develop`).
 - Fork divergence point (merge-base `develop`↔`origin/main`): **`46eb533d`**.
-- Mirror `origin/main` at `3894f37`: 44 commits past base, still 6.2.0 patch line. Security
-  fixes among them are cherry-picked; the rest are deferred features/refactors.
+- Mirror `origin/main` last reviewed through `176037d0af`: 50 commits past base, still the
+  6.2.0 patch line. Eight complete upstream patches are integrated, one security fix is
+  prepared locally, and 41 are not integrated. Exact dispositions and historical aggregate
+  provenance are in [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 - ⚠️ The repo's `v6.2.0` tag points at a **fork** commit (`a39c99f5`), **not** the upstream
-  release. Fork release tags are `v6.2.0-1..-3`. Pin bases to the merge-base / real upstream tag.
+  release. Fork release tags are `v6.2.0-1..-4`. Pin bases to the merge-base / real upstream tag.
 
 ## Knowledge base map
 

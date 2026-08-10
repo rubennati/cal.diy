@@ -34,7 +34,7 @@ The intended flow is:
 1. fetch upstream
 2. compare upstream to local `main`
 3. update `main` to the desired upstream state
-4. merge or rebase that reviewed state into `develop`
+4. integrate reviewed commits into `develop` using one of the explicit modes below
 5. run release gates on `develop`
 6. promote to `release` only after review
 
@@ -96,6 +96,25 @@ git log --oneline --no-merges develop..origin/main \
 - Keep `develop` as the branch where conflicts are reviewed and resolved.
 - Keep `release` free of surprise integration work.
 
+## Integration Modes
+
+### Selective intake (default)
+
+- Cherry-pick exactly one upstream commit at a time with `git cherry-pick -x <sha>`.
+- Never squash multiple upstream commits into one local commit.
+- Run focused validation and update [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md)
+  before moving to the next commit.
+- Put fork-specific adaptations in a separate follow-up commit.
+- For partial intake, apply only the reviewed patch and record exact retained/omitted scope
+  as `partial`; do not claim a full cherry-pick.
+
+### Full release-base sync (exception)
+
+- Pin the exact upstream release tag first.
+- Preserve upstream commits and merge topology; never squash the release range.
+- Review the complete range and all fork-owned conflict resolutions.
+- Record every upstream commit and every conflict decision in the ledger and sync log.
+
 ## Conflict Rules
 
 - Fork-owned files need manual review every sync.
@@ -107,7 +126,7 @@ git log --oneline --no-merges develop..origin/main \
 After `main` reflects the chosen upstream state:
 
 1. compare `main...develop`
-2. merge or rebase `main` into `develop`
+2. choose selective intake or a documented full release-base merge
 3. inspect fork-owned drift
 4. run release gates
 5. record what changed
@@ -122,6 +141,7 @@ git log --oneline --decorate main..develop
 ## What Must Be Recorded For Each Sync
 
 - upstream commit or tag reviewed
+- one ledger row for every reviewed upstream commit, including deferred/rejected changes
 - resulting `main` commit
 - resulting `develop` commit
 - fork-only files kept intentionally divergent
@@ -136,3 +156,4 @@ git log --oneline --decorate main..develop
 - do not publish a release image from an unreviewed sync
 - do not assume docs and image references remain correct after upstream changes
 - do not collapse fork-only workflow/docs changes into app-source review without calling them out
+- do not combine multiple upstream commits into a local aggregate commit

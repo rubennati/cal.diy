@@ -7,7 +7,7 @@ on:
   pull_request:
     branches: [develop, release]
   push:
-    branches: [develop]
+    branches: [develop, release]
 
 permissions:
   contents: read
@@ -21,14 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 20
       - name: Enable corepack (yarn 4)
         run: corepack enable
       - name: Install (immutable)
         run: yarn install --immutable
+      - name: Verify lifecycle scripts did not change tracked source
+        run: |
+          set -euo pipefail
+          if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+            echo "::error::Install or generation changed tracked files"
+            git diff --stat
+            git diff --check
+            exit 1
+          fi
       - name: Fork guard — telemetry stays removed
         # Blocking on purpose: this is the class of regression an upstream sync
         # re-introduces silently. See .ai/divergence.md.

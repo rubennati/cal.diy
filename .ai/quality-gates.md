@@ -17,6 +17,10 @@ For fork/release work:
 - no image publish without approval
 - no commit without approval
 - `git diff --check`
+- one upstream commit per local `git cherry-pick -x` in the current intake; no new
+  aggregate/squash cherry-picks
+- every reviewed upstream commit has a disposition in `UPSTREAM_REVIEW_LEDGER.md`
+- install/lifecycle scripts leave tracked source clean
 - `scripts/fork-guard-telemetry.sh` — blocking step in `forte-ci`; fails if the removed
   upstream telemetry module, its Jitsu endpoint/key, `next-collect`, or the
   `CALCOM_TELEMETRY_DISABLED` flag reappear through a sync
@@ -41,4 +45,6 @@ Minimum release checks called out in the process layer include:
 - relevant tests
 - reviewed GHCR target
 - recorded image tag or digest
+- tag commit equals the reviewed `origin/release` head
+- AMD64 and ARM64 digests, SBOMs, provenance, and finalizer status are recorded
 - no dependency on `latest` for secure downstream deployment

@@ -17,3 +17,16 @@ updates:
     schedule:
       interval: weekly
     labels: ["ci"]
+
+  # Immutable base-image digests used by the release and API v2 Dockerfiles.
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: ["docker", "dependencies"]
+
+  - package-ecosystem: docker
+    directory: "/apps/api/v2"
+    schedule:
+      interval: weekly
+    labels: ["docker", "dependencies"]

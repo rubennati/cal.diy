@@ -10,6 +10,10 @@ Rules:
 - do not publish images without explicit approval
 - do not assume branch-dispatch test artifacts are trusted releases
 - do not treat `latest` as a safe downstream deployment target
+- manual workflow dispatch is validation-only and must never publish
+- release tags must be annotated, match `vX.Y.Z-N`, and point exactly to `origin/release`
+- publish the exact image that was runtime-tested and scanned; never rebuild between gate and push
+- record architecture-specific registry digests, SBOMs, provenance, and finalizer status
 
 Branch intent reminder:
 
