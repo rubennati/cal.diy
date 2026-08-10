@@ -38,8 +38,9 @@ Record the base tag in each [sync-log](.ai/sync-log.md) entry.
 
 1. List what changed since our base: `git log --oneline <base>..origin/main`.
 2. Classify each commit: **security** / **interface-we-depend-on** / **feature-or-other**.
-3. Take security + required-interface; defer the rest and record why.
-4. Security scan command: [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) → Security Fix Priority.
+3. Record every commit in [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md).
+4. Take security + required-interface; defer the rest and record why.
+5. Security scan command: [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) → Security Fix Priority.
 
 ## Security-fix validation (don't trust the commit subject)
 
@@ -53,8 +54,20 @@ is a real, relevant fix:
   mark it N/A rather than taking it blindly.
 - **Dependency bumps:** confirm the package is actually used and the advisory applies
   (direct vs transitive).
-- Cherry-pick with `-x` (records the upstream SHA); add the CVE/GHSA id to the message
-  when one exists.
+- Cherry-pick one upstream commit at a time with `-x` (records the upstream SHA); add the
+  CVE/GHSA id to the message when one exists.
+
+## Commit provenance and partial intake
+
+- Never squash multiple upstream commits into one local commit.
+- Keep fork-specific adaptations in a separate follow-up commit that names the upstream SHA.
+- If only part of an upstream change is suitable, record it as `partial` in
+  [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md), including retained and omitted
+  behavior. Do not label a hand-selected patch as a full cherry-pick.
+- A deliberate full upstream release merge may preserve the original upstream commits and
+  merge topology. It must not replace them with one synthetic aggregate commit.
+- Historical aggregate commit `75c8f5c18f` remains immutable; its four complete upstream
+  patches are mapped individually in the ledger and the pattern must not be repeated.
 
 ## Cadence
 

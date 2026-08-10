@@ -6,8 +6,10 @@ Start here, then read the authoritative docs:
 
 - [../AGENTS.md](../AGENTS.md)
 - [../FORK_PROCESS.md](../FORK_PROCESS.md)
+- [../FORK_STATUS.md](../FORK_STATUS.md)
 - [../FORK_STRATEGY.md](../FORK_STRATEGY.md)
 - [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)
+- [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md)
 - [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md)
 - [../IMAGE_BUILD.md](../IMAGE_BUILD.md)
 - [../SECURITY_REVIEW.md](../SECURITY_REVIEW.md)

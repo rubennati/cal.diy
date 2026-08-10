@@ -3,7 +3,9 @@
 This page records the public maintenance status of `cal.forte`: which upstream state was
 seen and reviewed, which changes were actually integrated, and which source produced the
 latest release. It complements the chronological [sync log](.ai/sync-log.md) and the
-steady-state [divergence record](.ai/divergence.md).
+steady-state [divergence record](.ai/divergence.md). Commit-level accepted, partial,
+deferred, and rejected decisions are recorded in
+[UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md).
 
 ## Current Snapshot
 
@@ -89,6 +91,9 @@ defined in [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md).
 
 ## Known Limitations
 
+- `origin/release` has five historical release-only commits and is not yet an ancestor of
+  `origin/develop`; the one-time, content-neutral ancestry reconciliation in
+  [RELEASE_PROCESS.md](RELEASE_PROCESS.md) is required before the next fast-forward release.
 - `type-check:ci` does not cover every workspace package; see
   [.ai/quality-gates.md](.ai/quality-gates.md).
 - The Trivy image scan is currently report-only while inherited runtime-image findings are
@@ -106,6 +111,7 @@ Record the detailed outcome in [.ai/sync-log.md](.ai/sync-log.md), including:
 - review date, start commit, and end commit
 - accepted and integrated commits
 - intentionally deferred commits and reasons
+- ledger status and local provenance for every reviewed upstream commit
 - checks run and known validation gaps
 - release tag, source commit, workflow run, image references, and digest when published
 

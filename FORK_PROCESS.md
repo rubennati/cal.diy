@@ -26,6 +26,8 @@ The goal is a simple operating model:
 - `release`
   - Release branch for reviewed tags and GHCR publication.
   - Every commit on this branch should have a clear reason to be shippable.
+  - Target state: the tagged source tree is identical to the approved `develop` candidate;
+    release-only application or workflow edits are forbidden.
 - tags
   - Tags represent reviewed release points.
   - Tags are the release inputs that downstream secure deployment should trust.
@@ -63,18 +65,27 @@ Areas that should not drift casually:
   - checks performed
   - resulting image tag
   - resulting image digest
+- A release tag must point exactly to the current reviewed `origin/release` head.
+- Manual branch validation must never publish an image.
+- A release is incomplete until AMD64, ARM64, provenance/SBOM, digest capture, and the
+  finalization job have all succeeded.
 
 ## Normal Operating Cycle
 
 1. Inspect upstream changes.
-2. Update `main` to the desired upstream state.
-3. Merge or rebase that state into `develop`.
+2. Update `main` to the observed upstream state.
+3. Integrate approved upstream commits one at a time with `git cherry-pick -x`, or perform
+   an explicitly approved history-preserving release-base merge without squashing.
 4. Review the diff, especially fork-owned paths and security-sensitive areas.
 5. Run release gates.
 6. Promote reviewed code to `release`.
 7. Create a release tag from `release`.
 8. Publish the GHCR image from that tag.
 9. Record the resulting digest and release notes.
+
+Every upstream decision is recorded in [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md).
+Historical aggregate commit `75c8f5c18f` is documented there and must not be used as a
+precedent.
 
 ## Things This Repository Should Not Assume
 
