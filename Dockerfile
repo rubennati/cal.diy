@@ -107,7 +107,8 @@ ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
 ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL \
   BUILT_NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+  YARN_INSTALL_STATE_PATH=/tmp/cal-forte-install-state.gz
 
 # cal.forte hardened defaults — privacy-by-default; override via runtime env if ever needed.
 # No usage-telemetry flag here on purpose: the upstream telemetry module is deleted in this
