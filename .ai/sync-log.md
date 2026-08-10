@@ -254,6 +254,47 @@ can drop it. Ad-tracking remains off by default.
 
 ---
 
+## 2026-08-11 — Release `v6.2.0-5` and downstream handoff
+
+**Context:** The reviewed `develop` state was promoted after local install/type-check gates
+and repeated non-publishing AMD64/ARM64 Docker validation. The release also completed the
+one-time historical ancestry reconciliation required for future fast-forward promotions.
+
+**Release source:** `201b016984fe13388ccdc6a82f2669e9719d3bcc`
+
+**Release preparation:**
+- PR #8 redirected Yarn runtime state to writable `/tmp`; a Docker gate showed that Turbo's
+  strict task environment filtered the environment-only setting.
+- PR #9 persisted `installStatePath` in the final image's Yarn configuration; both
+  architecture runtime tests then passed.
+- PR #10 linked the five historical release-only commits with a content-neutral `ours`
+  ancestry merge. Its file diff was empty; `release` then fast-forwarded to `develop`.
+
+**Checks:** `forte-ci`, CodeQL, Trivy, and Scorecard passed for the exact source SHA.
+Non-publishing Release Docker run
+[`31433538582`](https://github.com/rubennati/cal.diy/actions/runs/31433538582) passed source
+identity, runtime tests, image scans, and SBOM generation on AMD64 and ARM64.
+
+**Published artifacts:** Release Docker run
+[`31435807941`](https://github.com/rubennati/cal.diy/actions/runs/31435807941) validated the
+annotated `v6.2.0-5` tag, published both architecture images, finalized `latest` as
+convenience metadata, uploaded CycloneDX SBOMs and `release-record.json`, and pushed build
+provenance attestations.
+
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
+
+**Downstream handoff:**
+[secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30)
+records the digest update and required non-root, secrets, migration, health, booking, SMTP,
+and rollback validation. `latest` is not a downstream trust input.
+
+**Documentation follow-up:** The historical release-only README conflicted with the new
+source-identical promotion model. The shared fork README is now branch-neutral for
+`develop` and `release`; `main` continues to carry the upstream README.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>

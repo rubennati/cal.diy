@@ -51,7 +51,7 @@ reconciled against current history on **2026-08-10**.
 | `4026669e68` | `integrated-squashed` | `75c8f5c18f` | Full unauthenticated `/api/me` 401 patch. Historical aggregate. |
 | `ca03f007df` | `integrated-squashed` | `75c8f5c18f` | Full verified-phone lookup patch. Historical aggregate. |
 | `561cf889ab` | `integrated-squashed` | `75c8f5c18f` | Full Daily webhook BookingRepository patch. Historical aggregate. |
-| `038381aeca` | `integrated-full` | `29d686fa67` | Forwarded-IP whitespace / banlist-bypass fix; cherry-picked with `-x` on 2026-08-10. Fork-only formatting follow-up: `2ea6ff49b0`. Targeted tests passed (23/23) and filtered `@calcom/lib` type-check passed. Not yet released. |
+| `038381aeca` | `integrated-full` | `29d686fa67` | Forwarded-IP whitespace / banlist-bypass fix; cherry-picked with `-x` on 2026-08-10. Fork-only formatting follow-up: `2ea6ff49b0`. Targeted tests passed (23/23) and filtered `@calcom/lib` type-check passed. First released in `v6.2.0-5`. |
 
 The four patches represented by `75c8f5c18f` have aggregate file statistics matching the
 sum of their upstream patches. No partial hunk intake was found. Their provenance is weak

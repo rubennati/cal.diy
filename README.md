@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > **cal.forte — a hardened, controlled fork of Cal.diy. This is not upstream.**
-> You are on the `develop` (integration / review) branch — it diverges from upstream and
-> is **not a deployment target**. Deployable images come only from the `release` branch.
+> Changes are reviewed on `develop`; deployable images come only from reviewed tags on
+> `release`. Use a versioned, architecture-specific digest — never `latest` as a trust anchor.
 
 # cal.forte
 
@@ -15,18 +15,37 @@ compromise; every change here is deliberate and documented.
 **Fork changes:** Security defaults, telemetry, CI, container runtime, and release handling
 intentionally differ from Cal.diy. [See the public divergence register →](FORK_DIVERGENCE.md)
 
+**Latest release:** [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5)
+from [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc).
+[Full release evidence →](FORK_STATUS.md#latest-release-evidence)
+
 ## Branch model
 
 | Branch    | Purpose                                   | Deploy?           |
 |-----------|-------------------------------------------|-------------------|
 | `main`    | Untouched upstream mirror                 | no                |
-| `develop` | Fork integration & review (this branch)   | no                |
+| `develop` | Fork integration and review               | no                |
 | `release` | Reviewed source for the GHCR Docker image | tag / digest only |
 
 - Image: `ghcr.io/rubennati/cal.diy` — consume a **reviewed tag/digest**, never `latest`
-  (latest release recorded in [.ai/sync-log.md](.ai/sync-log.md)).
+  (latest release recorded in [FORK_STATUS.md](FORK_STATUS.md)).
 - Downstream deployment: [`secure-docker-blueprint`](https://github.com/rubennati/secure-docker-blueprint/tree/main/apps/caldiy).
-- Exact diff vs upstream: **https://github.com/rubennati/cal.diy/compare/main...develop**
+- Exact reviewed diff vs upstream: **https://github.com/rubennati/cal.diy/compare/main...develop**
+- Exact release diff vs upstream: **https://github.com/rubennati/cal.diy/compare/main...release**
+
+## Releases
+
+The latest published image was built from `release` at
+[`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc):
+
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
+- Evidence: [Release Docker run 31435807941](https://github.com/rubennati/cal.diy/actions/runs/31435807941)
+- Downstream handoff: [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30)
+
+Tags are architecture-specific; there is currently no combined multi-architecture manifest.
+See [FORK_STATUS.md](FORK_STATUS.md) for the maintenance snapshot and
+[CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md) for the downstream trust contract.
 
 ## 📚 Documentation & knowledge base
 
