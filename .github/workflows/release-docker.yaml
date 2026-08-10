@@ -33,7 +33,7 @@ jobs:
       source_sha: ${{ steps.identity.outputs.source_sha }}
     steps:
       - name: Checkout requested source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
@@ -118,7 +118,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout validated source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
@@ -151,7 +151,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout validated source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
@@ -188,7 +188,7 @@ jobs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout validated release tag
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
@@ -227,7 +227,7 @@ jobs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout validated release tag
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
