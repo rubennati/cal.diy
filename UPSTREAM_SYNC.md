@@ -118,6 +118,8 @@ git log --oneline --no-merges develop..origin/main \
 ## Conflict Rules
 
 - Fork-owned files need manual review every sync.
+- Reconcile [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md); reapply guarded removals and retire
+  divergences when upstream now provides an equivalent reviewed solution.
 - If an application-source conflict appears in a security-sensitive area, stop and review it deliberately.
 - If a change is fork-specific and must stay divergent, document the reason in the release notes.
 

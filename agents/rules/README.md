@@ -3,7 +3,7 @@
 Modular, machine-readable engineering rules kept in this fork because they describe how
 to safely maintain **this codebase**. They originate from cal.com's engineering
 standards; the fork keeps the technical rules and has removed cal.com's team-culture and
-PR-process rules (see [../../.ai/divergence.md](../../.ai/divergence.md)).
+PR-process rules (see [../../FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md)).
 
 ## Sections
 
@@ -29,4 +29,4 @@ Each file states the rule, **why** it matters, and an incorrect/correct example.
 
 A few rules describe features this fork may drop when the codebase is slimmed —
 `patterns-trigger-dev`, `patterns-app-store`, `data-prisma-feature-flags`. Tracked in
-[../../.ai/divergence.md](../../.ai/divergence.md).
+[../../FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md).

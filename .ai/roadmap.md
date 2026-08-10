@@ -1,7 +1,7 @@
 # Roadmap
 
 Living list of open work for the fork. Durable posture: [../FORK_STRATEGY.md](../FORK_STRATEGY.md).
-Steady-state divergence: [divergence.md](divergence.md). Timeline: [sync-log.md](sync-log.md).
+Steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md). Timeline: [sync-log.md](sync-log.md).
 
 ## Now / next (in cal.forte)
 

@@ -28,6 +28,6 @@ Always ensure Playwright tests pass locally before pushing code. The user requir
 ## CI Behavior
 
 This fork does not run Playwright E2E in CI — the upstream E2E workflows are disabled
-(see [.ai/divergence.md](../../.ai/divergence.md) → CI policy). E2E is a **local** tool:
+(see [FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md) → Security And Privacy Changes). E2E is a **local** tool:
 run the relevant specs locally before pushing changes that touch booking / auth /
 calendar flows. Fork CI (`forte-ci`) covers type-check + lint only.

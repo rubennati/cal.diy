@@ -35,6 +35,9 @@ The goal is a simple operating model:
 ## Allowed Fork Divergence
 
 Fork-owned changes should stay small and obvious.
+The authoritative list of current fork additions, modifications, and removals is
+[FORK_DIVERGENCE.md](FORK_DIVERGENCE.md). A material fork-owned change is incomplete until
+that register records its rationale, evidence, maintenance rule, and release state.
 
 Expected fork-owned areas:
 

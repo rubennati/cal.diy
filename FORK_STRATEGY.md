@@ -15,7 +15,8 @@ for its purpose (a stable, hardened, auditable self-host image). Therefore:
 - **Skip by default:** new features, UI churn, refactors — unless a security fix
   depends on them. Record deferrals in [.ai/sync-log.md](.ai/sync-log.md).
 - **Minimise the fork:** every fork-only change is maintenance cost. Prefer removing
-  cruft over adding. Track steady-state divergence in [.ai/divergence.md](.ai/divergence.md).
+  cruft over adding. Track steady-state divergence in
+  [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md).
 
 This mirrors documented fork best practice: keep the upstream mirror untouched, keep
 custom changes small/isolated/documented, and minimise divergence so future syncs stay
@@ -26,7 +27,7 @@ vulnerabilities") — hence security is taken by default.
 
 Wanting a feature is fine, but it is a conscious decision, not a default. Either pull
 the specific upstream feature commits deliberately, or add a fork-owned change — in both
-cases record it in [.ai/divergence.md](.ai/divergence.md) so the divergence stays known.
+cases record it in [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) so the divergence stays known.
 
 ## Upstream base: pin to a release tag
 

@@ -7,7 +7,7 @@
 ## Rules Index
 
 Engineering rules adopted from upstream (cal.com team-culture / PR-process rules were
-removed — see [../../.ai/divergence.md](../../.ai/divergence.md)). Grouped by prefix
+removed — see [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md)). Grouped by prefix
 ([rules/_sections.md](rules/_sections.md)).
 
 ### Architecture

@@ -2,7 +2,7 @@
 
 Where the fork stands right now, and the rules that govern acting on it.
 Timeline: [sync-log.md](sync-log.md) · open work: [roadmap.md](roadmap.md) ·
-steady-state divergence: [divergence.md](divergence.md).
+steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md).
 
 ## Operating assumptions (approval gates)
 
@@ -32,7 +32,7 @@ image (Stage 1 + 2).
 
 **Unreleased on `develop`:** the upstream telemetry module and the
 `CALCOM_TELEMETRY_DISABLED` flag are **gone** (the flag gated nothing — see
-[divergence.md](divergence.md)). No runtime behaviour changes, but the Dockerfile did, so
+[../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md)). No runtime behaviour changes, but the Dockerfile did, so
 the next image differs from `v6.2.0-4`. `packages/lib` now type-checks in CI, and four
 orphaned rotted files were deleted.
 

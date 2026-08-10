@@ -6,7 +6,7 @@ Prioritise **security, type safety, and small, reviewable diffs**.
 The engineering rules referenced below are *adopted from upstream cal.com* and kept
 because they describe how to safely maintain **this codebase** — not because they are
 team process. cal.com's team-culture, review-ritual and PR-process rules have been
-removed on purpose (see [.ai/divergence.md](.ai/divergence.md)).
+removed on purpose (see [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md)).
 
 ## Controlled Fork Rules
 
@@ -14,7 +14,8 @@ The fork/release process docs are authoritative for branch and release behaviour
 
 - [FORK_PROCESS.md](FORK_PROCESS.md) · [FORK_STRATEGY.md](FORK_STRATEGY.md) · [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) · [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
 - [IMAGE_BUILD.md](IMAGE_BUILD.md) · [SECURITY_REVIEW.md](SECURITY_REVIEW.md) · [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md)
-- AI operational layer: [.ai/](.ai/) — index, state, decisions, [sync-log](.ai/sync-log.md), [divergence](.ai/divergence.md)
+- Public fork-owned behavior: [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md)
+- AI operational layer: [.ai/](.ai/) — index, state, decisions, [sync-log](.ai/sync-log.md)
 
 Durable fork rules:
 
