@@ -107,8 +107,7 @@ ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
 ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL \
   BUILT_NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
 
-ENV NODE_ENV=production \
-  YARN_INSTALL_STATE_PATH=/tmp/cal-forte-install-state.gz
+ENV NODE_ENV=production
 
 # cal.forte hardened defaults — privacy-by-default; override via runtime env if ever needed.
 # No usage-telemetry flag here on purpose: the upstream telemetry module is deleted in this
@@ -120,7 +119,8 @@ ENV GOOGLE_ADS_ENABLED=0 \
 # Runtime URL replacement and Turbo/Next caches need these paths writable without granting
 # ownership of the complete application tree.
 RUN mkdir -p /calcom/.turbo \
-  && chown -R node:node /calcom/.turbo /calcom/apps/web/.next /calcom/apps/web/public
+  && chown -R node:node /calcom/.turbo /calcom/apps/web/.next /calcom/apps/web/public \
+  && yarn config set installStatePath /tmp/cal-forte-install-state.gz
 
 USER node
 
