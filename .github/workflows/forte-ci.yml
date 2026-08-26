@@ -43,6 +43,10 @@ jobs:
         # Blocking on purpose: this is the class of regression an upstream sync
         # re-introduces silently. See .ai/divergence.md.
         run: bash scripts/fork-guard-telemetry.sh
+      - name: Fork guard — self-test
+        # A guard is only worth blocking on if it still fires. Asserts both directions:
+        # documentation may name the removed indicators, executable surfaces may not.
+        run: bash scripts/fork-guard-telemetry.test.sh
       - name: Type check
         run: yarn type-check:ci --force
       - name: Lint (Biome)

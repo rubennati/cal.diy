@@ -1098,6 +1098,55 @@ commit. See §11's note on the 2026-08-10 round.
 
 ---
 
+### FIL-0013 · Scope the telemetry guard to executable surfaces
+
+| Field | Value |
+| --- | --- |
+| Status | merged-not-released |
+| Type | `MAINTENANCE` / `SECURITY_GUARD_CORRECTION` |
+| GitHub issue | n/a |
+| PR | `BACKFILL_REQUIRED` — to be filled when this branch is opened as a PR |
+| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the same commit it describes |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** The guard added with the telemetry removal (`75a9df1812`) searched
+every tracked file except `.ai/`, `README.md`, the workflow and itself. Once the governance and
+audit records landed on `develop`, the guard began failing on documentation that merely *named*
+the removed indicators — `FORK_IMPLEMENTATION_LEDGER.md`, `docs/EXTERNAL_FORK_INTAKE.md` and
+`docs/EXTERNAL_FORK_INTAKE_EVIDENCE.md`. This is a false-positive scope defect, not a
+vulnerability: the protected invariant was never breached, and no telemetry behaviour returned.
+
+**Implementation summary.** Exclusions are now by file semantics rather than by directory:
+`*.md` and `*.mdx` are out of scope, everything else is in. The blanket `.ai/` and
+`forte-ci.yml` exemptions are removed, so a non-Markdown file in either location is now scanned
+for the first time. The guard itself remains the one unavoidable exception. The protected
+indicators, the blocking CI step and the deletion of `packages/lib/telemetry.ts` are unchanged.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Invariant preserved; scan scope is net wider on executable surfaces |
+| Attack-surface impact | Unchanged — no product code touched |
+| Compatibility impact | None |
+
+**Scope deliberately given up.** The guard previously failed if a hardening document
+re-advertised `CALCOM_TELEMETRY_DISABLED` as a live control. A fixed-string search cannot tell
+that apart from a record that the flag was removed, which is precisely why it fired on the audit
+set. Documentation accuracy remains a review obligation under `SECURITY_ASSURANCE.md`; it is no
+longer claimed to be machine-enforced.
+
+**Validation.** `scripts/fork-guard-telemetry.test.sh` — 18 assertions covering both directions,
+including that an executable placed under `docs/` is still scanned, and that removing the `*.md`
+exclusion reproduces the original failure. Guard passes on the real tree; harness verified to
+report a failure when an expectation is inverted.
+
+**Related documentation.** `FORK_DIVERGENCE.md` (telemetry removal row); `.ai/divergence.md`;
+`.ai/quality-gates.md`.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
