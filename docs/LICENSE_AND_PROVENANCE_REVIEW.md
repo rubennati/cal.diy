@@ -255,19 +255,23 @@ would ask about. **[LEGAL]**
 
 ## 4. Provenance Checklist For Each Proposed Capability
 
-Applied to the candidates in [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §8.
+Applied to the candidates in [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) **§10**
+(the ranked candidate registry). **Candidate ids below are the canonical registry ids**; an earlier
+draft of this table used a pre-consolidation numbering in which six of nine rows named a different
+candidate than the registry assigns. That numbering is retired — see the master's §1.2 crosswalk.
 
-| Candidate | Current-tree provenance | External reference | Copy or write? | Historical licence involved | Compatibility confidence | Needs [LEGAL]? |
-| --- | --- | --- | --- | --- | --- | --- |
-| P1-A deny-by-default permission service | none needed — replaces stubs | none | **write** | none touched | **high** | no |
-| P1-B authorization tests | MIT tRPC + Vitest infrastructure | none | **write** | none | **high** | no |
-| P1-C team role invariants (design) | MIT `MembershipRepository`, `roles.guard.ts` | none | **write** | pre-strip `ee/teams` is **Commercial** — must not be consulted as a source | **high** if written fresh | no, if fresh |
-| P2-A legal URL configuration | MIT `constants.ts`, `Dockerfile`, `start.sh` | none | **write** | none | **high** | **yes** — the choice of *what* URLs to serve is a legal question for the operator |
-| P2-B remove hosted-Cal upsells | MIT `apps/web` | none | **delete/edit** | none | **high** — deleting a link to a third party creates no obligation | no |
-| P2-C team invitation lifecycle | MIT token utils + `createOrUpdateMemberships` | none | **write** | pre-strip invite UI was **Commercial** | **high** if written fresh | no, if fresh |
-| P2-D host assignment UI | MIT `IEventTypeHostService`, `HostRepository` | possible — other forks may have UIs | **write** | pre-strip `ee/round-robin`, `modules/ee/teams` are **Commercial** | **high** if written fresh; **low** if copied from any fork | **yes** if any code is imported |
-| P2-E rebrand hard-coded Cal.com references | MIT `constants.ts` | none | **edit** | none | **high**, provided the `LICENSE` notice is untouched | no |
-| P3-A dead residue cleanup | MIT | none | **delete** | none | **high** | no |
+| Candidate | GitHub | Current-tree provenance | External reference | Copy or write? | Historical licence involved | Compatibility confidence | Needs [LEGAL]? |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **P1-A** deny-by-default permission service | #13 | none needed — replaces stubs | none | **write** | none touched | **high** | no |
+| **P1-A** (acceptance) authorization tests `T-01…T-14` | #13 | MIT tRPC + Vitest infrastructure | none | **write** | none | **high** | no |
+| **P1-C** team role invariants (design) | #33 | MIT `MembershipRepository`, `roles.guard.ts` | none | **write** | pre-strip `ee/teams` is **Commercial** — must not be consulted as a source | **high** if written fresh | no, if fresh |
+| **P2-C** legal URL configuration | #36 | MIT `constants.ts`, `Dockerfile`, `start.sh` | none | **write** | none | **high** | **yes** — the choice of *what* URLs to serve is a legal question for the operator |
+| **P2-N** remove hosted-Cal upsells | #39 | MIT `apps/web` | none | **delete/edit** | none | **high** — deleting a link to a third party creates no obligation | no |
+| **P1-C** (scope) team invitation lifecycle | #33 | MIT token utils + `createOrUpdateMemberships` | none | **write** | pre-strip invite UI was **Commercial** | **high** if written fresh | no, if fresh |
+| **P2-G** (scope) host assignment UI | #28 | MIT `IEventTypeHostService`, `HostRepository` | possible — other forks may have UIs | **write** | pre-strip `ee/round-robin`, `modules/ee/teams` are **Commercial** | **high** if written fresh; **low** if copied from any fork | **yes** if any code is imported |
+| **P3-D** rebrand hard-coded Cal.com references | #24 · #26 | MIT `constants.ts` | none | **edit** | none | **high**, provided the `LICENSE` notice is untouched | no |
+| **P3-A** dead residue cleanup | #27 | MIT | none | **delete** | none | **high** | no |
+| Ship the MIT `LICENSE` in the published image (§6 item 2) | #40 | MIT root `LICENSE`; `Dockerfile` | none | **copy the notice** | none — this *preserves* the existing grant | **high** | **yes** if confirmed absent from the artifact |
 | Restore PBAC from history | — | — | **excluded by §0 policy** | **AGPLv3** | copyleft obligation unresolved | **yes**, if ever reconsidered |
 | Restore Teams UI from history | — | — | **excluded by §0 policy** | **Cal.com Commercial** | subscription condition unresolved | **yes**, if ever reconsidered |
 | Restore Workflows / Insights / SAML | — | — | **excluded by §0 policy** | **Commercial** (`ee/workflows`, `ee/sso`) / **AGPLv3** (`features/insights`) | unresolved on both counts | **yes**, if ever reconsidered |

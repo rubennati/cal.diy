@@ -82,23 +82,29 @@ finding. Candidate IDs (`C-nn`) are preserved so the original analysis stays tra
 
 ### 5.1 Confirmed against this tree
 
-| ID | Finding | Source | Provenance | Ev. | Verified state on `develop` | Master ID |
-| --- | --- | --- | --- | --- | --- | --- |
-| C-06 | Public unauthenticated slot lookup resolves an event type by slug alone | Mitch515 `ab5d8542d3` | **upstream regression** (`ab21c7f805`) | **E2** | Confirmed — **and the source's wording is wrong**; see §6.1 | **F-02** |
-| C-16 | Permission checks are `return true` stubs across 18 files | fork-owned; corroborated by Enqira | upstream strip | **E2+E3** | Confirmed: 18 production files, 11 fail-open / 6 fail-closed / 1 DI-wiring | **F-01** |
+**The master audit is canonical for `F-nn` identifiers.** The `Master ID` column below is a pointer
+into [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.1/§1.2, not an independent
+numbering. An earlier revision of this table was **off by one for every candidate mapping to F-23 or
+above** — C-15, C-07, C-03, C-04, C-01 and C-05 each named `F-(n-1)` — because it skipped F-23, a
+runtime finding that has no entry in this register. Corrected below; the master was not changed.
+
+| ID | Finding | Source | Provenance | Ev. | Verified state on `develop` | Master ID | GitHub |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| C-06 | Public unauthenticated slot lookup resolves an event type by slug alone | Mitch515 `ab5d8542d3` | **upstream regression** (`ab21c7f805`) | **E2** | Confirmed — **and the source's wording is wrong**; see §6.1 | **F-02** | #14 |
+| C-16 | Permission checks are `return true` stubs across 18 files | fork-owned; corroborated by Enqira | upstream strip | **E2+E3** | Confirmed: 18 production files, 11 fail-open / 6 fail-closed / 1 DI-wiring | **F-01** | #13 |
 | C-15 | `truncateOnWord` ignores `maxLength`; collapses to `"..."` with no word break | upstream `ea0c92a267` (#27961); symptom via COG-GTM #31 | **upstream regression** | **E3** | Confirmed; live on public booking-page OpenGraph metadata | **F-24** |
-| C-17 | `ab21c7f805` (#28903) silently reverted merged upstream fixes | fork-owned | upstream | **E2** (partial) | Confirmed as a mechanism; the "13 commits / 24 paths" headcount is **not** verified — see §6.2 | **F-07** |
-| C-18 | Booker timezone slot-refresh fix (#27491) partially reverted | fork-owned | upstream | **E2** | Confirmed, with a concrete live inconsistency — see §6.3 | **F-07a** |
-| C-19 | Webhook payloads carry the `assignmentReason` shape upstream rolled back (#27891) | fork-owned | upstream | **E2** | Confirmed for legacy/unversioned payload paths only — see §6.4 | **F-07b** |
-| C-13 | `OUTLOOK_LOGIN_ENABLED` controls nothing while `/api/auth/signin/azure-ad` stays live | fork-owned; triggered by Mitch515 `ea863eac76` | upstream rot | **E2** | Confirmed on both login and signup | **F-20** |
-| C-08 | Entra login accepts every Microsoft tenant, unconfigurable | Mitch515 `c46a03d8e9` | external-fork (concept) | **E1+E3** | Confirmed; severity reduced by an existing guard — see §6.5 | **F-21** |
+| C-17 | `ab21c7f805` (#28903) silently reverted merged upstream fixes | fork-owned | upstream | **E2** (partial) | Confirmed as a mechanism; the "13 commits / 24 paths" headcount is **not** verified — see §6.2 | **F-07** | #20 |
+| C-18 | Booker timezone slot-refresh fix (#27491) partially reverted | fork-owned | upstream | **E2** | Confirmed, with a concrete live inconsistency — see §6.3 | **F-07a** | #19 |
+| C-19 | Webhook payloads carry the `assignmentReason` shape upstream rolled back (#27891) | fork-owned | upstream | **E2** | Confirmed for legacy/unversioned payload paths only — see §6.4 | **F-07b** | #21 |
+| C-13 | `OUTLOOK_LOGIN_ENABLED` controls nothing while `/api/auth/signin/azure-ad` stays live | fork-owned; triggered by Mitch515 `ea863eac76` | upstream rot | **E2** | Confirmed on both login and signup | **F-20** | #22 |
+| C-08 | Entra login accepts every Microsoft tenant, unconfigurable | Mitch515 `c46a03d8e9` | external-fork (concept) | **E1+E3** | Confirmed; severity reduced by an existing guard — see §6.5 | **F-21** | #23 |
 | C-07 | A failing cosmetic Google Calendar PATCH discards an already-created event | Mitch515 `36a40b4cb4` | external-fork (concept) | **E2** | Confirmed, and **broader than claimed** — see §6.6 | **F-28** |
 | C-03 | `extractBaseEmail` fabricates addresses from malformed input | COG-GTM #31 | external-fork | **E2** | Confirmed; reachable from an unauthenticated endpoint, but no bypass demonstrated | **F-25** |
 | C-04 | `getProviderName` throws a `TypeError` on a bare `integrations:` location | COG-GTM #31 | external-fork | **E2** | Confirmed; requires a connected calendar/CRM to reach | **F-26** |
 | C-01 | CSV export does not neutralise spreadsheet formula prefixes | COG-GTM #31 | external-fork | **E2** | Confirmed; org-gated, and one of the two cited consumers is dead code | **F-27** |
 | C-05 | HitPay drop-in accepts `message` events from any origin | fork-owned (COG-GTM #1 partial) | external-fork | **E1** | Confirmed; app disabled by default and impact is client-side only | **F-29** |
-| C-14 | Branding build args declared in the `Dockerfile` but never passed by the release workflow | fork-owned | fork-owned | **E2** | Confirmed; but the source's own correction to `.ai/branding.md` is wrong — see §7 | **F-16** |
-| C-20 | Multi-tenant team management (Enqira) | Enqira `857c362ed2` | external-fork | **E2** | Not adopted. Audited as an architecture decision in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | — |
+| C-14 | Branding build args declared in the `Dockerfile` but never passed by the release workflow | fork-owned | fork-owned | **E2** | Confirmed; but the source's own correction to `.ai/branding.md` is wrong — see §7 | **F-16** | #24 |
+| C-20 | Multi-tenant team management (Enqira) | Enqira `857c362ed2` | external-fork | **E2** | Not adopted. Audited as an architecture decision in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | — | #28 |
 
 ### 5.2 Deferred, no action proposed
 
