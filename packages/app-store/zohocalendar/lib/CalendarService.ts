@@ -1,23 +1,27 @@
 import { stringify } from "node:querystring";
-
 import dayjs from "@calcom/dayjs";
 import { getLocation } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type {
   Calendar,
-  CalendarServiceEvent,
   CalendarEvent,
+  CalendarServiceEvent,
   EventBusyDate,
   GetAvailabilityParams,
   IntegrationCalendar,
   NewCalendarEventType,
 } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
-
 import getAppKeysFromSlug from "../../_utils/getAppKeysFromSlug";
-import type { ZohoAuthCredentials, FreeBusy, ZohoCalendarListResp } from "../types/ZohoCalendar";
+import type { FreeBusy, ZohoAuthCredentials, ZohoCalendarListResp } from "../types/ZohoCalendar";
 import { appKeysSchema as zohoKeysSchema } from "../zod";
+import {
+  getZohoCalendarApiBaseUrl,
+  getZohoOAuthBaseUrl,
+  getZohoUserInfoUrl,
+  requireZohoRegion,
+} from "./zohoServerLocation";
 
 class ZohoCalendarService implements Calendar {
   private integrationName = "";
@@ -37,9 +41,12 @@ class ZohoCalendarService implements Calendar {
 
     const refreshAccessToken = async () => {
       try {
+        // Resolved first: a credential whose region cannot be resolved must not reach a request
+        // that carries client_secret. Throwing here is caught by the surrounding try/catch and
+        // surfaces as a failed refresh, which is the correct fail-closed outcome.
+        const region = requireZohoRegion(zohoCredentials.server_location);
         const appKeys = await getAppKeysFromSlug("zohocalendar");
         const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
-        const server_location = zohoCredentials.server_location;
         const params = {
           client_id,
           grant_type: "refresh_token",
@@ -49,7 +56,7 @@ class ZohoCalendarService implements Calendar {
 
         const query = stringify(params);
 
-        const res = await fetch(`https://accounts.zoho.${server_location}/oauth/v2/token?${query}`, {
+        const res = await fetch(`${getZohoOAuthBaseUrl(region)}/token?${query}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json; charset=utf-8",
@@ -67,7 +74,7 @@ class ZohoCalendarService implements Calendar {
           access_token: token.access_token,
           refresh_token: zohoCredentials.refresh_token,
           expires_in: Math.round(+new Date() / 1000 + token.expires_in),
-          server_location,
+          server_location: region,
         };
         await prisma.credential.update({
           where: { id: credential.id },
@@ -90,7 +97,8 @@ class ZohoCalendarService implements Calendar {
 
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
     const credentials = await this.auth.getToken();
-    return fetch(`https://calendar.zoho.${credentials.server_location}/api/v1${endpoint}`, {
+    const region = requireZohoRegion(credentials.server_location);
+    return fetch(`${getZohoCalendarApiBaseUrl(region)}${endpoint}`, {
       method: "GET",
       ...init,
       headers: {
@@ -103,7 +111,8 @@ class ZohoCalendarService implements Calendar {
 
   private getUserInfo = async () => {
     const credentials = await this.auth.getToken();
-    const response = await fetch(`https://accounts.zoho.${credentials.server_location}/oauth/user/info`, {
+    const region = requireZohoRegion(credentials.server_location);
+    const response = await fetch(getZohoUserInfoUrl(region), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${credentials.access_token}`,
@@ -470,9 +479,9 @@ class ZohoCalendarService implements Calendar {
       reminders: [
         {
           minutes: "-15",
-            action: "popup",
-          },
-        ],
+          action: "popup",
+        },
+      ],
       location: event.location
         ? getLocation({
             videoCallData: event.videoCallData,

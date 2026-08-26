@@ -1147,6 +1147,97 @@ report a failure when an expectation is inverted.
 
 ---
 
+### FIL-0014 · Zoho server-location trust-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#43](https://github.com/rubennati/cal.diy/issues/43) |
+| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
+| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the commit it describes |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired, and the
+sibling in-tree `zohocrm` and `zoho-bigin` callbacks supplied the allowlist convention this fork
+now follows for the same vendor. Region domains come from Zoho's own multi-DC documentation. No
+external fork was consulted, and no third-party implementation text was incorporated. All source
+material is either this MIT tree or official vendor documentation.
+
+**Problem / desired outcome.** `packages/app-store/zohocalendar` accepted the OAuth `location`
+query parameter, type-checked it as a string, mapped `us` and `au` to domain fragments and passed
+every other value through unchanged into `https://accounts.zoho.${value}` and
+`https://calendar.zoho.${value}`. The token request carries the app's `client_id` and
+`client_secret` in its query string, so a `location` of `attacker.example` or
+`com@attacker.example` directed those credentials at an attacker-chosen host.
+
+The value was then **persisted** into `ZohoAuthCredentials.server_location` and re-read by
+`lib/CalendarService.ts` for token refresh, calendar requests and user-info requests. Because the
+attacker's host also supplies `expires_in`, a past value forces a refresh on every subsequent
+call — turning a single callback into a durable exfiltration channel for the instance-wide
+`client_secret` that required no further attacker action. That persistence path is the part no
+scanner flagged.
+
+**Implementation summary.** A canonical region model in `lib/zohoServerLocation.ts` maps the nine
+data centres Zoho documents to hosts fixed at build time. `resolveZohoRegion` accepts only a
+known region identifier or one of the four domain fragments earlier revisions persisted, and
+returns `null` for everything else; `requireZohoRegion` throws on `null`. Both the callback and
+every `CalendarService` request path resolve before any credential is read or sent. No hostname
+is built by concatenating caller-supplied text anywhere in the app.
+
+Two regions were also **functionally broken** and are repaired by the same change: `ca` produced
+`zoho.ca` and `cn` produced `zoho.cn`, where Zoho documents `zohocloud.ca` and `zoho.com.cn`.
+Neither could ever have worked.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Reduces credential-exfiltration / SSRF-style trust-boundary risk; a Zoho URL host can no longer inherit caller-supplied text |
+| New trust boundary | **NO** — hardens an existing one |
+| Public endpoint | **NO** — the callback already required an authenticated session (`callback.ts`), and that check is unchanged |
+| Authenticated mutation | **YES** — the callback creates a `Credential` and `SelectedCalendar` row; unchanged except that the persisted region is now validated |
+| Persistent state | **YES** — `server_location` is now written as a canonical region and revalidated on every read |
+| External communication | **NO NEW** communication; the existing Zoho calls are constrained to documented Zoho hosts |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Existing credentials keep working via the legacy aliases; `ca` and `cn` connections start working for the first time |
+
+**Legacy credential behaviour.** A stored value that resolves — a region identifier, or `com`,
+`com.au`, `com.cn`, `zohocloud.ca` — continues to work and is rewritten to its canonical region on
+the next refresh. Anything else fails closed **before** any request is made, with an error naming
+neither the stored value nor any credential material, and directing the operator to reconnect the
+app. Nothing is silently normalised into a usable host.
+
+**Validation.** `packages/app-store/zohocalendar/lib/zohoServerLocation.test.ts` (mapping
+primitive, 35 rejected input classes) and
+`packages/app-store/zohocalendar/lib/CalendarService.serverLocation.test.ts` (behavioural: a
+poisoned persisted value reaches no `fetch` on either the valid-token or expired-token path).
+Plus `yarn type-check:ci --force`, `yarn biome check`, and the telemetry fork guard and its
+self-test.
+
+**Guard.** Security regression tests, not a source-text check. The invariant asserted is
+behavioural — every Zoho URL resolves to one of a fixed host set regardless of input — which
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so an upstream sync that restores it fails these tests.
+
+**Rollback.** Reverting reintroduces the security defect and must not be done to resolve a merge
+conflict. One asymmetry matters: this change persists a canonical region (`us`, `au`) where the
+previous code persisted a domain fragment (`com`, `com.au`). Older code reading a
+newly-written credential would build `accounts.zoho.us`, which is not a Zoho host, so a revert
+also degrades US and Australian connections until those credentials are recreated. Prefer fixing
+forward.
+
+**Upstream reevaluation trigger.** Official upstream changes Zoho region or host handling, adds
+its own validation, or publishes a security fix for `packages/app-store/zohocalendar`. At
+implementation time `calcom/cal.diy` carried the same affected behaviour with no fix available.
+
+**Related documentation.** Issue #43; `SECURITY_ASSURANCE.md` §2 (the finding is
+`CONFIRMED_SECURITY_DEFECT`, not a confirmed exploited vulnerability — no exploitation was
+observed).
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
