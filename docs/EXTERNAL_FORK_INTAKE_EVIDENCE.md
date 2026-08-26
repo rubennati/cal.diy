@@ -335,7 +335,7 @@ Ordered by source. Ranked table in §7.
 - **Current cal.forte state:** Upstream observation is entirely manual. `FORK_STATUS.md` carries "Upstream mirror observed" and "Reviewed through" fields updated by hand; `UPSTREAM_SYNC.md` supplies the security-relevant grep. Nothing tells the maintainer when new upstream commits appear, and `.ai/state.md` notes the `upstream` remote is not even configured.
 - **Official upstream state:** N/A (fork-process tooling).
 - **Claimed problem:** The fork should know when it drifts from upstream.
-- **Independently verified problem:** True, but **their mechanism is incompatible with cal.forte and must not be copied.** Their workflow asserts `merge-base(HEAD, upstream/main) == upstream/main` and **fails the build** when the fork is behind, and `auto-sync-upstream.yml` opens automatic merge PRs. cal.forte's `develop` is *deliberately* behind by design — 41 upstream commits are recorded as not-integrated in `UPSTREAM_REVIEW_LEDGER.md`. Their gate would be permanently red, and their auto-merge model is the direct negation of `.ai/decisions.md` ("upstream sync requires explicit approval", one `cherry-pick -x` per commit).
+- **Independently verified problem:** True, but **their mechanism is incompatible with cal.forte and must not be adopted.** Their workflow asserts `merge-base(HEAD, upstream/main) == upstream/main` and **fails the build** when the fork is behind, and `auto-sync-upstream.yml` opens automatic merge PRs. cal.forte's `develop` is *deliberately* behind by design — 41 upstream commits are recorded as not-integrated in `UPSTREAM_REVIEW_LEDGER.md`. Their gate would be permanently red, and their auto-merge model is the direct negation of `.ai/decisions.md` ("upstream sync requires explicit approval", one `cherry-pick -x` per commit).
 - **Potential user value:** The maintainer learns about security-relevant upstream commits without a manual poll — directly serving `UPSTREAM_SYNC.md` → *Security Fix Priority*, the one drift the fork says it does not tolerate.
 - **Security relevance:** Indirect but aligned with the fork's stated top priority.
 - **Risk if ignored:** Security-relevant upstream commits sit unnoticed between manual reviews.
@@ -520,10 +520,14 @@ actively exploitable issue. C-06 is the closest and is deliberately capped at P1
 
 ## 3. Recommended GitHub Issue Hierarchy
 
-> **Blocker:** `gh issue list -R rubennati/cal.diy` returns
-> *"the 'rubennati/cal.diy' repository has disabled issues"*. **Issues must be enabled in
-> repository settings before any of this can be filed.** That is a repository-settings change
-> for the owner; this pass performed no GitHub writes.
+> **Blocker at the time of writing — since resolved.** During this intake pass
+> `gh issue list -R rubennati/cal.diy` reported *"the 'rubennati/cal.diy' repository has
+> disabled issues"*, so nothing here could be filed and this pass performed no GitHub writes.
+> **Issues were enabled later on 2026-08-26 and the set below was filed as #12–#40**, under
+> tracker [#12](https://github.com/rubennati/cal.diy/issues/12). The hierarchy below is kept as
+> authored — it is the reasoning behind the set, not a description of current GitHub state. The
+> authoritative candidate → finding → issue mapping is
+> [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.2.
 
 **Master tracker** — `[tracker] External fork intake — COG-GTM, Mitch515, Biji-Biji` (body in §6)
 
@@ -537,7 +541,7 @@ actively exploitable issue. C-06 is the closest and is deliberately capped at P1
 **Epic 2 — Auth surface decision** *(sequenced: 6 gates 7)*
 
 6. `chore(auth): decide whether OUTLOOK_LOGIN_ENABLED is wired through or removed as dead surface` — C-13
-7. `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` — C-08 *(blocked by #6)*
+7. `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` — C-08 *(blocked by item 6 above)*
 
 **Epic 3 — Track A: self-host branding and productization**
 
@@ -1290,7 +1294,7 @@ label set. **17 issues + 1 tracker.**
 **Epic 3 — Auth surface decision**
 
 10. `chore(auth): decide whether OUTLOOK_LOGIN_ENABLED is wired through or removed as dead surface` — C-13
-11. `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` — C-08 *(blocked by #10)*
+11. `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` — C-08 *(blocked by item 10 above)*
 
 **Epic 4 — Track A: branding and productization**
 
@@ -1304,7 +1308,7 @@ label set. **17 issues + 1 tracker.**
 
 **Epic 6 — Product/architecture decision** *(new)*
 
-16. `[decision] does cal.forte need multi-tenant team management, and at what cost` — **C-20**, deferred, **blocked by #1**
+16. `[decision] does cal.forte need multi-tenant team management, and at what cost` — **C-20**, deferred, **blocked by item 1 above**
 
 **Epic 7 — Fork process automation**
 

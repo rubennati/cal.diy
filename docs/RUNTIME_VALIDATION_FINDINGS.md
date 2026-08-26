@@ -25,9 +25,25 @@ renumbered there (the API-keys defect is `P1-B` in that document). This file kee
 reasoning, the complete tRPC parity matrix, the exhaustive TOTP error mapping and the
 deployment-side 429 diagnostics that the condensed version does not carry.
 
-Findings here are numbered `F-20`..`F-25` purely to avoid collision with the capability
-audit's own `F-01`..`F-13`. Those numbers are local to this file. Cross-references to `F-01`
-(PBAC placeholders) and `F-04` (unmounted routers) point at the capability audit.
+Findings here are numbered `RV.1`..`RV.6` — a **local namespace for this evidence record**. They were
+originally written as `F-20`..`F-25`, chosen to avoid colliding with a capability audit that then
+stopped at `F-13`. That audit has since grown to `F-32`, so those numbers *would* now collide with
+canonical findings of entirely different meaning; they were renamed to the `RV.n` alias the master
+already records. **Substance is unchanged — only the identifiers.**
+
+| Here | Canonical | Subject |
+| --- | --- | --- |
+| `RV.1` | **F-05** | API Keys tRPC route missing |
+| `RV.2` | **F-06** | tRPC router / adapter parity |
+| `RV.3` | **F-23** | TOTP setup returns an undiagnosable 400 |
+| `RV.4` | **D-01** (+ **D-02**) | Mass 429 on static resources — deployment layer |
+| `RV.5` | **F-19** | Web Push / VAPID phantom configuration knob |
+| `RV.6` | **F-31** | Client console warnings |
+
+Cross-references below to `F-01` (PBAC placeholders) are canonical and still correct. References to
+`F-04` meant the **retired static-audit** `F-04` (two unmounted routers), which is canonical **F-06**
+today — canonical `F-04` is now the unrelated `disable-signup` bypass. Full mapping:
+[SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.2.
 
 Nothing in this pass was fixed. Session context and open items:
 [AUDIT_SESSION_HANDOVER.md](AUDIT_SESSION_HANDOVER.md).
@@ -43,8 +59,9 @@ The audit above was produced by static source reading only. This section adds th
 UI on 2026-08-25. Every symptom was then correlated against `develop` at the audited commit by
 reading the actual files and tracing the full client→handler path.
 
-Nothing was fixed. Findings continue the `F-NN` numbering and reuse the §37 classification
-vocabulary where it applies.
+Nothing was fixed. Findings use this file's local `RV.n` numbering (see the crosswalk above) and reuse
+the capability audit's classification vocabulary
+([SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §2) where it applies.
 
 > **Correction to this document's own header.** The `Method` row states *"static source reading
 > only — no instance was deployed or exercised"*. That is no longer true of §9 and should be
@@ -61,9 +78,9 @@ vocabulary where it applies.
 | `react-i18next: "You will need to pass in an i18next instance by using initReactI18next"` | `initReactI18next` is never called. `packages/lib/hooks/useLocale.ts` calls `useTranslation()` eagerly before checking `AppRouterI18nContext`; the provider is a plain React context that registers no i18next instance. | **CONFIRMED** | Application — client bundle | **Low** (`DEVELOPMENT_WARNING`) |
 | `"markdownToSafeHTML" should not be imported on the client side.` | Deliberate bundle-cost guard at `packages/lib/markdownToSafeHTML.ts:4-9`; upstream-known and tolerated. ~13 client components import it. | **CONFIRMED** | Application — bundle architecture | **Low** (`BUNDLE_ARCHITECTURE`) |
 
-### F-20 · API Keys tRPC route missing — `CONFIRMED_BROKEN`
+### RV.1 · API Keys tRPC route missing — `CONFIRMED_BROKEN`
 
-The inverse of **F-04**. F-04 records routers that exist with no adapter *and no client
+The inverse of **retired static `F-04`** (canonical **F-06**), which records routers that exist with no adapter *and no client
 caller* (harmless dead weight); this is a router that exists, **is** in the client
 `ENDPOINTS` list, **is** called by live UI, and has no adapter.
 
@@ -124,20 +141,20 @@ manual UI exercise.
 - **Security impact** — none directly. Indirect: API keys are the credential mechanism for API v1/v2, so operators cannot rotate or revoke keys through the UI. An operational-security limitation, not a vulnerability.
 - **Divergence impact** — negative, i.e. beneficial: this converges with upstream.
 
-### F-21 · tRPC router / adapter parity inventory — `BACKEND_ONLY` / dead surface
+### RV.2 · tRPC router / adapter parity inventory — `BACKEND_ONLY` / dead surface
 
 Generated mechanically from the three legs. Only mismatching rows are listed; 27 endpoints
 agree across all three legs and are omitted.
 
 | Endpoint | client `ENDPOINTS` | `viewerRouter` key | Next adapter | Verdict |
 |---|---|---|---|---|
-| **`apiKeys`** | **Y** | **Y** | **–** | **BROKEN — F-20** |
+| **`apiKeys`** | **Y** | **Y** | **–** | **BROKEN — RV.1** |
 | `appBasecamp3` | Y | – | – | Orphan client entry |
 | `credits` | Y | – | – | Orphan client entry |
 | `delegationCredential` | Y | – | – | Orphan client entry |
 | `featureOptIn` | Y | – | – | Orphan client entry |
-| `filterSegments` | Y | – | – | Orphan client entry (**F-04**) |
-| `payments` | Y | – | – | Orphan client entry (**F-04**) |
+| `filterSegments` | Y | – | – | Orphan client entry (retired static **F-04** = canonical **F-06**) |
+| `payments` | Y | – | – | Orphan client entry (retired static **F-04** = canonical **F-06**) |
 | `phoneNumber` | Y | – | – | Orphan client entry |
 | `appsRouter` | – | – | Y | **Stale adapter** — duplicate mount of `appsRouter`, no client endpoint targets it |
 | `viewer` | Y | – | Y | **Intentional alias** — `resolveEndpoint` maps 2-segment paths (`viewer.me`) to `parts[0]`; the adapter serves `loggedInViewerRouter`. Not a defect; recorded so a later audit does not "fix" it |
@@ -149,7 +166,7 @@ Totals: 35 client endpoints · 27 router keys · 28 adapters.
 - **`appsRouter` stale adapter** — `apps/web/pages/api/trpc/appsRouter/[trpc].ts` mounts the same router as `apps/web/pages/api/trpc/apps/[trpc].ts`. A reachable, unreferenced duplicate route on an authenticated router. Low risk, but it is extra public surface.
 - **Recommended durable control** — a CI parity check across the three legs: ~20 lines, no runtime, and it converts this entire class of silent breakage into a build failure.
 
-### F-22 · TOTP setup returns an undiagnosable 400 — application UX defect
+### RV.3 · TOTP setup returns an undiagnosable 400 — application UX defect
 
 Routes: `apps/web/app/api/auth/two-factor/totp/{setup,enable,disable}/route.ts`.
 Client: `apps/web/components/settings/TwoFactorAuthAPI.ts`, `EnableTwoFactorModal.tsx`.
@@ -166,7 +183,7 @@ View: `apps/web/modules/settings/security/two-factor-auth-view.tsx`.
 
 Non-400 outcomes: `401` (no session / user gone), `500` (missing `session.user.id`, missing
 `CALENDSO_ENCRYPTION_KEY`), `429` (`checkRateLimitAndThrowError`, `core` namespace, 10/60s —
-**inert unless `UNKEY_ROOT_KEY` is set**, see F-23).
+**inert unless `UNKEY_ROOT_KEY` is set**, see RV.4).
 
 `EnableTwoFactorModal.tsx:106-110` special-cases only `IncorrectPassword`. Cases 1–3 collapse
 to `t("something_went_wrong")`. `enable` behaves the same way: it maps only
@@ -209,9 +226,9 @@ guaranteed to 400 opaquely. Because `next-auth-options.ts:255-285` downgrades an
 - **Regression test** — local `CAL` admin → correct password → `setup` 200 with `secret`/`dataUri`/10 backup codes; wrong password → 400 `IncorrectPassword` **surfaced as such**; `enable` with a derived TOTP → 200; assert `twoFactorEnabled = true`; login with password only → second factor demanded and role is not `ADMIN`; login with password + TOTP → role `ADMIN`; login with a backup code → succeeds and **the same code is rejected on reuse**; negative case: `identityProvider !== CAL` with no password → 400 `ThirdPartyIdentityProviderEnabled` **with the reason stated in the UI**. Login and backup-code steps need Playwright (`PLAYWRIGHT_HEADLESS=1 yarn e2e`, run locally per `agents/rules/testing-playwright.md`); the rest are unit/integration-testable.
 - **Security impact** — the routes are sound (session-gated, password-confirmed, rate-limit-hooked, encrypted secrets, length-validated). The impact is **availability of a security control**: an `INACTIVE_ADMIN` who cannot complete setup stays degraded indefinitely. Release-relevant under [SECURITY_REVIEW.md](../SECURITY_REVIEW.md) → *auth and signup behavior*.
 - **Divergence impact** — UI-only, in `EnableTwoFactorModal.tsx` plus `packages/i18n/locales/en/common.json`. Small, but it is fork divergence in a file upstream also edits; prefer proposing it upstream.
-- **Related dead surface** — `EnableTwoFactorModal.tsx` and `DisableTwoFactorModal.tsx` each exist twice: under `apps/web/components/settings/` (imported by the view) and under `apps/web/components/security/` (no importer found). Belongs with F-21's dead-surface inventory.
+- **Related dead surface** — `EnableTwoFactorModal.tsx` and `DisableTwoFactorModal.tsx` each exist twice: under `apps/web/components/settings/` (imported by the view) and under `apps/web/components/security/` (no importer found). Belongs with RV.2's dead-surface inventory.
 
-### F-23 · Mass 429 on static resources — deployment layer, not application
+### RV.4 · Mass 429 on static resources — deployment layer, not application
 
 Four independent facts, each verified in `develop`:
 
@@ -255,7 +272,7 @@ always misfire on it.
 reduces origin load by roughly the number of page loads, should be raised upstream rather than
 carried as divergence — and it is **not** a fix for the 429.
 
-### F-24 · Web Push / VAPID — phantom configuration knob
+### RV.5 · Web Push / VAPID — phantom configuration knob
 
 - `apps/web/modules/notifications/components/WebPushContext.tsx:66` subscribes with `applicationServerKey: urlB64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "")`. With the variable unset the `|| ""` fallback yields an empty key and the browser rejects it with the exact observed `InvalidAccessError`. **There is no guard for a missing key anywhere in the provider.**
 - **The server is correct and asymmetric to the client.** `packages/features/notifications/sendNotification.ts:16-22` logs *"Missing VAPID keys. Web push notifications are disabled."* and refuses to send — so the server disables the feature while the client still offers and attempts it.
@@ -271,8 +288,9 @@ bundle.
 The published `cal.forte` image therefore can never have working web push at any
 configuration, and the fork's own compose file advertises a knob that cannot function. This is
 the same class as two phantom flags already on record: the removed Jitsu telemetry opt-out
-(`75a9df1812`) and the dead `OUTLOOK_LOGIN_ENABLED`. It also directly extends §7's existing
-correction that `NEXT_PUBLIC_WEBSITE_*_URL` are build-time only — **the same defect, a
+(`75a9df1812`) and the dead `OUTLOOK_LOGIN_ENABLED`. It also directly extends the existing
+correction in [SELF_HOST_PRODUCTIZATION.md](SELF_HOST_PRODUCTIZATION.md) §5.3 that
+`NEXT_PUBLIC_WEBSITE_*_URL` are build-time only — **the same defect, a
 different variable, and this one is in a fork-owned file.**
 
 - **Official upstream comparison** — `WebPushContext.tsx` and `sendNotification.ts` match upstream. The compose mismatch is fork-owned.
@@ -281,7 +299,7 @@ different variable, and this one is in a fork-owned file.**
 - **Security impact** — none. Web push is optional, no secret is exposed, and `VAPID_PRIVATE_KEY` is correctly server-only. **No keys were generated or committed.**
 - **Divergence impact** — part 2 is a one-line change to a file the fork already owns and already lists in [FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md). Parts 1 and 3 are upstream-shaped and should be proposed upstream.
 
-### F-25 · Client console warnings — `DEVELOPMENT_WARNING` / `BUNDLE_ARCHITECTURE`
+### RV.6 · Client console warnings — `DEVELOPMENT_WARNING` / `BUNDLE_ARCHITECTURE`
 
 **`react-i18next: "You will need to pass in an i18next instance by using initReactI18next"` —
 `DEVELOPMENT_WARNING`.** `initReactI18next` is never called anywhere in the repository.
@@ -313,17 +331,17 @@ evidence does not implicate.
 ### 9.2 What §9 changes elsewhere in this audit
 
 - **F-01 is corroborated, not altered.** The runtime pass reached the same conclusion about the
-  18 permissive `PermissionCheckService` stubs independently. §6 *Unresolved Questions →
-  Security → 1* ("does any deployed instance have `Team` rows?") **remains open** — the runtime
-  evidence gathered here does not answer it, and F-22's SQL snippet is the closest available
+  18 permissive `PermissionCheckService` stubs independently. The open question "does any deployed instance have `Team` rows?"
+  ([SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §12 item 1) **remains open** — the runtime
+  evidence gathered here does not answer it, and RV.3's SQL snippet is the closest available
   probe, covering admin identity rather than team rows.
-- **F-04 is extended by F-21.** F-04 found two unmounted routers; the parity sweep finds seven
+- **Retired static `F-04` (canonical F-06) is extended by RV.2.** It found two unmounted routers; the parity sweep finds seven
   orphan client `ENDPOINTS` entries plus a stale duplicate adapter — and, more importantly, the
-  inverse case (F-20) that F-04's "neither is an authorization risk (unreachable)" framing does
+  inverse case (RV.1) that its "neither is an authorization risk (unreachable)" framing does
   not cover.
-- **§7 gains a row.** The build-time/runtime confusion it already records for
+- **[SELF_HOST_PRODUCTIZATION.md](SELF_HOST_PRODUCTIZATION.md) §5.3 gains a row.** The build-time/runtime confusion it already records for
   `NEXT_PUBLIC_WEBSITE_*_URL` recurs in `docker-compose.yml` for
-  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (F-24) — this time in a fork-owned file rather than upstream's.
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (RV.5) — this time in a fork-owned file rather than upstream's.
 - **A recurring failure class is now confirmed four times over.** Configuration and wiring that
   survive a strip after the thing they controlled is gone: the removed telemetry opt-out, the
   dead `OUTLOOK_LOGIN_ENABLED`, the seven orphan client endpoints, and the VAPID compose entry.
@@ -332,12 +350,18 @@ evidence does not implicate.
 
 ### 9.3 Proposed candidates from §9 (proposals only — nothing implemented)
 
-| ID | Item | Type | Prio | Disposition |
-|---|---|---|---|---|
-| **P1-D** | Restore the `apiKeys` tRPC route via `git cherry-pick -x 07a288bbd8`, and correct its `UPSTREAM_REVIEW_LEDGER.md` row | Bug | **P1** | `UPSTREAM_INTAKE` |
-| **P2-F** | CI parity check across `ENDPOINTS` / `viewerRouter` / Next adapters; prune the seven orphan client entries and the stale `appsRouter` adapter | Maintenance | P2 | `PROPOSED` |
-| **P2-G** | Map all four TOTP-setup 400s to actionable UI messages; disable the toggle where setup is structurally impossible | Bug (security capability) | P2 | `PROPOSED` |
-| **P3-C** | VAPID: guard the client subscribe; stop advertising a build-time variable as a runtime one in `docker-compose.yml` | Bug + deployment | P3 | `PROPOSED` |
-| — | Mass 429 on static assets | Deployment | — | `NOT_APPLICABLE` — belongs to `secure-docker-blueprint` |
-| — | `react-i18next` warning | Development warning | — | `DOCUMENT_ONLY` |
-| — | `markdownToSafeHTML` client warning | Bundle architecture | — | `DOCUMENT_ONLY` |
+**Local ids.** These were originally written as `P1-D`/`P2-F`/`P2-G`/`P3-C`, reusing the capability
+audit's candidate namespace before it settled. Three of the four now mean something different there,
+so they are renamed `RC-1`..`RC-4` — local to this file — with the canonical candidate and issue
+given alongside. Authoritative mapping:
+[SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.2.
+
+| ID | Canonical | GitHub | Item | Type | Prio | Disposition |
+|---|---|---|---|---|---|---|
+| **RC-1** | **P1-B** | [#32](https://github.com/rubennati/cal.diy/issues/32) | Restore the `apiKeys` tRPC route via `git cherry-pick -x 07a288bbd8`, and correct its `UPSTREAM_REVIEW_LEDGER.md` row | Bug | **P1** | `UPSTREAM_INTAKE` |
+| **RC-2** | **P2-F** | [#34](https://github.com/rubennati/cal.diy/issues/34) | CI parity check across `ENDPOINTS` / `viewerRouter` / Next adapters; prune the seven orphan client entries and the stale `appsRouter` adapter | Maintenance | P2 | `PROPOSED` |
+| **RC-3** | **P2-B** | [#35](https://github.com/rubennati/cal.diy/issues/35) | Map all four TOTP-setup 400s to actionable UI messages; disable the toggle where setup is structurally impossible | Bug (security capability) | P2 | `PROPOSED` |
+| **RC-4** | **P2-D** | [#37](https://github.com/rubennati/cal.diy/issues/37) | VAPID: guard the client subscribe; stop advertising a build-time variable as a runtime one in `docker-compose.yml` | Bug + deployment | P3 | `PROPOSED` |
+| — | — | — | Mass 429 on static assets | Deployment | — | `NOT_APPLICABLE` — belongs to `secure-docker-blueprint` |
+| — | — | — | `react-i18next` warning | Development warning | — | `DOCUMENT_ONLY` |
+| — | — | — | `markdownToSafeHTML` client warning | Bundle architecture | — | `DOCUMENT_ONLY` |

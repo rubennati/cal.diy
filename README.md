@@ -47,6 +47,45 @@ Tags are architecture-specific; there is currently no combined multi-architectur
 See [FORK_STATUS.md](FORK_STATUS.md) for the maintenance snapshot and
 [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md) for the downstream trust contract.
 
+## How cal.forte differs from Cal.diy
+
+cal.forte maintains **reviewed, deliberate divergence** from upstream. Divergence is not a goal —
+it is a cost, accepted only where the fork's purpose requires it. Every material change is
+recorded with its provenance, security impact and licence status.
+
+| Category | What it means here |
+|----------|--------------------|
+| **Privacy / telemetry reduction** | Inert usage telemetry deleted rather than disabled, with a blocking CI guard against its return; ad-click integrations shipped off by default |
+| **Security hardening** | Fork-owned security CI replacing upstream's estate; non-root web and API v2 runtimes; digest-pinned base images and SHA-pinned Actions |
+| **Self-host productization** | The distribution presents its own identity, support contact and legal surface rather than upstream's — **in progress, not complete** |
+| **Selected regression fixes** | Security-relevant upstream commits taken by default, one `cherry-pick -x` at a time |
+| **Reduced hosted / commercial surface** | The Enterprise paywall *gating* is gone; dead upsell residue and unused scope removed where it had no importers |
+| **Controlled feature additions** | Features are opt-in decisions, never defaults. **None have been added to date** |
+| **Attack-surface reduction** | Runtime image slimmed; orphaned and unreachable code deleted rather than left inert |
+
+**Where the records live**
+
+| Question | Document |
+|----------|----------|
+| What is different today? | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) |
+| **What did we change, from what source, and what was verified?** | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) |
+| Which upstream commits were taken, deferred or rejected? | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) |
+| When is a change actually finished? | [FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done) |
+| How is security assured, and what is *not* yet verified? | [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) |
+
+**Provenance.** External repositories may be used as discovery or reference sources. Material
+implementations are independently evaluated for provenance, licence compatibility and security
+impact before incorporation into cal.forte. Each material change records its implementation
+relationship, source usage and licence disposition in the
+[implementation ledger](FORK_IMPLEMENTATION_LEDGER.md); the completion rule is
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done), and the security
+model is [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md).
+
+**Two honest caveats.** Branding is only partly applied — the published image still carries some
+upstream defaults, and its Terms/Privacy links still point at Cal.com. And two commercial Cal.com
+prompts remain reachable in a fresh install, one of them on the public booking page. Both are
+tracked as open issues; see [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PRODUCTIZATION.md).
+
 ## 📚 Documentation & knowledge base
 
 Everything we know about this fork, grouped. Entry point for tooling: [.ai/index.md](.ai/index.md).
@@ -60,6 +99,8 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) | public register of fork-added, modified and removed behavior |
 | [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) | how upstream is pulled in (security-first) |
 | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) | commit-level accepted, partial, deferred and rejected upstream changes |
+| [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) | what the fork actually implemented: provenance, licence, security impact, guards |
+| [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) | security-assurance model — ASVS mapping, CI tiers, tooling, licence policy (design) |
 | [RELEASE_PROCESS.md](RELEASE_PROCESS.md) · [IMAGE_BUILD.md](IMAGE_BUILD.md) | cutting & building a release |
 | [SECURITY_REVIEW.md](SECURITY_REVIEW.md) · [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md) | review gate & downstream trust |
 

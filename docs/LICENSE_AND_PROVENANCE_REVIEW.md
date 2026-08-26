@@ -20,15 +20,17 @@ lie, and what that means for any proposal to restore or reimplement a stripped c
 Everything below explains the evidence. This is the rule the evidence supports, and it is stated as a
 **repository policy**, not as a legal conclusion:
 
-> **Historical deleted EE / commercial code must not be copied or restored into `cal.forte` unless the
-> applicable licence and provenance independently permit that use.**
+> **Historical deleted EE / commercial source must not be incorporated, adapted or restored into
+> `cal.forte` unless the applicable licence and provenance independently permit that use.**
 >
 > **Default: behavioural and reference evidence only.** Reading a deleted file to understand what a
-> feature did is research. Copying it — or reproducing it closely enough to be a derivative — is not
-> permitted under this default.
+> feature did is research. Incorporating or adapting it — or reproducing it closely enough to be a
+> derivative work — is not permitted under this default.
 >
-> **New `cal.forte` implementation must be written cleanly from permitted sources**: the current MIT
-> working tree, public interface contracts, and original work.
+> **New `cal.forte` implementation must be authored from permitted sources**: the current MIT working
+> tree, public interface contracts, and original work. The resulting record is
+> `Implementation relationship: CAL_FORTE_NATIVE` — see
+> [../FORK_IMPLEMENTATION_LEDGER.md](../FORK_IMPLEMENTATION_LEDGER.md) §3.
 >
 > **Required copyright and licence notices are preserved** in every case, including during rebranding.
 >
@@ -164,13 +166,14 @@ Rules for using them:
 - They are **intelligence, not authority.** Another fork's `LICENSE` file states that fork's
   claim; it does not establish that the claim is correct, nor that the code in it was theirs to
   relicense.
-- A fork that reintroduced code from `packages/features/ee/**` under an MIT header would be
-  **re-publishing Commercial-licensed code with a wrong notice**. Copying from it inherits the
-  problem.
+- A fork that reintroduced source from `packages/features/ee/**` under an MIT header would be
+  **re-publishing Commercial-licensed source with a wrong notice**. Incorporating from it inherits
+  the problem.
 - Before importing a single line: identify which pre-strip path it corresponds to, and check
   that path against §2's licence map. If it maps into `ee/**`, stop.
-- Behavioural observation ("their round-robin UI shows priority as a dropdown") is fine and
-  carries no licence weight. Copying structure, naming and code does.
+- Behavioural observation ("their round-robin UI shows priority as a dropdown") is fine and carries
+  no licence weight — `Source usage: BEHAVIOURAL_REFERENCE`. Incorporating or adapting structure,
+  naming or source does — `SOURCE_INCORPORATED` / `SOURCE_ADAPTED` — and requires clearance.
 - **[LEGAL]** Any actual code import from an external fork needs its own provenance review.
 
 ### 3.4 Historical code deleted by the strip — **do not restore**
@@ -193,9 +196,10 @@ Rules for using them:
   third-party contributions to the AGPL portions is a further wrinkle. **This fork should not
   rely on the permissive reading.**
 
-**Operating rule for `cal.forte`: pre-strip blobs are read-only behavioural evidence.** Reading
-one to understand *what* a feature did is reasonable engineering research. Copying it — or
-reproducing it closely enough to be a derivative — is not.
+**Operating rule for `cal.forte`: pre-strip blobs are read-only reference evidence.** Reading one to
+understand *what* a feature did is reasonable engineering research — `Source usage:
+BEHAVIOURAL_REFERENCE` or `DESIGN_REFERENCE`. Incorporating or adapting it — or reproducing it
+closely enough to be a derivative work — is not permitted.
 
 ### 3.5 Previous EE / commercial-licence code — **excluded by policy**
 
@@ -226,7 +230,7 @@ implications for `cal.forte`:
 - `yarn.lock` dependency licences are governed by each package.
 - The release pipeline already produces **CycloneDX SBOMs** per architecture
   ([RELEASE_PROCESS.md](../RELEASE_PROCESS.md) §5), which is the right place to track this.
-- Four in-tree sub-`LICENSE` files were checked and are all MIT © Cal.com, Inc.:
+- Five in-tree sub-`LICENSE` files were checked and are all MIT © Cal.com, Inc.:
   `packages/app-store/hitpay/LICENSE`, `packages/app-store/stripepayment/LICENSE`,
   `packages/embeds/embed-core/LICENSE`, `packages/embeds/embed-react/LICENSE`,
   `packages/embeds/embed-snippet/LICENSE`.
@@ -260,40 +264,41 @@ Applied to the candidates in [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILIT
 draft of this table used a pre-consolidation numbering in which six of nine rows named a different
 candidate than the registry assigns. That numbering is retired — see the master's §1.2 crosswalk.
 
-| Candidate | GitHub | Current-tree provenance | External reference | Copy or write? | Historical licence involved | Compatibility confidence | Needs [LEGAL]? |
+| Candidate | GitHub | Current-tree provenance | External reference | Implementation relationship | Historical licence involved | Compatibility confidence | Needs [LEGAL]? |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **P1-A** deny-by-default permission service | #13 | none needed — replaces stubs | none | **write** | none touched | **high** | no |
-| **P1-A** (acceptance) authorization tests `T-01…T-14` | #13 | MIT tRPC + Vitest infrastructure | none | **write** | none | **high** | no |
-| **P1-C** team role invariants (design) | #33 | MIT `MembershipRepository`, `roles.guard.ts` | none | **write** | pre-strip `ee/teams` is **Commercial** — must not be consulted as a source | **high** if written fresh | no, if fresh |
-| **P2-C** legal URL configuration | #36 | MIT `constants.ts`, `Dockerfile`, `start.sh` | none | **write** | none | **high** | **yes** — the choice of *what* URLs to serve is a legal question for the operator |
-| **P2-N** remove hosted-Cal upsells | #39 | MIT `apps/web` | none | **delete/edit** | none | **high** — deleting a link to a third party creates no obligation | no |
-| **P1-C** (scope) team invitation lifecycle | #33 | MIT token utils + `createOrUpdateMemberships` | none | **write** | pre-strip invite UI was **Commercial** | **high** if written fresh | no, if fresh |
-| **P2-G** (scope) host assignment UI | #28 | MIT `IEventTypeHostService`, `HostRepository` | possible — other forks may have UIs | **write** | pre-strip `ee/round-robin`, `modules/ee/teams` are **Commercial** | **high** if written fresh; **low** if copied from any fork | **yes** if any code is imported |
-| **P3-D** rebrand hard-coded Cal.com references | #24 · #26 | MIT `constants.ts` | none | **edit** | none | **high**, provided the `LICENSE` notice is untouched | no |
-| **P3-A** dead residue cleanup | #27 | MIT | none | **delete** | none | **high** | no |
-| Ship the MIT `LICENSE` in the published image (§6 item 2) | #40 | MIT root `LICENSE`; `Dockerfile` | none | **copy the notice** | none — this *preserves* the existing grant | **high** | **yes** if confirmed absent from the artifact |
-| Restore PBAC from history | — | — | **excluded by §0 policy** | **AGPLv3** | copyleft obligation unresolved | **yes**, if ever reconsidered |
-| Restore Teams UI from history | — | — | **excluded by §0 policy** | **Cal.com Commercial** | subscription condition unresolved | **yes**, if ever reconsidered |
-| Restore Workflows / Insights / SAML | — | — | **excluded by §0 policy** | **Commercial** (`ee/workflows`, `ee/sso`) / **AGPLv3** (`features/insights`) | unresolved on both counts | **yes**, if ever reconsidered |
+| **P1-A** deny-by-default permission service | #13 | none needed — replaces stubs | none | `CAL_FORTE_NATIVE` | none touched | **high** | no |
+| **P1-A** (acceptance) authorization tests `T-01…T-14` | #13 | MIT tRPC + Vitest infrastructure | none | `CAL_FORTE_NATIVE` | none | **high** | no |
+| **P1-C** team role invariants (design) | #33 | MIT `MembershipRepository`, `roles.guard.ts` | none | `CAL_FORTE_NATIVE` | pre-strip `ee/teams` is **Commercial** — must not be consulted as a source | **high** if written fresh | no, if fresh |
+| **P2-C** legal URL configuration | #36 | MIT `constants.ts`, `Dockerfile`, `start.sh` | none | `CAL_FORTE_NATIVE` | none | **high** | **yes** — the choice of *what* URLs to serve is a legal question for the operator |
+| **P2-O** remove hosted-Cal upsells | #39 | MIT `apps/web` | none | `CAL_FORTE_NATIVE` (deletion/edit of MIT tree) | none | **high** — deleting a link to a third party creates no obligation | no |
+| **P1-C** (scope) team invitation lifecycle | #33 | MIT token utils + `createOrUpdateMemberships` | none | `CAL_FORTE_NATIVE` | pre-strip invite UI was **Commercial** | **high** if written fresh | no, if fresh |
+| **P2-G** (scope) host assignment UI | #28 | MIT `IEventTypeHostService`, `HostRepository` | possible — other forks may have UIs | `CAL_FORTE_NATIVE` | pre-strip `ee/round-robin`, `modules/ee/teams` are **Commercial** | **high** if authored natively; **low** if external material is incorporated or adapted from any fork | **yes** if any code is imported |
+| **P3-D** rebrand hard-coded Cal.com references | #24 · #26 | MIT `constants.ts` | none | `CAL_FORTE_NATIVE` (edit of MIT tree) | none | **high**, provided the `LICENSE` notice is untouched | no |
+| **P3-A** dead residue cleanup | #27 | MIT | none | `CAL_FORTE_NATIVE` (deletion from MIT tree) | none | **high** | no |
+| Ship the MIT `LICENSE` in the published image (§6 item 2) | #40 | MIT root `LICENSE`; `Dockerfile` | none | `CAL_FORTE_NATIVE` — the notice itself is preserved verbatim, as the licence requires | none — this *preserves* the existing grant | **high** | **yes** if confirmed absent from the artifact |
+| Restore PBAC from history | — | — | — | `HISTORICAL_REFERENCE_ONLY` — excluded by §0 policy as an implementation source | **AGPLv3** | copyleft obligation unresolved | **yes**, if ever reconsidered |
+| Restore Teams UI from history | — | — | — | `HISTORICAL_REFERENCE_ONLY` — excluded by §0 policy as an implementation source | **Cal.com Commercial** | subscription condition unresolved | **yes**, if ever reconsidered |
+| Restore Workflows / Insights / SAML | — | — | — | `HISTORICAL_REFERENCE_ONLY` — excluded by §0 policy as an implementation source | **Commercial** (`ee/workflows`, `ee/sso`) / **AGPLv3** (`features/insights`) | unresolved on both counts | **yes**, if ever reconsidered |
 
 ## 5. Standing Rules
 
 1. **Never restore code from git history because it is technically accessible.** Check §2's
    licence map first. If the path was under `ee/`, its blob was Commercial-licensed; if it was elsewhere
-   pre-strip, it was AGPLv3. Under the §0 policy neither is copied into this tree absent an independent
-   licence and provenance determination.
-2. **Never copy old EE or commercial code into `cal.forte`** without independently establishing
-   that it is permitted. Nothing in this audit establishes that, and this audit does not attempt to.
-3. **Use historical implementations only as behavioural context.** Reading a deleted file to
-   learn what a feature did is research; reproducing it is derivation.
+   pre-strip, it was AGPLv3. Under the §0 policy neither is incorporated into this tree absent an
+   independent licence and provenance determination.
+2. **Never incorporate or adapt old EE or commercial source into `cal.forte`** without independently
+   establishing that it is permitted. Nothing in this audit establishes that, and this audit does not attempt to.
+3. **Use historical implementations only as reference context.** Reading a deleted file to learn what
+   a feature did is research; reproducing it is derivation, and is recorded as such.
 4. **Treat external forks' licensing analyses as claims, not authority.** Verify against the
    pre-strip path map, not against their `LICENSE` file.
 5. **Never remove the MIT notice or the `Cal.com, Inc.` copyright line** while rebranding.
    Rebrand the product surface; keep the attribution.
 6. **Record provenance for every new capability** in [FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md)
    when it lands: original work, upstream cherry-pick, or third-party import.
-7. **Any third-party code import gets its own provenance review** before merge, recorded in the
-   divergence register with the source, its licence, and the compatibility rationale.
+7. **Any third-party source incorporation or adaptation gets its own provenance review** before merge
+   — `Implementation relationship: EXTERNAL_ADAPTATION` or `THIRD_PARTY_INTEGRATION` — recorded with
+   the source, its licence, and the compatibility rationale.
 
 ## 6. Unresolved Licensing Questions
 
@@ -321,5 +326,5 @@ All require verification before being relied upon.
    contributions that affect the relicensing analysis in §2?
 6. **[VERIFY]** Do the CycloneDX SBOMs produced by `release-docker` capture dependency licences,
    or only components? This determines whether §3.7 is already covered by existing process.
-7. **[LEGAL]** `packages/app-store/*/LICENSE` files exist for three apps but not the other ~108.
+7. **[LEGAL]** `packages/app-store/*/LICENSE` files exist for two apps (`hitpay`, `stripepayment`) but not the other 109.
    Is that intentional upstream structure, or are some apps carrying unstated third-party terms?

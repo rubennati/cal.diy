@@ -63,8 +63,8 @@ Three passes, all evidence-gathering:
 
 | File | Contents |
 | --- | --- |
-| [EXTERNAL_FORK_INTAKE_EVIDENCE.md](EXTERNAL_FORK_INTAKE_EVIDENCE.md) | Long-form intake record, 1,966 lines. Per-candidate reasoning for C-01..C-25, the fork classification tables, the revert archaeology, the Enqira invariant audit |
-| [RUNTIME_VALIDATION_FINDINGS.md](RUNTIME_VALIDATION_FINDINGS.md) | Long-form runtime record, 332 lines. Full tRPC parity matrix, exhaustive TOTP error mapping, 429 diagnostics |
+| [EXTERNAL_FORK_INTAKE_EVIDENCE.md](EXTERNAL_FORK_INTAKE_EVIDENCE.md) | Long-form intake record, 1,991 lines. Per-candidate reasoning for C-01..C-25, the fork classification tables, the revert archaeology, the Enqira invariant audit |
+| [RUNTIME_VALIDATION_FINDINGS.md](RUNTIME_VALIDATION_FINDINGS.md) | Long-form runtime record, 359 lines. Full tRPC parity matrix, exhaustive TOTP error mapping, 429 diagnostics |
 | [EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) | Curated register — the primary record |
 | [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) | Capability inventory; absorbed the runtime findings in condensed form |
 | [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) · [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) · [LICENSE_AND_PROVENANCE_REVIEW.md](LICENSE_AND_PROVENANCE_REVIEW.md) · [SELF_HOST_PRODUCTIZATION.md](SELF_HOST_PRODUCTIZATION.md) | Companion audits produced alongside this session |
@@ -185,8 +185,8 @@ Nothing is half-finished; these are decisions and follow-ups, not loose ends.
 3. **`apps/web/pages/api/trpc/apiKeys/[trpc].ts` is still missing.** API-key management remains
    broken in the UI.
 4. **Two runtime questions need one command each, no code change:**
-   - which TOTP 400 fires — the read-only SQL in `RUNTIME_VALIDATION_FINDINGS.md` §F-22
-   - which layer emits the 429 — the `curl -sSD -` header check in §F-23
+   - which TOTP 400 fires — the read-only SQL in `RUNTIME_VALIDATION_FINDINGS.md` §RV.3
+   - which layer emits the 429 — the `curl -sSD -` header check in §RV.4
 5. ~~**Everything in this repository is uncommitted.**~~ **Resolved 2026-08-26** — the
    consolidation pass committed the full audit set (9 `docs/*.md` plus the `.ai/` and `README.md`
    index updates) to a dedicated branch. Nothing was pushed and no PR was opened; both remain
@@ -196,8 +196,10 @@ Nothing is half-finished; these are decisions and follow-ups, not loose ends.
 
 - These audits were produced **alongside a concurrent process** writing into the same `docs/`
   tree. `SELF_HOST_CAPABILITY_AUDIT.md` grew from 530 to 966 lines during the session and
-  developed its own `F-13`. The long-form files here use `F-20`..`F-25` to avoid that collision;
-  those numbers are local to `RUNTIME_VALIDATION_FINDINGS.md`.
+  developed its own `F-13`. The long-form runtime file originally used `F-20`..`F-25` to avoid that collision. The capability
+  audit has since grown to `F-32`, so those ids were renamed to **`RV.1`..`RV.6`** — a local
+  namespace, crosswalked to canonical ids in that file's header and in
+  [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.2.
 - The condensed capability audit carries the substance of the runtime findings but **not the
   Fly.io / `erikmayergit` assessment**, which exists only in
   `EXTERNAL_FORK_INTAKE_EVIDENCE.md`. It was classified `not-applicable / rejected`, so the gap

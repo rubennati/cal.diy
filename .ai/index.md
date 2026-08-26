@@ -11,10 +11,17 @@ Start here, then read the authoritative docs:
 - [../FORK_STRATEGY.md](../FORK_STRATEGY.md)
 - [../UPSTREAM_SYNC.md](../UPSTREAM_SYNC.md)
 - [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md)
+- [../FORK_IMPLEMENTATION_LEDGER.md](../FORK_IMPLEMENTATION_LEDGER.md)
 - [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md)
 - [../IMAGE_BUILD.md](../IMAGE_BUILD.md)
 - [../SECURITY_REVIEW.md](../SECURITY_REVIEW.md)
+- [../SECURITY_ASSURANCE.md](../SECURITY_ASSURANCE.md)
 - [../CALDIY_RELEASE_CONTRACT.md](../CALDIY_RELEASE_CONTRACT.md)
+
+**Before treating a change as finished**, check
+[../FORK_PROCESS.md → Definition of Done](../FORK_PROCESS.md#definition-of-done). The gates in
+[quality-gates.md](quality-gates.md) are the *ready-for-review* threshold; the Definition of Done
+is the *finished* threshold and includes the licence/provenance gate.
 
 Point-in-time audits of the application tree (public, fork-owned) live in `docs/`:
 

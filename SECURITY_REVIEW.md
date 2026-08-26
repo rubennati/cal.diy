@@ -4,6 +4,11 @@
 
 This is the minimum recurring security review checklist for this fork before a reviewed image is allowed to move toward downstream deployment.
 
+It is a **per-release gate**. The per-change completion rule is
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done), and the broader
+assurance strategy — ASVS mapping, risk-based CI tiers, tooling evaluation, licence policy and
+the runtime/DAST model — is [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) (design only).
+
 ## Review Priorities
 
 Focus on these areas first:

@@ -6,6 +6,10 @@ ledger:
 
 - [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) records which upstream commits
   were accepted, deferred, rejected, or prepared.
+- [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) records **how each material
+  change was implemented** — provenance, licence classification, security impact, validation,
+  guards and rollback. This register is the *steady state*; that ledger is the *per-change*
+  record and retains superseded and reverted entries that this register correctly drops.
 - This document records behavior and maintenance work created specifically for this fork.
 - [FORK_STATUS.md](FORK_STATUS.md) records the current review and release snapshot.
 - [.ai/sync-log.md](.ai/sync-log.md) provides the chronological implementation history.

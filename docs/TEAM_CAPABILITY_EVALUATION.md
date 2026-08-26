@@ -128,7 +128,7 @@ Honest answer: **almost nothing, and the small items are not the useful ones.**
 | --- | --- | --- |
 | Deny-by-default permission service | ~40 lines + 18 call-site edits | small — and it *removes* capability |
 | Membership-role permission service | ~150 lines + invariants | small–medium, but it is the gateway to everything else |
-| Re-enable the assignment tab UI | a full React tab (host list, priority, weights, groups, locations) | **not** minimal; the deleted implementation was Commercial-licensed and cannot be copied |
+| Re-enable the assignment tab UI | a full React tab (host list, priority, weights, groups, locations) | **not** minimal; the deleted implementation was Commercial-licensed and is not approved for source incorporation |
 | Team creation | router + mutation + slug validation + transaction + owner membership + UI | medium |
 | Invitation lifecycle | token issue/expire/consume/revoke + email + accept UI + enumeration handling | medium–large |
 | Team settings / member management | repository write layer (absent) + service + UI | large |

@@ -1,6 +1,11 @@
 # Upstream Review Ledger
 
 This ledger is the public commit-level record of what this fork did with upstream changes.
+It covers **upstream commits only**, including the ones deliberately not taken. What the fork
+then *implemented* — provenance, licence status, security impact, validation and guards — is
+recorded in [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md). An accepted upstream
+commit has a row in both: this one records the **disposition**, that one records the
+**implementation**.
 It complements the chronological [.ai/sync-log.md](.ai/sync-log.md): the sync log explains
 review rounds, while this file gives every reviewed upstream commit a durable disposition.
 

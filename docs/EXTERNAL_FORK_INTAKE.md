@@ -90,31 +90,35 @@ runtime finding that has no entry in this register. Corrected below; the master 
 
 | ID | Finding | Source | Provenance | Ev. | Verified state on `develop` | Master ID | GitHub |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| C-06 | Public unauthenticated slot lookup resolves an event type by slug alone | Mitch515 `ab5d8542d3` | **upstream regression** (`ab21c7f805`) | **E2** | Confirmed — **and the source's wording is wrong**; see §6.1 | **F-02** | #14 |
-| C-16 | Permission checks are `return true` stubs across 18 files | fork-owned; corroborated by Enqira | upstream strip | **E2+E3** | Confirmed: 18 production files, 11 fail-open / 6 fail-closed / 1 DI-wiring | **F-01** | #13 |
-| C-15 | `truncateOnWord` ignores `maxLength`; collapses to `"..."` with no word break | upstream `ea0c92a267` (#27961); symptom via COG-GTM #31 | **upstream regression** | **E3** | Confirmed; live on public booking-page OpenGraph metadata | **F-24** |
-| C-17 | `ab21c7f805` (#28903) silently reverted merged upstream fixes | fork-owned | upstream | **E2** (partial) | Confirmed as a mechanism; the "13 commits / 24 paths" headcount is **not** verified — see §6.2 | **F-07** | #20 |
-| C-18 | Booker timezone slot-refresh fix (#27491) partially reverted | fork-owned | upstream | **E2** | Confirmed, with a concrete live inconsistency — see §6.3 | **F-07a** | #19 |
-| C-19 | Webhook payloads carry the `assignmentReason` shape upstream rolled back (#27891) | fork-owned | upstream | **E2** | Confirmed for legacy/unversioned payload paths only — see §6.4 | **F-07b** | #21 |
-| C-13 | `OUTLOOK_LOGIN_ENABLED` controls nothing while `/api/auth/signin/azure-ad` stays live | fork-owned; triggered by Mitch515 `ea863eac76` | upstream rot | **E2** | Confirmed on both login and signup | **F-20** | #22 |
-| C-08 | Entra login accepts every Microsoft tenant, unconfigurable | Mitch515 `c46a03d8e9` | external-fork (concept) | **E1+E3** | Confirmed; severity reduced by an existing guard — see §6.5 | **F-21** | #23 |
-| C-07 | A failing cosmetic Google Calendar PATCH discards an already-created event | Mitch515 `36a40b4cb4` | external-fork (concept) | **E2** | Confirmed, and **broader than claimed** — see §6.6 | **F-28** |
-| C-03 | `extractBaseEmail` fabricates addresses from malformed input | COG-GTM #31 | external-fork | **E2** | Confirmed; reachable from an unauthenticated endpoint, but no bypass demonstrated | **F-25** |
-| C-04 | `getProviderName` throws a `TypeError` on a bare `integrations:` location | COG-GTM #31 | external-fork | **E2** | Confirmed; requires a connected calendar/CRM to reach | **F-26** |
-| C-01 | CSV export does not neutralise spreadsheet formula prefixes | COG-GTM #31 | external-fork | **E2** | Confirmed; org-gated, and one of the two cited consumers is dead code | **F-27** |
-| C-05 | HitPay drop-in accepts `message` events from any origin | fork-owned (COG-GTM #1 partial) | external-fork | **E1** | Confirmed; app disabled by default and impact is client-side only | **F-29** |
-| C-14 | Branding build args declared in the `Dockerfile` but never passed by the release workflow | fork-owned | fork-owned | **E2** | Confirmed; but the source's own correction to `.ai/branding.md` is wrong — see §7 | **F-16** | #24 |
-| C-20 | Multi-tenant team management (Enqira) | Enqira `857c362ed2` | external-fork | **E2** | Not adopted. Audited as an architecture decision in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | — | #28 |
+| C-06 | Public unauthenticated slot lookup resolves an event type by slug alone | Mitch515 `ab5d8542d3` | **upstream regression** (`ab21c7f805`) | **E2** | Confirmed — **and the source's wording is wrong**; see §6.1 | **F-02** | [#14](https://github.com/rubennati/cal.diy/issues/14) |
+| C-16 | Permission checks are `return true` stubs across 18 files | fork-owned; corroborated by Enqira | upstream strip | **E2+E3** | Confirmed: 18 production files, 11 fail-open / 6 fail-closed / 1 DI-wiring | **F-01** | [#13](https://github.com/rubennati/cal.diy/issues/13) |
+| C-15 | `truncateOnWord` ignores `maxLength`; collapses to `"..."` with no word break | upstream `ea0c92a267` (#27961); symptom via COG-GTM #31 | **upstream regression** | **E3** | Confirmed; live on public booking-page OpenGraph metadata | **F-24** | [#15](https://github.com/rubennati/cal.diy/issues/15) |
+| C-17 | `ab21c7f805` (#28903) silently reverted merged upstream fixes | fork-owned | upstream | **E2** (partial) | Confirmed as a mechanism; the "13 commits / 24 paths" headcount is **not** verified — see §6.2 | **F-07** | [#20](https://github.com/rubennati/cal.diy/issues/20) |
+| C-18 | Booker timezone slot-refresh fix (#27491) partially reverted | fork-owned | upstream | **E2** | Confirmed, with a concrete live inconsistency — see §6.3 | **F-07a** | [#19](https://github.com/rubennati/cal.diy/issues/19) |
+| C-19 | Webhook payloads carry the `assignmentReason` shape upstream rolled back (#27891) | fork-owned | upstream | **E2** | Confirmed for legacy/unversioned payload paths only — see §6.4 | **F-07b** | [#21](https://github.com/rubennati/cal.diy/issues/21) |
+| C-13 | `OUTLOOK_LOGIN_ENABLED` controls nothing while `/api/auth/signin/azure-ad` stays live | fork-owned; triggered by Mitch515 `ea863eac76` | upstream rot | **E2** | Confirmed on both login and signup | **F-20** | [#22](https://github.com/rubennati/cal.diy/issues/22) |
+| C-08 | Entra login accepts every Microsoft tenant, unconfigurable | Mitch515 `c46a03d8e9` | external-fork (concept) | **E1+E3** | Confirmed; severity reduced by an existing guard — see §6.5 | **F-21** | [#23](https://github.com/rubennati/cal.diy/issues/23) |
+| C-07 | A failing cosmetic Google Calendar PATCH discards an already-created event | Mitch515 `36a40b4cb4` | external-fork (concept) | **E2** | Confirmed, and **broader than claimed** — see §6.6 | **F-28** | [#18](https://github.com/rubennati/cal.diy/issues/18) |
+| C-03 | `extractBaseEmail` fabricates addresses from malformed input | COG-GTM #31 | external-fork | **E2** | Confirmed; reachable from an unauthenticated endpoint, but no bypass demonstrated | **F-25** | [#16](https://github.com/rubennati/cal.diy/issues/16) |
+| C-04 | `getProviderName` throws a `TypeError` on a bare `integrations:` location | COG-GTM #31 | external-fork | **E2** | Confirmed; requires a connected calendar/CRM to reach | **F-26** | [#16](https://github.com/rubennati/cal.diy/issues/16) |
+| C-01 | CSV export does not neutralise spreadsheet formula prefixes | COG-GTM #31 | external-fork | **E2** | Confirmed; org-gated, and one of the two cited consumers is dead code | **F-27** | [#17](https://github.com/rubennati/cal.diy/issues/17) |
+| C-05 | HitPay drop-in accepts `message` events from any origin | fork-owned (COG-GTM #1 partial) | external-fork | **E1** | Confirmed; app disabled by default and impact is client-side only | **F-29** | [#31](https://github.com/rubennati/cal.diy/issues/31) |
+| C-14 | Branding build args declared in the `Dockerfile` but never passed by the release workflow | fork-owned | fork-owned | **E2** | Confirmed; but the source's own correction to `.ai/branding.md` is wrong — see §7 | **F-16** | [#24](https://github.com/rubennati/cal.diy/issues/24) |
+| C-20 | Multi-tenant team management (Enqira) | Enqira `857c362ed2` | external-fork | **E2** | Not adopted. Audited as an architecture decision in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | — | [#28](https://github.com/rubennati/cal.diy/issues/28) |
 
-### 5.2 Deferred, no action proposed
+### 5.2 Deferred or not adopted
 
-| ID | Finding | Why deferred |
+None of these produced a canonical `F-nn`. Two were nevertheless filed as issues on their own terms;
+three remain intentionally unfiled. Authoritative mapping:
+[SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.2.
+
+| ID | Finding | Disposition |
 | --- | --- | --- |
-| C-09 | Upstream drift **reporting** (never enforcement) | Concept only. The source's own implementation (`fc37a2cac4`) auto-syncs and fails the build when behind — directly contrary to `.ai/decisions.md` and `UPSTREAM_SYNC.md`. Only the reporting idea survives. |
-| C-10 | Env-template-vs-code drift check | Overlaps the environment-semantics work already proposed as a candidate; sequence behind it. |
-| C-11 | API v2 build stage runs as root | `already-covered` — non-root runtime shipped in `6800e65e06` (`v6.2.0-5`). |
-| C-12 | LIA / Mereka deployment-specific changes | `not-applicable` — customer-specific. |
-| C-21 | Fly.io deployment additions | `not-applicable` / `rejected` — see §7. |
+| C-09 | Upstream drift **reporting** (never enforcement) | `REPRESENTED_BY_ISSUE` — [#29](https://github.com/rubennati/cal.diy/issues/29), still marked deferred there. Concept only. The source's own implementation (`fc37a2cac4`) auto-syncs and fails the build when behind — directly contrary to `.ai/decisions.md` and `UPSTREAM_SYNC.md`. Only the reporting idea survives. |
+| C-10 | Env-template-vs-code drift check | `MERGED_INTO_EXISTING_ISSUE` — absorbed into [#30](https://github.com/rubennati/cal.diy/issues/30) (candidate P2-E) as its first dimension, and raised P3 → P2 there. |
+| C-11 | API v2 build stage runs as root | `INTENTIONALLY_UNFILED` · `already-covered` — non-root runtime shipped in `6800e65e06` (`v6.2.0-5`). |
+| C-12 | LIA / Mereka deployment-specific changes | `INTENTIONALLY_UNFILED` · `not-applicable` — customer-specific. |
+| C-21 | Fly.io deployment additions | `INTENTIONALLY_UNFILED` · `not-applicable` / `rejected` — see §7. |
 
 ## 6. Where This Fork's Verification Differs From The Source
 
@@ -242,7 +246,7 @@ Recorded so they are not re-raised.
 | Fly.io workflow / `fly.toml` | erikmayergit | Mutable `@master` / `@v4` action refs, `flyctl deploy --local-only` bypassing reviewed image promotion, hard-coded customer host, and a `CALCOM_TELEMETRY_DISABLED` build arg that would trip this fork's own blocking telemetry guard. |
 | COG-GTM test-coverage PRs #2–#4, #6–#30 | COG-GTM | ~27 unreviewed, CI-unchecked, agent-generated PRs against a base older than this fork's, several targeting Insights/Stripe/DI surfaces this edition does not ship. |
 | Enqira team implementation as a cherry-pick | Enqira | ~3,600 lines across 59 files; would activate F-01; carries an ADMIN→OWNER invite escalation and a slug TOCTOU race. Evaluated as an architecture decision, never as an intake. |
-| Restoring `packages/features/ee/**` from git history | history is reachable in this clone | That tree carried the Cal.com Commercial License. See [LICENSE_AND_PROVENANCE_REVIEW.md](LICENSE_AND_PROVENANCE_REVIEW.md) §3.4 — **must not** be copied or restored unless licence and provenance independently permit it. |
+| Restoring `packages/features/ee/**` from git history | history is reachable in this clone | That tree carried the Cal.com Commercial License. See [LICENSE_AND_PROVENANCE_REVIEW.md](LICENSE_AND_PROVENANCE_REVIEW.md) §3.4 — **not approved for source incorporation or adaptation** unless licence and provenance independently permit it. |
 
 ## 8. Interaction With The Upstream Ledger
 

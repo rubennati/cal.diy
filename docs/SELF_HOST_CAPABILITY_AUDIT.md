@@ -57,7 +57,7 @@ Findings are renumbered into one contiguous sequence. Nothing was dropped.
 | **F-04** | `F-07` | static audit |
 | **F-05** | runtime `F-20` / `RV.1` | runtime session |
 | **F-06** | runtime `F-21` / `RV.2`, supersedes static `F-04` | runtime session; extends the static finding |
-| **F-07** (+ `a`, `b`, `c`) | intake `C-17`, `C-18`, `C-19` | fork-owned archaeology on upstream history |
+| **F-07** (+ `a`, `b`) | intake `C-17`, `C-18`, `C-19` | fork-owned archaeology on upstream history |
 | **F-08** | headline row 2 | static audit |
 | **F-09** | `F-02` | static audit |
 | **F-10** | `F-03` | static audit |
@@ -86,11 +86,61 @@ Findings are renumbered into one contiguous sequence. Nothing was dropped.
 | **D-01** | runtime `F-23` / `RV.4` | runtime session — **deployment layer** |
 | **D-02** | part of runtime `F-23` | runtime session — **deployment layer** |
 
-Retired without a successor: intake `C-02` (superseded by `C-15`/F-24 with correct provenance),
-`C-09`–`C-12`, `C-20`, `C-21` (deferred or not-applicable — see
-[EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) §5.2 and §7).
+Intake candidates that produced **no canonical finding** are listed in §1.2 with their own
+dispositions; `C-02` is the only one retired outright (superseded by `C-15`/F-24 with correct
+provenance). See [EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) §5.2 and §7.
 
-### 1.2 Duplicate findings merged
+### 1.2 Authoritative crosswalk — candidate → finding → issue
+
+**This table is the single authority for identifier mapping.** Every other document points here
+rather than maintaining its own column. GitHub issues live in `rubennati/cal.diy`.
+
+| Intake `C-xx` | Canonical | GitHub / disposition |
+| --- | --- | --- |
+| `C-01` | **F-27** | [#17](https://github.com/rubennati/cal.diy/issues/17) |
+| `C-02` | — | `RETIRED` — superseded by `C-15` / F-24 |
+| `C-03` | **F-25** | [#16](https://github.com/rubennati/cal.diy/issues/16) |
+| `C-04` | **F-26** | [#16](https://github.com/rubennati/cal.diy/issues/16) (folded with F-25) |
+| `C-05` | **F-29** | [#31](https://github.com/rubennati/cal.diy/issues/31) |
+| `C-06` | **F-02** | [#14](https://github.com/rubennati/cal.diy/issues/14) |
+| `C-07` | **F-28** | [#18](https://github.com/rubennati/cal.diy/issues/18) |
+| `C-08` | **F-21** | [#23](https://github.com/rubennati/cal.diy/issues/23) |
+| `C-09` | — | [#29](https://github.com/rubennati/cal.diy/issues/29) — `REPRESENTED_BY_ISSUE`; concept only, no canonical finding |
+| `C-10` | — | [#30](https://github.com/rubennati/cal.diy/issues/30) — `MERGED_INTO_EXISTING_ISSUE`; absorbed as P2-E's first dimension |
+| `C-11` | — | `INTENTIONALLY_UNFILED` — already-covered (non-root runtime shipped in `6800e65e06`) |
+| `C-12` | — | `INTENTIONALLY_UNFILED` — not-applicable (customer-specific) |
+| `C-13` | **F-20** | [#22](https://github.com/rubennati/cal.diy/issues/22) |
+| `C-14` | **F-16** | [#24](https://github.com/rubennati/cal.diy/issues/24) |
+| `C-15` | **F-24** | [#15](https://github.com/rubennati/cal.diy/issues/15) |
+| `C-16` | **F-01** | [#13](https://github.com/rubennati/cal.diy/issues/13) |
+| `C-17` | **F-07** | [#20](https://github.com/rubennati/cal.diy/issues/20) |
+| `C-18` | **F-07a** | [#19](https://github.com/rubennati/cal.diy/issues/19) |
+| `C-19` | **F-07b** | [#21](https://github.com/rubennati/cal.diy/issues/21) |
+| `C-20` | — | [#28](https://github.com/rubennati/cal.diy/issues/28) — `REPRESENTED_BY_ISSUE`; architecture decision, not an intake |
+| `C-21` | — | `INTENTIONALLY_UNFILED` — not-applicable / rejected (Fly.io deployment config) |
+| `C-22` | **F-05** | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+| `C-23` | **F-06** | [#34](https://github.com/rubennati/cal.diy/issues/34) |
+| `C-24` | **F-23** | [#35](https://github.com/rubennati/cal.diy/issues/35) |
+| `C-25` | **F-19** | [#37](https://github.com/rubennati/cal.diy/issues/37) |
+
+`C-01`–`C-21` are the intake register's candidates; `C-22`–`C-25` were raised by the runtime pass
+and exist only in [EXTERNAL_FORK_INTAKE_EVIDENCE.md](EXTERNAL_FORK_INTAKE_EVIDENCE.md) §RV.7.
+Findings with **no** `C-xx` origin (fork-owned and runtime findings) are accounted for in §10's
+coverage table instead.
+
+#### Identifier namespaces — three deliberate collisions to know about
+
+`F-nn` is canonical **only** in this document. Three other namespaces reuse the same shapes:
+
+| Namespace | Where | Relationship to canonical |
+| --- | --- | --- |
+| Retired static-audit / runtime `F-nn` | the **Previous ID** column of §1.1 | Historical only. A bare `F-04` in the retired static namespace is canonical **F-06**; retired `F-13` is canonical **F-03**. Never cite the Previous ID column as a current id |
+| `RV.1`–`RV.6` | [RUNTIME_VALIDATION_FINDINGS.md](RUNTIME_VALIDATION_FINDINGS.md) | Local ids for the runtime evidence record, mapped to canonical ids in that file's header table |
+| `C-01`–`C-04` (control) | [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) §5 | Control **assertions** in a test plan. Unrelated to intake candidates `C-01`–`C-04` |
+| `RC-1`–`RC-4` | [RUNTIME_VALIDATION_FINDINGS.md](RUNTIME_VALIDATION_FINDINGS.md) §9.3 | Local candidate ids for that file's proposals. They were once written `P1-D`/`P2-F`/`P2-G`/`P3-C`; three of those now name different candidates here, so the canonical candidate is given alongside each |
+| `I-01`–`I-18` | §11 of this document | Internal proposal ids for the issue set **as originally authored**. Never GitHub numbers — the real issue is a separate column |
+
+### 1.3 Duplicate findings merged
 
 | Merged into | Sources that independently found it | Resolution |
 | --- | --- | --- |
@@ -100,10 +150,10 @@ Retired without a successor: intake `C-02` (superseded by `C-15`/F-24 with corre
 | **F-17 / F-12** | static `F-08` conflated dead paywall residue with the still-mounted licence mutations | Split: `F-17` is inert residue, `F-12` is a mounted endpoint. Different dispositions. |
 | **F-24** | intake `C-02` (COG-GTM symptom) and `C-15` (upstream regression) | One finding with **upstream** provenance. COG-GTM is demoted to symptom reporter; the actionable artefact is upstream commit `ea0c92a267`. |
 
-### 1.3 Claims corrected during consolidation
+### 1.4 Claims corrected during consolidation
 
-Seven claims from the source passes did not survive re-derivation. They are listed in §8 so they are not
-re-raised.
+Nine claims did not survive re-derivation — eight from the source passes plus one from the consolidation
+draft. They are listed in §8 so they are not re-raised; both evidence records' banners give the same count.
 
 ## 2. Confidence, Provenance And Layer Vocabulary
 
@@ -675,7 +725,7 @@ set.
 | --- | --- | --- | --- |
 | **F-30** | Inert PostHog instrumentation | `FRONTEND_STUBBED` | `posthog.capture` in 12 `apps/web` files; **no** `posthog.init`, no `PostHogProvider`, no `posthog-js/react` import anywhere. Calls are inert. Static reading cannot prove zero network egress — §12 |
 | **F-31** | Client console warnings | `DEVELOPMENT_WARNING` / `BUNDLE_ARCHITECTURE` | See below |
-| **F-32** | Stale references in fork-adjacent documentation | `process` | `agents/knowledge-base.md:91`, `agents/rules/reference-file-locations.md:29`, `agents/rules/patterns-trigger-dev.md:240`, `packages/features/data-table/GUIDE.md:1156` cite `packages/features/ee/**` and `apps/web/modules/ee/**` — deleted by `ab21c7f805`. Also `FeatureOptInService.test.ts:716` `vi.doMock`s `@calcom/features/pbac/services/permission-check.service`, a deleted module — a dangling mock is a silent no-op, so whatever that test intended to assert about permissions is not asserted |
+| **F-32** | Stale references in fork-adjacent documentation | `process` | `agents/knowledge-base.md:91`, `agents/rules/reference-file-locations.md:29`, `agents/rules/patterns-trigger-dev.md:240`, `packages/features/data-table/GUIDE.md:1156` cite `packages/features/ee/**` and `apps/web/modules/ee/**` — deleted by `ab21c7f805`. Also `FeatureOptInService.test.ts:716` `vi.doMock`s `@calcom/features/pbac/services/permission-check.service`, a deleted module — a dangling mock is a silent no-op, so whatever that test intended to assert about permissions is not asserted **Also `PERMISSIONS.md`** (root, inherited, byte-identical to `origin/main`): it documents a `resource.action` PBAC permission model and links **22** file paths — `packages/trpc/server/routers/viewer/teams/**`, `organizations/**`, `packages/lib/entityPermissionUtils.ts`, `packages/app-store/routing-forms/**` — **every one of which was deleted by `ab21c7f805`**. It is referenced by no governance document, sits at repository root, and describes the authorization system F-01 shows is stubbed. Editing it would create a fork divergence requiring its own Definition-of-Done cycle, so it is recorded here rather than changed. |
 
 **F-31 detail.** `initReactI18next` is never called anywhere, and `packages/lib/hooks/useLocale.ts:16-29`
 calls `useTranslation(namespace)` unconditionally before any context check. **But the repo-wide framing is
@@ -829,13 +879,19 @@ missing row.
 | [FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md) | image branding baked "through explicit build arguments" | True for one of three declared ARGs (F-16) |
 | `agents/rules/reference-local-dev.md` vs `agents/commands.md` | two conflicting setup paths, only one of which seeds | F-22 |
 | `agents/knowledge-base.md`, `agents/rules/*`, `packages/features/data-table/GUIDE.md` | cite deleted `ee/**` paths | F-32 |
+| `PERMISSIONS.md` (root, inherited) | documents a PBAC model whose 22 linked paths were all deleted by `ab21c7f805`; unreferenced by any governance document | F-32 |
 
 `agents/rules/**` were **not** edited: they are engineering rules governed by [AGENTS.md](../AGENTS.md),
 and rewriting them is a separate deliberate change.
 
 ## 10. Ranked Candidate Registry
 
-The single registry. Nothing here is implemented, and no issue has been created.
+The single registry. **Nothing here is implemented.** Every candidate targeted at `cal.forte` and not
+dispositioned `REDIRECTED`, `DOCUMENTED_ONLY` or `NOT_APPLICABLE` has been filed as a GitHub issue
+under tracker [#12](https://github.com/rubennati/cal.diy/issues/12), and all of those remain open.
+The deliberately unfiled candidates are **P2-J** and **P2-M**/**P3-I** (`sdb`), and **P3-B**/**P3-C**
+(`DOCUMENTED_ONLY`); each is accounted for in §10.1. The
+authoritative identifier mapping is §1.2, and §10.1 below accounts for every finding defined in §5.
 
 **Target key:** `cal.forte` = this repository · `sdb` = `secure-docker-blueprint`.
 
@@ -843,7 +899,7 @@ The single registry. Nothing here is implemented, and no issue has been created.
 
 | ID | Type | Candidate | Evidence | Current state | Provenance | Security relevance | Target | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **P1-A** | Security review + remediation | **PBAC authorization audit** — replace the 18 inlined stubs with one deny-by-default module; add a `scripts/fork-guard-*.sh` in the telemetry-guard style so a `return true` permission stub cannot silently return | F-01 · `E2`+`E3` · [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) | 11 fail-open files / 19 call sites; 2 genuinely cross-tenant; one enables a destructive cross-tenant delete | upstream strip; fork-owned remediation | **Highest in this audit.** Broken access control (CWE-863) with a data-gated trigger. **Not** a demonstrated remote exploit | cal.forte | `NEEDS_SECURITY_WORK_FIRST` |
+| **P1-A** | Security review + remediation | **PBAC authorization audit** — replace the 18 inlined stubs with one deny-by-default module; add a `scripts/fork-guard-*.sh` in the telemetry-guard style so a `return true` permission stub cannot silently return. **Also carries F-03** (team webhooks bypass the ownership middleware) — a *distinct root cause* needing a `teamId` branch, merged here because it shares F-01's reachability gate and test fixture | F-01, **F-03** · `E2`+`E3` · [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) §3.4, §3.10 | 11 fail-open files / 19 call sites; 2 genuinely cross-tenant; one enables a destructive cross-tenant delete | upstream strip; fork-owned remediation | **Highest in this audit.** Broken access control (CWE-863) with a data-gated trigger. **Not** a demonstrated remote exploit | cal.forte | `NEEDS_SECURITY_WORK_FIRST` |
 | **P1-B** | Bug (availability) | **API Keys route restoration** — `git cherry-pick -x 07a288bbd8`, plus the ledger correction in §9.1 | F-05 · `E2`+`RUNTIME` | `CONFIRMED_BROKEN`; upstream fixed 2026-06-08, not integrated | **upstream** — the only candidate here eligible for `-x` | None directly. Indirect: no UI path to revoke a leaked API key | cal.forte | `UPSTREAM_INTAKE` |
 | **P1-C** | Security design | **Team authorization prerequisites** — role/ownership invariants defined before any team surface is enabled | [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §6 (22 invariants), §10.3 (5 gaps an external implementation still had) | No invariant layer; `MembershipRepository` has no write surface | fork-owned; **must not** derive from deleted `ee/teams` | Prerequisite for any team feature | cal.forte | `DOCUMENT_ONLY` — blocked by P1-A |
 | **P1-D** | Bug + hardening | **Public slot resolution** — resolve by owner/team and stop the slug-only fallback | F-02 · `E2` | Live functional corruption on team private links; modest unauthenticated slug-existence oracle | **split**: fallback is upstream and predates `ab21c7f805`; the team-branch removal is `ab21c7f805` | Real but modest — undirected availability metadata, no auth bypass, no write primitive | cal.forte | `NEEDS_SECURITY_WORK_FIRST` |
@@ -863,18 +919,21 @@ alters a public API's behaviour.
 | **P2-D** | Bug + deployment | **VAPID configuration semantics** — guard the client subscribe; stop implying a build-time variable is runtime-settable; fix the misattributing error message | F-19 · `E2` | Client offers a feature the server has disabled; knob inert on a prebuilt image | app code upstream; compose file fork-owned | None. **No keys generated or committed** | cal.forte + sdb | `SAFE_TO_EVALUATE` |
 | **P2-E** | Maintenance / CI | **Environment semantic preflight** — report drift between the shipped env template and the variables the code actually reads, and flag build-time vs runtime confusion | F-15, F-19, F-20 · `E1` | Four phantom knobs confirmed across three passes | fork-owned | Preventive | cal.forte | `SAFE_TO_EVALUATE` |
 | **P2-F** | Maintenance / CI | **Endpoint/router parity CI** — assert every `ENDPOINTS` entry that is also a `viewerRouter` child has a matching adapter; prune the 7 orphans and the stale `appsRouter` duplicate | F-06 · `E2` | 1 broken, 7 orphans, 1 stale duplicate | fork-owned | Converts a class of silent breakage into a build failure. ~20 lines, no runtime | cal.forte | `HIGH_VALUE_CANDIDATE` |
-| **P2-G** | Feature evaluation | **Team capability architecture** — decide whether multi-tenant teams are wanted, and at what cost | [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | Read backend intact; write layer, UI and authorization absent | fork-owned; external implementation exists but **must not** be cherry-picked | Adding teams **activates F-01** | cal.forte | `KEEP_DISABLED` — blocked by P1-A and P1-C |
+| **P2-G** | Feature evaluation | **Team capability architecture** — decide whether multi-tenant teams are wanted, and at what cost | **F-08** · [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §10 | Read backend intact; write layer, UI and authorization absent | fork-owned; external implementation exists but **must not** be cherry-picked | Adding teams **activates F-01** | cal.forte | `KEEP_DISABLED` — blocked by P1-A and P1-C |
 | **P2-H** | Security hardening | **Microsoft tenant-bound authentication** — allow restricting sign-in to a configured Entra tenant | F-21 · `E1`+`E3` | No tenant concept at all; defaults to `common` | external-fork concept | Real tenant-isolation gap; **not** account takeover — the `xms_edov` guard holds | cal.forte | `SAFE_TO_EVALUATE` — sequence after the F-20 decision |
 | **P2-I** | Reliability | **Google Calendar retry safety** — keep a created event when the cosmetic enrichment PATCH fails | F-28 · `E2` | `catch` rethrows unconditionally; two affected PATCH sites | external-fork concept | None | cal.forte | `SAFE_TO_EVALUATE` |
 | **P2-J** | Deployment | **Deployment smoke checks** — post-deployment verification against a live URL | [EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) §7 | Pre-publication validation already exists in `docker-build-and-test`; post-deployment does not | fork-owned | Operational assurance | **sdb** | `NOT_APPLICABLE` here |
 | **P2-K** | Decision | **Outlook login surface** — wire the flag through, or remove the dead surface with a guard | F-20 · `E2` | Flag inert, endpoint live | fork-owned | Gates P2-H | cal.forte | `SAFE_TO_EVALUATE` |
 | **P2-L** | Bug | **`truncateOnWord` restoration** — `git cherry-pick -x ea0c92a267` (restores the test block too) | F-24 · `E3` | Live on public OG metadata | **upstream** — eligible for `-x` | None. Cosmetic/SEO | cal.forte | `UPSTREAM_INTAKE` |
+| **P2-M** | Deployment | **Static-asset rate-limit exemption** and the `/api/logo` cache header — *was P3-I; raised to P2 as a real runtime availability concern* | D-01, D-02 · `RUNTIME` + `E2` exclusion | Application excluded by four independent barriers; upstream `8b17df4621` states the limiting moved to the edge | fork-owned | Availability only. No application defect | **sdb** (D-01) · upstream (D-02) | `REDIRECTED` — deployment layer; **no cal.forte implementation issue** |
+| **P2-N** | Security hardening | **`disable-signup` bypass via non-team verification tokens** — validate the token's `teamId` before opening the gate; consume the token on every path it honours | F-04 · `E1` | `ensureSignupIsEnabled` returns before validation; non-team tokens are never consumed and are replayable for 24h | upstream-inherited | A documented registration control that does not hold as documented. **No live bypass executed** | cal.forte | `REPRESENTED_BY_ISSUE` — [#38](https://github.com/rubennati/cal.diy/issues/38) |
+| **P2-O** | Productization | **Reachable hosted-Cal upsells** — the `$15/user/mo` onboarding chooser that dead-ends in a 404, and the `cal.com/signup` block that posts a booker's email to a third party | F-13, F-14 · `E2` | Both `ACTIVE_AND_REACHABLE` in a fresh install; `hideBranding` defaults `false` | upstream-inherited | Privacy — booker email disclosed to a third party in a URL query string | cal.forte | `REPRESENTED_BY_ISSUE` — [#39](https://github.com/rubennati/cal.diy/issues/39) |
 
 ### P3
 
 | ID | Type | Candidate | Evidence | Current state | Provenance | Target | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **P3-A** | Maintenance | **Dead endpoint / client configuration cleanup** — `TeamsFilter`, `filterSegments`/`payments` routers, `/enterprise`, `/upgrade`, `UpgradeTip`, orphan watchlist containers, dead Kbar and settings-nav entries, `apps/web/components/security/*`, licence-purchase mutations, `apps/web/public/upgrade/*` | F-06, F-10, F-11, F-12, F-17, F-18, F-23 | `DEAD_RESIDUE` / `ORPHAN_*` | fork-owned | cal.forte | `REMOVE_DEAD_RESIDUE` — one batched, single-purpose change |
+| **P3-A** | Maintenance | **Dead endpoint / client configuration cleanup** — `TeamsFilter`, `filterSegments`/`payments` routers, `/enterprise`, `/upgrade`, `UpgradeTip`, orphan watchlist containers, dead Kbar and settings-nav entries, `apps/web/components/security/*`, licence-purchase mutations, `apps/web/public/upgrade/*` | F-06, **F-09**, F-10, F-11, F-12, F-17, F-18, F-23 | `DEAD_RESIDUE` / `ORPHAN_*` | fork-owned | cal.forte | `REMOVE_DEAD_RESIDUE` — one batched, single-purpose change |
 | **P3-B** | Maintenance | **i18next warning** — App Router pages only; `warnOnce`-deduped | F-31 | Upstream-shaped; touches every translated component | upstream | cal.forte | `DOCUMENT_ONLY` — do not refactor |
 | **P3-C** | Maintenance | **`markdownToSafeHTML` bundle warning** — deliberate guard, sanitisation unaffected | F-31 | 17 importers, 9 client components | upstream | cal.forte | `DOCUMENT_ONLY` |
 | **P3-D** | Branding | **Residual Cal.com references** — constants first (`SUPPORT_MAIL_ADDRESS`, `COMPANY_NAME`, `ROADMAP`, `CALCOM_PRIVATE_API_ROUTE`, `CONSOLE_URL`), then the reachable user-facing ones (`error-page.tsx:92`, `sendNotification.ts:15`) | F-16 · [SELF_HOST_PRODUCTIZATION.md](SELF_HOST_PRODUCTIZATION.md) §6 | 47 files carry the literal; most are app-store metadata that legitimately names upstream | fork-owned | cal.forte | `SAFE_TO_EVALUATE` — **preserve `LICENSE` notices** |
@@ -882,13 +941,79 @@ alters a public API's behaviour.
 | **P3-F** | Security hardening | **CSV formula-prefix neutralisation** | F-27 | Org-gated; live consumer is the bookings export | external-fork | cal.forte | `SAFE_TO_EVALUATE` |
 | **P3-G** | Security hardening | **HitPay `message` origin validation** | F-29 | App off by default; impact client-side only | fork-owned | cal.forte | `DEFERRED` |
 | **P3-H** | Maintenance | **Documentation corrections** (§9.2) | — | — | fork-owned | cal.forte | `DOCUMENT_ONLY` |
-| **P3-I** | Deployment | **Static-asset rate-limit exemption** and the `/api/logo` cache header | D-01, D-02 | Application excluded with four barriers | fork-owned | **sdb** (D-01) · upstream (D-02) | `NOT_APPLICABLE` here |
+| **P3-I** | Deployment | *(reclassified — see **P2-M** in the P2 table; retained as a pointer so the id does not go dark)* | D-01, D-02 | — | — | **sdb** | `REDIRECTED` |
 
 **No P0 is assigned.** Nothing in this audit meets the bar of a confirmed severe or actively exploitable
 issue on a stock deployment. F-01 is the most serious finding and is deliberately capped at P1 because its
 trigger is data-gated and no exploit was demonstrated.
 
-## 11. Proposed Issue Set — Not Created
+### 10.1 Finding coverage — every finding accounted for
+
+Completeness check for the registry above. **Every finding defined in §5 appears here exactly once**,
+with the candidate that carries it and its current disposition. A finding may be *represented* without
+having a candidate of its own — bundling is recorded explicitly rather than left implicit.
+
+Dispositions: `REPRESENTED_BY_ISSUE` · `MERGED_INTO_EXISTING_ISSUE` · `REDIRECTED` ·
+`DOCUMENTED_ONLY` · `INTENTIONALLY_UNFILED` · `NO_ACTION`.
+
+| Finding | Candidate | GitHub | Disposition |
+| --- | --- | --- | --- |
+| **F-01** | P1-A | [#13](https://github.com/rubennati/cal.diy/issues/13) | `REPRESENTED_BY_ISSUE` |
+| **F-02** | P1-D | [#14](https://github.com/rubennati/cal.diy/issues/14) | `REPRESENTED_BY_ISSUE` |
+| **F-03** | P1-A | [#13](https://github.com/rubennati/cal.diy/issues/13) | `MERGED_INTO_EXISTING_ISSUE` — distinct root cause, shared reachability gate and fixture |
+| **F-04** | P2-N | [#38](https://github.com/rubennati/cal.diy/issues/38) | `REPRESENTED_BY_ISSUE` |
+| **F-05** | P1-B | [#32](https://github.com/rubennati/cal.diy/issues/32) | `REPRESENTED_BY_ISSUE` |
+| **F-06** | P2-F · P3-A | [#34](https://github.com/rubennati/cal.diy/issues/34) · [#27](https://github.com/rubennati/cal.diy/issues/27) | `REPRESENTED_BY_ISSUE` — check built by P2-F, removals executed by P3-A |
+| **F-07** | P2-A | [#20](https://github.com/rubennati/cal.diy/issues/20) | `REPRESENTED_BY_ISSUE` |
+| **F-07a** | P2-A | [#19](https://github.com/rubennati/cal.diy/issues/19) | `REPRESENTED_BY_ISSUE` |
+| **F-07b** | P2-A | [#21](https://github.com/rubennati/cal.diy/issues/21) | `REPRESENTED_BY_ISSUE` — deferred pending P2-A's verdict |
+| **F-08** | P2-G | [#28](https://github.com/rubennati/cal.diy/issues/28) | `REPRESENTED_BY_ISSUE` |
+| **F-09** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` — batched dead-residue removal |
+| **F-10** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` |
+| **F-11** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` |
+| **F-12** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` |
+| **F-13** | P2-O | [#39](https://github.com/rubennati/cal.diy/issues/39) | `REPRESENTED_BY_ISSUE` |
+| **F-14** | P2-O | [#39](https://github.com/rubennati/cal.diy/issues/39) | `REPRESENTED_BY_ISSUE` |
+| **F-15** | P2-C · P2-E | [#36](https://github.com/rubennati/cal.diy/issues/36) · [#30](https://github.com/rubennati/cal.diy/issues/30) | `REPRESENTED_BY_ISSUE` — design in P2-C, drift detection in P2-E |
+| **F-16** | P3-D | [#24](https://github.com/rubennati/cal.diy/issues/24) · [#26](https://github.com/rubennati/cal.diy/issues/26) | `REPRESENTED_BY_ISSUE` — **P3** (see §10.2) |
+| **F-17** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` |
+| **F-18** | P3-A | [#27](https://github.com/rubennati/cal.diy/issues/27) | `MERGED_INTO_EXISTING_ISSUE` |
+| **F-19** | P2-D · P2-E | [#37](https://github.com/rubennati/cal.diy/issues/37) · [#30](https://github.com/rubennati/cal.diy/issues/30) | `REPRESENTED_BY_ISSUE` — remediation in P2-D, detection in P2-E |
+| **F-20** | P2-K · P2-E | [#22](https://github.com/rubennati/cal.diy/issues/22) | `REPRESENTED_BY_ISSUE` |
+| **F-21** | P2-H | [#23](https://github.com/rubennati/cal.diy/issues/23) | `REPRESENTED_BY_ISSUE` — blocked by P2-K |
+| **F-22** | P1-A | [#13](https://github.com/rubennati/cal.diy/issues/13) | `MERGED_INTO_EXISTING_ISSUE` — the conflicting setup paths determine F-01's reachability; on #13's checklist |
+| **F-23** | P2-B · P3-A | [#35](https://github.com/rubennati/cal.diy/issues/35) · [#27](https://github.com/rubennati/cal.diy/issues/27) | `REPRESENTED_BY_ISSUE` — diagnostics in P2-B, its dead duplicate component set in P3-A |
+| **F-24** | P2-L | [#15](https://github.com/rubennati/cal.diy/issues/15) | `REPRESENTED_BY_ISSUE` |
+| **F-25** | P3-E | [#16](https://github.com/rubennati/cal.diy/issues/16) | `REPRESENTED_BY_ISSUE` |
+| **F-26** | P3-E | [#16](https://github.com/rubennati/cal.diy/issues/16) | `MERGED_INTO_EXISTING_ISSUE` — folded with F-25 |
+| **F-27** | P3-F | [#17](https://github.com/rubennati/cal.diy/issues/17) | `REPRESENTED_BY_ISSUE` |
+| **F-28** | P2-I | [#18](https://github.com/rubennati/cal.diy/issues/18) | `REPRESENTED_BY_ISSUE` |
+| **F-29** | P3-G | [#31](https://github.com/rubennati/cal.diy/issues/31) | `REPRESENTED_BY_ISSUE` — deferred |
+| **F-30** | — | — | `NO_ACTION` — inert PostHog instrumentation: `posthog.capture` calls exist but there is no `posthog.init` anywhere, so they cannot fire. Static reading cannot prove zero network egress; the open question is §12 item 7. No work item until that is answered |
+| **F-31** | P3-B · P3-C | — | `DOCUMENTED_ONLY` — upstream-shaped console warnings; sanitisation is unaffected and a refactor would touch every translated component |
+| **F-32** | P3-H | — | **`DOCUMENTED_ONLY` / `INTENTIONALLY_UNFILED`** — `agents/rules/**` is governed by [AGENTS.md](../AGENTS.md) and belongs to a separate agent-governance maintenance scope |
+| **D-01** | P2-M | — | `REDIRECTED` — `secure-docker-blueprint`; **no cal.forte implementation issue** |
+| **D-02** | P2-M | — | `REDIRECTED` — raise upstream; a contributing factor to D-01, not its cause |
+
+Candidates that carry **no** `F-xx` because they are design or process work, not defects: **P1-C**
+(team invariants → [#33](https://github.com/rubennati/cal.diy/issues/33)), **P2-E** (env preflight →
+[#30](https://github.com/rubennati/cal.diy/issues/30)), **P2-J** (deployment smoke checks → `sdb`),
+**P3-H** (documentation corrections → [#25](https://github.com/rubennati/cal.diy/issues/25)). The
+upstream-drift reporting concept (`C-09` → [#29](https://github.com/rubennati/cal.diy/issues/29)) and
+the MIT-`LICENSE`-in-image item ([LICENSE_AND_PROVENANCE_REVIEW.md](LICENSE_AND_PROVENANCE_REVIEW.md)
+§6 item 2 → [#40](https://github.com/rubennati/cal.diy/issues/40)) likewise have no `F-xx`.
+
+### 10.2 Priority decisions that were contested
+
+Two priorities disagreed between this registry and the issue set. Both are now settled here, and the
+detail sections and the filed issues match.
+
+| Subject | Settled at | Reasoning |
+| --- | --- | --- |
+| **F-16** — branding build args not passed by the release action (P3-D) | **P3** | A self-host branding/productization defect. Not security-critical and not a core functional failure. The **Terms/Privacy** configuration work (F-15 / P2-C) stays separately at **P2**, because a wrong legal URL is shown to third parties on the public booking page |
+| **D-01** — mass 429 on static resources | **P2** | A real runtime availability concern, even though it belongs to `secure-docker-blueprint` rather than cal.forte application code. Carried as **P2-M**, `REDIRECTED`, with no cal.forte implementation issue |
+
+## 11. Issue Set — Proposal As Authored, With Filed Issues
 
 > **Superseded 2026-08-26 — the issues now exist.** When this section was drafted,
 > `gh issue list -R rubennati/cal.diy` reported *"the 'rubennati/cal.diy' repository has disabled
@@ -900,12 +1025,12 @@ trigger is data-gated and no exploit was demonstrated.
 > The proposal below is kept as written, because it is the reasoning behind the set rather than a
 > duplicate of it. Mapping for the P1 items:
 >
-> | Candidate | Issue |
-> | --- | --- |
-> | P1-A · deny-by-default permission service | [#13](https://github.com/rubennati/cal.diy/issues/13) |
-> | P1-B · restore the apiKeys tRPC route | [#32](https://github.com/rubennati/cal.diy/issues/32) |
-> | P1-C · team role/ownership invariants | [#33](https://github.com/rubennati/cal.diy/issues/33) |
-> | P1-D · public slot resolution | [#14](https://github.com/rubennati/cal.diy/issues/14) |
+> | Candidate | Proposal | Issue |
+> | --- | --- | --- |
+> | P1-A · deny-by-default permission service | I-01 | [#13](https://github.com/rubennati/cal.diy/issues/13) |
+> | P1-B · restore the apiKeys tRPC route | I-03 | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+> | P1-C · team role/ownership invariants | I-02 | [#33](https://github.com/rubennati/cal.diy/issues/33) |
+> | P1-D · public slot resolution | I-05 | [#14](https://github.com/rubennati/cal.diy/issues/14) |
 >
 > **One filed issue rests on a refuted claim.**
 > [#25 `docs(ai): correct the stale branding build-arg and Cal.com-literal claims`](https://github.com/rubennati/cal.diy/issues/25)
@@ -914,49 +1039,47 @@ trigger is data-gated and no exploit was demonstrated.
 > and none of the three `.ts`/`.tsx` hits is a `package.json`. The build-arg half of that issue is
 > sound (F-16); the literal-count half needs restating before it is worked.
 
-Deliberately **not** 17 flat issues. One master tracker, high-value items standing alone, small related
-defects grouped.
+Deliberately not a flat list. One master tracker, high-value items standing alone, small related defects
+grouped. **Proposal ids below are `I-nn` — an internal namespace.** They are *not* GitHub numbers; the
+real issue is given in its own column. **In this document `#nn` always means a real GitHub artifact.**
+The two preserved evidence records ([EXTERNAL_FORK_INTAKE_EVIDENCE.md](EXTERNAL_FORK_INTAKE_EVIDENCE.md),
+[RUNTIME_VALIDATION_FINDINGS.md](RUNTIME_VALIDATION_FINDINGS.md)) additionally use bare `#n` for positions
+within their own proposed hierarchies; those are list positions, not issues.
 
 ### Master
 
 **`[tracker] External fork & self-host improvement registry`** — `MAINTENANCE`
-Scope: index the five audit documents, the candidate registry, and the standing rules for upstream vs
+Scope: index the audit document set listed in the header table, the candidate registry, and the standing rules for upstream vs
 external-fork provenance. Links every child. Records that no external patch was adopted and no code
 changed. Acceptance: every child issue below exists and is linked; `docs/` audits are referenced rather
 than duplicated.
 
 ### Independent issues
 
-| # | Title | Category | Prio | Blocks / blocked by | Scope | Acceptance evidence |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | `security(pbac): replace unconditional "return true" permission stubs with a deny-by-default service` | **SECURITY REVIEW** | P1 | blocks #2, #6 | Consolidate 18 inlined stubs into one explicitly-named module returning `false` / `[]`; add a fork guard so a permissive stub cannot return through a sync. Stage per file — this exceeds the diff-size guidance. | The 14 tests in [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) §5 pass (T-01…T-14 reject, C-01…C-04 still succeed); fork guard fails CI on a reintroduced stub |
-| 2 | `[decision] team role and ownership invariants before any team surface is enabled` | **SECURITY REVIEW** | P1 | blocked by #1; blocks #7 | Decide the 22 invariants in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §6, explicitly including ADMIN→OWNER **invite** escalation and the slug partial unique index. Design only. | A written invariant set with a disposition per row, and a recorded provenance rule barring restoration of historical EE code |
-| 3 | `fix(api): restore the missing apiKeys tRPC route and correct its ledger row` | **CONFIRMED BUG** | P1 | none | `git cherry-pick -x 07a288bbd8` (4 lines). Update `UPSTREAM_REVIEW_LEDGER.md:76` to `integrated-full` **and record why the original rationale was wrong**, per the `0d164da8dd` precedent. | API key create/edit/delete succeed from `/settings/developer/api-keys`; parity check (#4) green |
-| 4 | `ci(forte): assert tRPC client/router/adapter parity and prune dead endpoint surface` | **MAINTENANCE** | P2 | pairs with #3 | ~20-line static check across the three legs; remove the 7 orphan `ENDPOINTS` entries and the stale `appsRouter` adapter. No runtime needed. | CI fails on a deliberately removed adapter; 35/27/28 reconciles to a clean set |
-| 5 | `fix(slots): resolve event types by owner and stop the slug-only fallback` | **CONFIRMED BUG** | P1 | none | Restore owner/team resolution in `getEventTypeId`; decide whether the fallback throws `NOT_FOUND` — a public-API behaviour change requiring `api-no-breaking-changes` review. | Team private-link booking renders the correct availability; a non-existent username returns `NOT_FOUND` rather than a foreign event type; personal happy path unchanged |
-| 6 | `[decision] does cal.forte need multi-tenant team management, and at what cost` | **FEATURE EVALUATION** | P2 | blocked by #1 and #2 | Product/architecture decision only. If pursued: implement independently, never cherry-pick. | A recorded decision plus updates to `FORK_DIVERGENCE.md`, `.ai/state.md` and `.ai/branding.md` if the edition definition changes |
-| 7 | `fix(2fa): surface every TOTP setup failure and disable the toggle when setup is impossible` | **CONFIRMED BUG** | P2 | none | Map all six 400 paths to distinct actionable strings; disable the toggle where structurally impossible. **Server-side checks unchanged.** | Regression suite per §12; wrong password surfaces as such; a non-CAL account states the reason |
-| 8 | `[decision] self-host Terms and Privacy URL configuration` | **DEPLOYMENT** | P2 | none | Choose among the four assessed options; recommendation is local relative routes as default with runtime substitution as override. | A built image whose Terms/Privacy links do not point at `cal.com`; verified by grepping the bundle |
-| 9 | `fix(branding): pass the fork company name and support address as image build args` | **CONFIRMED BUG** | P2 | pairs with #8 | Two build args in `docker-build-and-test/action.yml`. Qualify the `FORK_DIVERGENCE.md` row. | Built bundle contains the fork values, not `Cal.com, Inc.` / `help@cal.com` |
-| 10 | `[audit] identify upstream fixes silently reverted by the Cal.diy refactor (#28903)` | **MAINTENANCE** | P2 | none | Produce dispositions, not patches. Extend the scan window past 2026-01-01. Give `ab21c7f805` a baseline decision. | A row per reverted path with an intentional/accidental verdict; a documented detection method in `UPSTREAM_SYNC.md` |
-| 11 | `chore(auth): decide whether OUTLOOK_LOGIN_ENABLED is wired through or removed` | **FEATURE EVALUATION** | P2 | blocks #12 | Two legitimate opposite directions. Decide explicitly; if removed, add a guard. | A recorded decision and a `FORK_DIVERGENCE.md` row |
-| 12 | `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` | **SECURITY REVIEW** | P2 | blocked by #11 | Add a validated tenant env var defaulting to `common` (preserves current behaviour). | Unset / GUID / domain forms all work; the `xms_edov` guard still fires; value never inlined client-side |
-| 13 | `fix(googlecalendar): keep a created event when the enrichment PATCH fails` | **CONFIRMED BUG** | P2 | none | Covers **both** PATCH sites. Converting a throw into a warning is a deliberate behaviour change, not a side effect. | Unit tests incl. a non-retryable 403; no orphaned Google event on PATCH failure |
-| 14 | `fix(upstream): restore the truncateOnWord maxLength fix reverted by #28903` | **CONFIRMED BUG** | P2 | none | `git cherry-pick -x ea0c92a267`; restores its test block. | OG description for a space-less 148-char description is no longer `"..."`; restored tests pass |
-| 15 | `chore: remove dead stripped-feature residue` | **MAINTENANCE** | P3 | after #4 | One batched change covering F-06/F-10/F-11/F-12/F-17/F-18/F-23 residue. Confirm zero importers immediately before deleting — the type-check gate covers 8 of 113 packages. | No route or import regressions; bundle shrinks; `FORK_DIVERGENCE.md` records the removals |
-| 16 | `fix(lib): harden extractBaseEmail and getProviderName against malformed input` | **CONFIRMED BUG** | P3 | none | Two small independent defects, grouped because both are input-handling in `packages/lib` with no demonstrated bypass. | Unit tests for `"foo"`, `"a@b@c"`, `"integrations:"` |
-| 17 | `security(export): neutralise spreadsheet formula prefixes in CSV export` | **SECURITY REVIEW** | P3 | none | Org-gated today; note that `ORGANIZATIONS_ENABLED` is a Dockerfile ARG not passed by the release action, so reachability changes if orgs are ever enabled. Do **not** justify on the dead members-table path. | Values beginning `= + - @ TAB CR` are neutralised; round-trip tests |
-| 18 | `[deployment] exempt static asset paths from API-style rate limiting` | **DEPLOYMENT** | P2 | none | **`secure-docker-blueprint`.** Application excluded here with four independent barriers. | 429s stop on `/app-store/*`; captured headers match no in-app fingerprint |
+| Proposal | Title | Category | Prio | GitHub | Blocks / blocked by | Scope | Acceptance evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **I-01** | `security(pbac): replace unconditional "return true" permission stubs with a deny-by-default service` | **SECURITY REVIEW** | P1 | [#13](https://github.com/rubennati/cal.diy/issues/13) | blocks I-02, I-06 | Consolidate 18 inlined stubs into one explicitly-named module returning `false` / `[]`; add a fork guard so a permissive stub cannot return through a sync. Stage per file — this exceeds the diff-size guidance. | The 14 tests in [PBAC_PLACEHOLDER_AUDIT.md](PBAC_PLACEHOLDER_AUDIT.md) §5 pass (T-01…T-14 reject, C-01…C-04 still succeed); fork guard fails CI on a reintroduced stub |
+| **I-02** | `[decision] team role and ownership invariants before any team surface is enabled` | **SECURITY REVIEW** | P1 | [#33](https://github.com/rubennati/cal.diy/issues/33) | blocked by I-01; blocks I-07 | Decide the 22 invariants in [TEAM_CAPABILITY_EVALUATION.md](TEAM_CAPABILITY_EVALUATION.md) §6, explicitly including ADMIN→OWNER **invite** escalation and the slug partial unique index. Design only. | A written invariant set with a disposition per row, and a recorded provenance rule barring restoration of historical EE code |
+| **I-03** | `fix(api): restore the missing apiKeys tRPC route and correct its ledger row` | **CONFIRMED BUG** | P1 | [#32](https://github.com/rubennati/cal.diy/issues/32) | none | `git cherry-pick -x 07a288bbd8` (4 lines). Update `UPSTREAM_REVIEW_LEDGER.md:76` to `integrated-full` **and record why the original rationale was wrong**, per the `0d164da8dd` precedent. | API key create/edit/delete succeed from `/settings/developer/api-keys`; parity check (I-04) green |
+| **I-04** | `ci(forte): assert tRPC client/router/adapter parity and prune dead endpoint surface` | **MAINTENANCE** | P2 | [#34](https://github.com/rubennati/cal.diy/issues/34) | pairs with I-03 | ~20-line static check across the three legs; remove the 7 orphan `ENDPOINTS` entries and the stale `appsRouter` adapter. No runtime needed. | CI fails on a deliberately removed adapter; 35/27/28 reconciles to a clean set |
+| **I-05** | `fix(slots): resolve event types by owner and stop the slug-only fallback` | **CONFIRMED BUG** | P1 | [#14](https://github.com/rubennati/cal.diy/issues/14) | none | Restore owner/team resolution in `getEventTypeId`; decide whether the fallback throws `NOT_FOUND` — a public-API behaviour change requiring `api-no-breaking-changes` review. | Team private-link booking renders the correct availability; a non-existent username returns `NOT_FOUND` rather than a foreign event type; personal happy path unchanged |
+| **I-06** | `[decision] does cal.forte need multi-tenant team management, and at what cost` | **FEATURE EVALUATION** | P2 | [#28](https://github.com/rubennati/cal.diy/issues/28) | blocked by I-01 and I-02 | Product/architecture decision only. If pursued: implement independently, never cherry-pick. | A recorded decision plus updates to `FORK_DIVERGENCE.md`, `.ai/state.md` and `.ai/branding.md` if the edition definition changes |
+| **I-07** | `fix(2fa): surface every TOTP setup failure and disable the toggle when setup is impossible` | **CONFIRMED BUG** | P2 | [#35](https://github.com/rubennati/cal.diy/issues/35) | none | Map all six 400 paths to distinct actionable strings; disable the toggle where structurally impossible. **Server-side checks unchanged.** | Regression suite per §12; wrong password surfaces as such; a non-CAL account states the reason |
+| **I-08** | `[decision] self-host Terms and Privacy URL configuration` | **DEPLOYMENT** | P2 | [#36](https://github.com/rubennati/cal.diy/issues/36) | none | Choose among the four assessed options; recommendation is local relative routes as default with runtime substitution as override. | A built image whose Terms/Privacy links do not point at `cal.com`; verified by grepping the bundle |
+| **I-09** | `fix(branding): pass the fork company name and support address as image build args` | **CONFIRMED BUG** | P3 | [#24](https://github.com/rubennati/cal.diy/issues/24) | pairs with I-08 | Two build args in `docker-build-and-test/action.yml`. Qualify the `FORK_DIVERGENCE.md` row. | Built bundle contains the fork values, not `Cal.com, Inc.` / `help@cal.com` |
+| **I-10** | `[audit] identify upstream fixes silently reverted by the Cal.diy refactor (#28903)` | **MAINTENANCE** | P2 | [#20](https://github.com/rubennati/cal.diy/issues/20) | none | Produce dispositions, not patches. Extend the scan window past 2026-01-01. Give `ab21c7f805` a baseline decision. | A row per reverted path with an intentional/accidental verdict; a documented detection method in `UPSTREAM_SYNC.md` |
+| **I-11** | `chore(auth): decide whether OUTLOOK_LOGIN_ENABLED is wired through or removed` | **FEATURE EVALUATION** | P2 | [#22](https://github.com/rubennati/cal.diy/issues/22) | blocks I-12 | Two legitimate opposite directions. Decide explicitly; if removed, add a guard. | A recorded decision and a `FORK_DIVERGENCE.md` row |
+| **I-12** | `feat(auth): allow restricting Microsoft sign-in to a configured Entra tenant` | **SECURITY REVIEW** | P2 | [#23](https://github.com/rubennati/cal.diy/issues/23) | blocked by I-11 | Add a validated tenant env var defaulting to `common` (preserves current behaviour). | Unset / GUID / domain forms all work; the `xms_edov` guard still fires; value never inlined client-side |
+| **I-13** | `fix(googlecalendar): keep a created event when the enrichment PATCH fails` | **CONFIRMED BUG** | P2 | [#18](https://github.com/rubennati/cal.diy/issues/18) | none | Covers **both** PATCH sites. Converting a throw into a warning is a deliberate behaviour change, not a side effect. | Unit tests incl. a non-retryable 403; no orphaned Google event on PATCH failure |
+| **I-14** | `fix(upstream): restore the truncateOnWord maxLength fix reverted by #28903` | **CONFIRMED BUG** | P2 | [#15](https://github.com/rubennati/cal.diy/issues/15) | none | `git cherry-pick -x ea0c92a267`; restores its test block. | OG description for a space-less 148-char description is no longer `"..."`; restored tests pass |
+| **I-15** | `chore: remove dead stripped-feature residue` | **MAINTENANCE** | P3 | [#27](https://github.com/rubennati/cal.diy/issues/27) | after I-04 | One batched change covering F-06/F-10/F-11/F-12/F-17/F-18/F-23 residue. Confirm zero importers immediately before deleting — the type-check gate covers 8 of 113 packages. | No route or import regressions; bundle shrinks; `FORK_DIVERGENCE.md` records the removals |
+| **I-16** | `fix(lib): harden extractBaseEmail and getProviderName against malformed input` | **CONFIRMED BUG** | P3 | [#16](https://github.com/rubennati/cal.diy/issues/16) | none | Two small independent defects, grouped because both are input-handling in `packages/lib` with no demonstrated bypass. | Unit tests for `"foo"`, `"a@b@c"`, `"integrations:"` |
+| **I-17** | `security(export): neutralise spreadsheet formula prefixes in CSV export` | **SECURITY REVIEW** | P3 | [#17](https://github.com/rubennati/cal.diy/issues/17) | none | Org-gated today; note that `ORGANIZATIONS_ENABLED` is a Dockerfile ARG not passed by the release action, so reachability changes if orgs are ever enabled. Do **not** justify on the dead members-table path. | Values beginning `= + - @ TAB CR` are neutralised; round-trip tests |
+| **I-18** | `[deployment] exempt static asset paths from API-style rate limiting` | **DEPLOYMENT** | P2 | *not filed — `sdb`* | none | **`secure-docker-blueprint`.** Application excluded here with four independent barriers. | 429s stop on `/app-store/*`; captured headers match no in-app fingerprint |
 
-**Not proposed as issues:** every item in [EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) §7, plus P3-B
-and P3-C (document-only), plus D-02 (raise upstream).
+**Not filed as cal.forte issues:** every item in [EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md) §7; P3-B and P3-C (`DOCUMENTED_ONLY`); P3-H's own scope, which is `INTENTIONALLY_UNFILED` for `agents/rules/**` (F-32); F-30 (`NO_ACTION`); and D-01/D-02 (`REDIRECTED` — `sdb` and upstream respectively). The complete per-finding accounting is §10.1.
 
-**Labels worth creating alongside** — type (`security-candidate`, `reliability`, `maintenance`,
-`branding`, `deployment`), priority (`P0`–`P3`), evidence (`E0`–`E3`), disposition mirroring the ledger
-vocabulary, provenance (`src:upstream`, `src:upstream-regression`, `src:external-fork`, `src:fork-owned`),
-and scope (`scope:cal.forte`, `scope:secure-docker-blueprint`). The evidence tier is what stops a P2
-hardening item from reading as a P0 vulnerability.
-
+**Labels — current state.** The taxonomy proposed here was created in part. `rubennati/cal.diy` now carries `external-intake`, `needs-evaluation`, the `type:*` family (`security-candidate`, `reliability`, `optimization`, `maintenance`, `branding`, `deployment`), `priority:P1`–`priority:P3`, and the `decision:*` family (`accepted`, `deferred`, `rejected`, `not-applicable`, `already-covered`), alongside GitHub's nine defaults. The proposed **evidence** (`E0`–`E3`), **provenance** (`src:*`) and **scope** (`scope:*`) families were **not** created; evidence tiers are carried in the issue bodies instead. The reasoning stands: the evidence tier is what stops a P2 hardening item from reading as a P0 vulnerability.
 ## 12. Findings That Still Require Runtime Evidence
 
 | # | Question | How to answer (all read-only) |
