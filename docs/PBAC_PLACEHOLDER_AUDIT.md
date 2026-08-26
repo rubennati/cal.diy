@@ -291,9 +291,25 @@ There is also a latent index bug worth noting: `hasPermissionForFiltered` is bui
 `.filter(...)` (line 122) but indexed in parallel with the *filtered* `teamsData` (line 154).
 The two arrays only align when every check passes — which, with the stub, they always do.
 
+### 3.9 Watchlist services — `UNREACHABLE`
+
+`OrganizationWatchlistOperationsService` guards `watchlist.create`, `watchlist.update` and
+`watchlist.delete` behind the stub (lines 49-56, 64, 69, 79, 129);
+`OrganizationWatchlistQueryService` guards reads (line 41). Both are constructed only by
+`packages/features/di/watchlist/containers/watchlist.ts:95,123`, and
+`getOrganizationWatchlistOperationsService` / `getOrganizationWatchlistQueryService` have
+**no callers anywhere in the tree**.
+
+**Verdict:** `UNREACHABLE` today. This is the clearest `REMOVE_DEAD_RESIDUE` candidate in the
+audit: dead code that would become a global blocklist-mutation hole the moment anything imports it.
+
 ### 3.10 Webhook ownership middleware — missing team branch (independent of the stubs)
 
 Not a PBAC placeholder, but found while tracing §3.5 and materially more serious.
+
+Recorded in the master audit as **F-03**, and merged into the scope of GitHub issue **#13**
+(P1-A) because it shares F-01's reachability gate and test fixture — **not** because it shares
+its root cause. See [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §5.1.
 
 `packages/trpc/server/routers/viewer/webhook/util.ts:8-66` is the ownership middleware behind
 **every** `viewer.webhook` endpoint (`list`, `get`, `create`, `edit`, `delete`, `testTrigger`,
@@ -330,18 +346,6 @@ i.e. a team webhook or a platform (OAuth-client) webhook. Unreachable on a clean
 secret = "s")`; as user `B` (not a member of `T`) call `viewer.webhook.get({ id })` and assert
 `FORBIDDEN` and that `secret` is not returned; call `viewer.webhook.edit({ id, subscriberUrl:
 "https://attacker.example" })` and assert `FORBIDDEN` and that the row is unchanged.
-
-### 3.9 Watchlist services — `UNREACHABLE`
-
-`OrganizationWatchlistOperationsService` guards `watchlist.create`, `watchlist.update` and
-`watchlist.delete` behind the stub (lines 49-56, 64, 69, 79, 129);
-`OrganizationWatchlistQueryService` guards reads (line 41). Both are constructed only by
-`packages/features/di/watchlist/containers/watchlist.ts:95,123`, and
-`getOrganizationWatchlistOperationsService` / `getOrganizationWatchlistQueryService` have
-**no callers anywhere in the tree**.
-
-**Verdict:** `UNREACHABLE` today. This is the clearest `REMOVE_DEAD_RESIDUE` candidate in the
-audit: dead code that would become a global blocklist-mutation hole the moment anything imports it.
 
 ## 4. Fail-Closed Sites — `SAFE_BY_OTHER_CONTROL`
 
@@ -399,7 +403,12 @@ inserts.
 | T-13 | `B` | `viewer.webhook.get({ id })` for a `T`-owned webhook | `FORBIDDEN`; `secret` not returned |
 | T-14 | `B` | `viewer.webhook.edit({ id, subscriberUrl })` for a `T`-owned webhook | `FORBIDDEN`; row unchanged |
 
-Control assertions that must keep passing (guard against over-correction):
+Control assertions that must keep passing (guard against over-correction). **Note the namespace
+collision:** these `C-nn` ids are *control assertions local to this test plan* and are unrelated to the
+`C-nn` external-intake candidate ids used in
+[SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §1.1 and
+[EXTERNAL_FORK_INTAKE.md](EXTERNAL_FORK_INTAKE.md). Where both appear together, this document's are
+written `C-01 (control)`.
 
 | ID | As | Call | Expected |
 | --- | --- | --- | --- |

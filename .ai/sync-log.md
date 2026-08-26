@@ -362,8 +362,17 @@ misreading. Editing a disposition row is a review decision, not a typo fix, so i
 deliberate update following the `0d164da8dd` precedent of keeping reversals visible.
 
 **Intentionally NOT taken:** no commit to `develop` directly, no push, no cherry-pick, no GitHub
-issue (issues are disabled on the repository), no ledger edit, no application-code change, no Teams
-activation, no authorization change, no licence notice removed.
+issue, no ledger edit, no application-code change, no Teams activation, no authorization change, no
+licence notice removed.
+
+**Concurrency note.** A separate process was writing into the same `docs/` tree during this pass and,
+between 04:26 and 04:33 on 2026-08-26, **enabled GitHub issues and filed 29** under tracker
+[#12](https://github.com/rubennati/cal.diy/issues/12). This consolidation filed none of them. Two
+consequences worth carrying forward: the audit documents' original "issues are disabled" statements are
+superseded (corrected in place), and issue
+[#25](https://github.com/rubennati/cal.diy/issues/25) rests on a claim this pass refuted — the
+`Cal.com` literal appears in **47** files, not 3, and none of the three `.ts`/`.tsx` hits is a
+`package.json` author field.
 
 **Deployment-layer findings handed off (not this repository's):** D-01 mass 429 on static assets —
 application code excluded by four independent barriers, and upstream `8b17df4621` (#27674) states

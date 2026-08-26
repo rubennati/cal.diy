@@ -174,8 +174,11 @@ argument for making endpoint-parity and env-template checks blocking rather than
 
 Nothing is half-finished; these are decisions and follow-ups, not loose ends.
 
-1. **Issues are disabled on `rubennati/cal.diy`.** `gh issue list` reports it. None of the
-   proposed issues can be filed until this is changed in repository settings.
+1. ~~**Issues are disabled on `rubennati/cal.diy`.**~~ **Resolved 2026-08-26** — issues were
+   enabled and 29 were filed between 04:26 and 04:33 under tracker
+   [#12](https://github.com/rubennati/cal.diy/issues/12). Note that
+   [#25](https://github.com/rubennati/cal.diy/issues/25) rests on a claim a later verification
+   pass refuted; see [SELF_HOST_CAPABILITY_AUDIT.md](SELF_HOST_CAPABILITY_AUDIT.md) §8.
 2. **`UPSTREAM_REVIEW_LEDGER.md:76` still reads `deferred`** with the refuted rationale. The
    correction should record *why* the original decision was wrong, per the ledger's own
    convention that reversals stay visible (the `0d164da8dd` precedent).

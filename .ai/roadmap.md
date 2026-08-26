@@ -19,8 +19,15 @@ Steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md). Timelin
     fallback `NOT_FOUND` changes a public API's behaviour.
   - **P2-F — tRPC three-leg parity CI.** ~20 lines, no runtime, and it converts a whole class of
     silent breakage (which is how P1-B's defect survived four months) into a build failure.
-  Two blockers outside the code: GitHub issues are **disabled** on the repository, and nine findings
-  still need runtime or database evidence (master §12).
+  The registry is now filed as GitHub issues — tracker
+  [#12](https://github.com/rubennati/cal.diy/issues/12), children #13–#40, created 2026-08-26 by a
+  separate pass. P1s: [#13](https://github.com/rubennati/cal.diy/issues/13) (PBAC),
+  [#32](https://github.com/rubennati/cal.diy/issues/32) (API keys),
+  [#33](https://github.com/rubennati/cal.diy/issues/33) (team invariants),
+  [#14](https://github.com/rubennati/cal.diy/issues/14) (slots). Two caveats: nine findings still need
+  runtime or database evidence (master §12), and issue
+  [#25](https://github.com/rubennati/cal.diy/issues/25) needs restating — its `Cal.com`-literal premise
+  was refuted (master §8).
 
 - **Slim the runtime image** — the built image still ships dev/build tooling (vitest,
   esbuild, `@depot/cli`, trigger.dev) + Playwright test files, inflating both image size and

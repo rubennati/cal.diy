@@ -890,9 +890,29 @@ trigger is data-gated and no exploit was demonstrated.
 
 ## 11. Proposed Issue Set — Not Created
 
-**Blocking precondition:** `gh issue list -R rubennati/cal.diy` reports *"the 'rubennati/cal.diy'
-repository has disabled issues"*. Issues must be enabled in repository settings before any of this can be
-filed. That is an owner action; this pass performed no GitHub writes.
+> **Superseded 2026-08-26 — the issues now exist.** When this section was drafted,
+> `gh issue list -R rubennati/cal.diy` reported *"the 'rubennati/cal.diy' repository has disabled
+> issues"*. That is no longer true: issues were enabled and **29 were filed by a concurrent process**
+> between 04:26 and 04:33 on 2026-08-26, under tracker
+> [#12 `[External Intake] cal.forte external fork & improvement registry`](https://github.com/rubennati/cal.diy/issues/12).
+> **This consolidation pass filed none of them** and performed no GitHub write.
+>
+> The proposal below is kept as written, because it is the reasoning behind the set rather than a
+> duplicate of it. Mapping for the P1 items:
+>
+> | Candidate | Issue |
+> | --- | --- |
+> | P1-A · deny-by-default permission service | [#13](https://github.com/rubennati/cal.diy/issues/13) |
+> | P1-B · restore the apiKeys tRPC route | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+> | P1-C · team role/ownership invariants | [#33](https://github.com/rubennati/cal.diy/issues/33) |
+> | P1-D · public slot resolution | [#14](https://github.com/rubennati/cal.diy/issues/14) |
+>
+> **One filed issue rests on a refuted claim.**
+> [#25 `docs(ai): correct the stale branding build-arg and Cal.com-literal claims`](https://github.com/rubennati/cal.diy/issues/25)
+> derives from the assertion that the `Cal.com` literal now appears in "3 files, all `package.json`
+> author fields". §8 shows that is wrong twice — the true count across `apps/` + `packages/` is **47**,
+> and none of the three `.ts`/`.tsx` hits is a `package.json`. The build-arg half of that issue is
+> sound (F-16); the literal-count half needs restating before it is worked.
 
 Deliberately **not** 17 flat issues. One master tracker, high-value items standing alone, small related
 defects grouped.
