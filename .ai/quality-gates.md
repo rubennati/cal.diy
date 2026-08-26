@@ -25,11 +25,20 @@ For fork/release work:
   upstream telemetry module, its Jitsu endpoint/key, `next-collect`, or the
   `CALCOM_TELEMETRY_DISABLED` flag reappear through a sync
 
+**No markdown gate exists.** `biome check docs/` reports *"Checked 1 file"* — Biome has no markdown
+support configured here, and `lint-staged.config.mjs` covers only `js/ts/jsx/tsx` plus
+`schema.prisma`. Documentation formatting and link integrity are therefore **not** machine-verified
+by any gate. The 2026-08-26 audit validated its own output with an ad-hoc relative-link check; if
+documentation volume keeps growing, a link checker is the cheapest gate to add.
+
 **Coverage caveat — `type-check:ci` does not cover the repo.** turbo has 113 packages in
 scope but only the packages that *define* the script actually run one (7 upstream + this
 fork's `packages/lib`). Files with no importers are otherwise in no tsc program at all and
 rot silently — that is how `packages/lib/telemetry.ts` kept a dangling type reference for
-months. When auditing a package for dead or rotted code, check whether it defines
+months. The 2026-08-26 audit found the sharper case: the 18 `return true` permission stubs
+**type-check perfectly**, so neither tsc, Biome nor CodeQL flags `return true` in a function named
+`checkPermission` (`../docs/PBAC_PLACEHOLDER_AUDIT.md`). Neither does anything flag a deleted
+Next.js route whose router and UI remain wired (`../docs/SELF_HOST_CAPABILITY_AUDIT.md` F-05). When auditing a package for dead or rotted code, check whether it defines
 `type-check` before trusting a green CI run. Remaining gaps are listed in
 [roadmap.md](roadmap.md).
 

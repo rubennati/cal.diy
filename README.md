@@ -71,6 +71,21 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | [.ai/env-reference.md](.ai/env-reference.md) | every env var: meaning, format, priority, recommendation |
 | [.ai/branding.md](.ai/branding.md) | white-labeling (build vs runtime), CE-vs-EE table, paywall/teams reality |
 
+**Capability, security & licence audits (`docs/`)**
+
+Point-in-time forensic audits of the tree at `41689d1d6e`, consolidated 2026-08-26 from a static pass, a
+live-deployment session and an external-fork intake. They record evidence, not process — treat them as
+dated findings, not standing rules. The **master** carries the single ranked candidate registry.
+
+| Doc | What |
+|-----|------|
+| [docs/SELF_HOST_CAPABILITY_AUDIT.md](docs/SELF_HOST_CAPABILITY_AUDIT.md) | master inventory: active, stripped, stubbed, orphaned and residual capabilities + ranked candidates |
+| [docs/PBAC_PLACEHOLDER_AUDIT.md](docs/PBAC_PLACEHOLDER_AUDIT.md) | authorization placeholder call graph, per-endpoint verdicts, minimum reproducible tests |
+| [docs/TEAM_CAPABILITY_EVALUATION.md](docs/TEAM_CAPABILITY_EVALUATION.md) | team architecture, missing layers, role model, invariants required before any team feature |
+| [docs/LICENSE_AND_PROVENANCE_REVIEW.md](docs/LICENSE_AND_PROVENANCE_REVIEW.md) | MIT scope and notice duty, the AGPL/Commercial history boundary, what may not be restored |
+| [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PRODUCTIZATION.md) | legal URLs, residual hosted-Cal upsells, hard-coded `cal.com` references |
+| [docs/EXTERNAL_FORK_INTAKE.md](docs/EXTERNAL_FORK_INTAKE.md) | external-fork evidence register — discovery only, with per-claim verification verdicts |
+
 **Harden & secure**
 
 | Doc | What |
