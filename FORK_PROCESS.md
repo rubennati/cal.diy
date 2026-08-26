@@ -37,7 +37,8 @@ The goal is a simple operating model:
 Fork-owned changes should stay small and obvious.
 The authoritative list of current fork additions, modifications, and removals is
 [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md). A material fork-owned change is incomplete until
-that register records its rationale, evidence, maintenance rule, and release state.
+that register records its rationale, evidence, maintenance rule, and release state — and until
+it satisfies the [Definition of Done](#definition-of-done) below.
 
 Expected fork-owned areas:
 
@@ -55,6 +56,61 @@ Areas that should not drift casually:
 - cron and webhook behavior
 - Prisma schema and migrations
 - public route behavior
+
+## Definition of Done
+
+**A material change is not complete merely because the code works and the tests pass.**
+
+This is the single normative completion rule for this fork. It is stated **here only** —
+other documents reference it rather than restating it, so there is one place to change.
+
+A change is **material** when it alters security posture, privacy posture, attack surface,
+product behaviour, provenance, licence obligations, or a maintenance boundary. Formatting,
+refactoring and routine dependency bumps are not material unless they do one of those things.
+
+A material change is **Done** when all of the following that apply are true:
+
+| # | Requirement | Recorded in |
+| --- | --- | --- |
+| 1 | The decision is recorded — why this change, why now, what was rejected | the GitHub issue, then the implementation ledger |
+| 2 | **Implementation relationship is classified** — native, upstream cherry-pick, upstream adaptation, external reference, external adaptation, third-party integration, or historical reference only | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) §3.1 |
+| 3 | **Source usage is classified** wherever an external source was consulted at all — from behavioural reference through to source incorporation | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) §3.2 |
+| 4 | **Licence disposition is recorded**, together with any attribution or source-availability obligation and where it is discharged | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) §4 |
+| 5 | Security impact is reviewed — including attack surface, new endpoints, new mutations, new persistent state, new outbound communication | the ledger's impact table; [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for release-blocking conditions |
+| 6 | Tests pass, and any **new** regression test the change requires exists and is named | the ledger's Validation field |
+| 7 | **The implementation ledger is updated** | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) |
+| 8 | If upstream-derived: the upstream ledger is updated with the commit's disposition | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) |
+| 9 | If it changes steady-state behaviour: the divergence register is updated | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) |
+| 10 | Any guard needed to stop silent regression or upstream reintroduction exists | `scripts/fork-guard-*.sh`, CI, or `.gitattributes` |
+| 11 | Release documentation is updated when the change ships | [FORK_STATUS.md](FORK_STATUS.md), [RELEASE_PROCESS.md](RELEASE_PROCESS.md) |
+
+Requirements **2-4 are a hard gate**: a change whose implementation relationship, source usage or
+licence disposition is unrecorded is not Done, regardless of code quality. The default classification when no licence can be
+established is `UNKNOWN_BLOCKED`.
+
+Requirement **10 is what makes a removal durable.** An unguarded removal is a temporary removal:
+the next upstream merge re-arms it silently while the divergence register still claims it is
+gone.
+
+### Three thresholds, deliberately distinct
+
+A change passes through three separate bars. Conflating them is how a fork ends up believing a
+merged change is finished when its provenance was never recorded.
+
+| Threshold | Means | Owned by |
+| --- | --- | --- |
+| `READY_FOR_REVIEW` | The change compiles, gates pass, and it can be sensibly reviewed | [.ai/quality-gates.md](.ai/quality-gates.md) |
+| `DONE` | The change is **complete as a change** — the table above is satisfied and the record exists | **this section** |
+| `RELEASED` | The change is in a published tag and image, with release evidence captured | [RELEASE_PROCESS.md](RELEASE_PROCESS.md), [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md), [FORK_STATUS.md](FORK_STATUS.md) |
+
+A change can be `READY_FOR_REVIEW` and merged while still not `DONE` — that is precisely the gap
+this section closes. `DONE` does not imply `RELEASED`; the ledger's `Status` field tracks the
+transition, and `FORK_STATUS.md`'s *Status Terms* remains the canonical review vocabulary.
+
+**Non-material changes** — formatting, refactoring, routine dependency bumps that touch none of
+the material dimensions above — need only `READY_FOR_REVIEW`. Do not manufacture ledger entries
+or provenance classifications for them; an over-applied rule is abandoned faster than an
+under-applied one.
 
 ## Release Rules
 

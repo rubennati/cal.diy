@@ -5,6 +5,30 @@ Steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md). Timelin
 
 ## Now / next (in cal.forte)
 
+- **Work the audit candidate registry.** The 2026-08-26 audit produced one ranked registry at
+  [../docs/SELF_HOST_CAPABILITY_AUDIT.md](../docs/SELF_HOST_CAPABILITY_AUDIT.md) §10 (P1-A…P3-I),
+  plus a proposed issue set in §11. **Nothing from it is implemented.** Ordering that matters:
+  - **P1-A — deny-by-default permission service.** Replace the 18 inlined `return true` stubs with
+    one explicitly-named module plus a fork guard in the `scripts/fork-guard-telemetry.sh` style.
+    Correct whether or not Teams is ever enabled, and P1-C is blocked on it. Exceeds the diff-size
+    guidance — stage it per file.
+  - **P1-B — restore the API-keys tRPC route.** `git cherry-pick -x 07a288bbd8` (4 lines), and
+    correct the ledger row that called it "feature/API expansion". Cheapest win in the registry, and
+    it converges with upstream rather than diverging.
+  - **P1-D — public slot resolution.** Needs an `api-no-breaking-changes` review, because making the
+    fallback `NOT_FOUND` changes a public API's behaviour.
+  - **P2-F — tRPC three-leg parity CI.** ~20 lines, no runtime, and it converts a whole class of
+    silent breakage (which is how P1-B's defect survived four months) into a build failure.
+  The registry is now filed as GitHub issues — tracker
+  [#12](https://github.com/rubennati/cal.diy/issues/12), children #13–#40, created 2026-08-26 by a
+  separate pass. P1s: [#13](https://github.com/rubennati/cal.diy/issues/13) (PBAC),
+  [#32](https://github.com/rubennati/cal.diy/issues/32) (API keys),
+  [#33](https://github.com/rubennati/cal.diy/issues/33) (team invariants),
+  [#14](https://github.com/rubennati/cal.diy/issues/14) (slots). Two caveats: nine findings still need
+  runtime or database evidence (master §12), and issue
+  [#25](https://github.com/rubennati/cal.diy/issues/25) needs restating — its `Cal.com`-literal premise
+  was refuted (master §8).
+
 - **Slim the runtime image** — the built image still ships dev/build tooling (vitest,
   esbuild, `@depot/cli`, trigger.dev) + Playwright test files, inflating both image size and
   the CVE count. Prune them from the runner stage. This is the prerequisite for flipping the

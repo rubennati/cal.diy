@@ -59,8 +59,29 @@ config-controlled — [slimming-analysis.md](slimming-analysis.md)). Runtime-ima
 [slimming-runtime-plan.md](slimming-runtime-plan.md).
 
 **Not in this edition:** Workflows, Insights, SAML/SSO, audit logs, and **team creation**
-(no UI/wizard/CLI/API) → no team calendars / round-robin. The Enterprise paywall/upsell UI is
-already removed upstream-side. Details: [branding.md](branding.md).
+(no UI/wizard/CLI/API) → no team calendars / round-robin. Details: [branding.md](branding.md).
+
+⚠️ **Two claims in `branding.md` were corrected by the 2026-08-26 audit** — read
+[../docs/SELF_HOST_CAPABILITY_AUDIT.md](../docs/SELF_HOST_CAPABILITY_AUDIT.md) §9.2 before relying
+on them. The Enterprise *paywall gating* is genuinely gone, but two **reachable** hosted-Cal.com
+commercial prompts remain (an onboarding `$15/user/mo` plan chooser that dead-ends, and a
+`cal.com/signup` upsell shown to every anonymous booker). And "no team creation" is true of every
+shipped **runtime** path but not of `scripts/seed.ts`, which creates 7 `Team` rows via the
+documented `yarn dx` path — which is what decides the severity of the authorization finding below.
+
+**Audit posture (as of 2026-08-26, documentation only — nothing fixed):**
+The capability/authorization/licence/productization audit is recorded in
+[../docs/](../docs/) — master: `SELF_HOST_CAPABILITY_AUDIT.md`. Three items bear on release
+decisions:
+- **Authorization placeholders (F-01).** 18 production files carry `return true` permission stubs;
+  11 fail open. An architectural hazard on the published image, a live destructive cross-tenant
+  write on any seeded instance. Ranked P1-A and a hard prerequisite for any Teams work.
+- **API keys are broken (F-05).** `apps/web/pages/api/trpc/apiKeys/[trpc].ts` is missing, so every
+  create/edit/delete fails. Upstream fixed it in `07a288bbd8`; the ledger row for that commit needs
+  correcting (see §9.1 of the master — deliberately not edited by the audit).
+- **Upstream can move backwards (F-07).** `ab21c7f805` reverted merged upstream fixes together with
+  their regression tests. The sync model has no provision for this; `UPSTREAM_SYNC.md` should gain
+  one.
 
 ## Upstream base
 
