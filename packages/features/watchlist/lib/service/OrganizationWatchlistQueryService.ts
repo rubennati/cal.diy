@@ -3,10 +3,12 @@ import type { WatchlistRepository } from "@calcom/features/watchlist/lib/reposit
 import { MembershipRole, type WatchlistSource, type WatchlistType } from "@calcom/prisma/enums";
 import { WatchlistErrors } from "../errors/WatchlistErrors";
 
+// cal.forte: PBAC is unimplemented upstream-side; these placeholders deny by default
+// so missing authorization can never grant access. See issue #13.
 class PermissionCheckService {
   constructor(_prisma?: unknown) {}
-  async checkPermission(..._args: unknown[]) { return true; }
-  async hasPermission(..._args: unknown[]) { return true; }
+  async checkPermission(..._args: unknown[]) { return false; }
+  async hasPermission(..._args: unknown[]) { return false; }
   async getTeamIdsWithPermission(..._args: unknown[]): Promise<number[]> { return []; }
 }
 

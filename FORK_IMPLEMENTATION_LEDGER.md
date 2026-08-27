@@ -1639,6 +1639,119 @@ reconciled against this divergence rather than merged blindly.
 
 ---
 
+### FIL-0019 · PBAC placeholders fail closed
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `SECURITY_HARDENING` / `AUTHORIZATION_CONTAINMENT` |
+| GitHub issue | [#13](https://github.com/rubennati/cal.diy/issues/13) — **remains open** |
+| Code-scanning alert | n/a — no scanner models owner-scoped permissions; CodeQL cannot see that a function named `checkPermission` returns an unconditional `true` |
+| PR | [#56](https://github.com/rubennati/cal.diy/pull/56) |
+| Local commit(s) | `1bd84ef167` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — containment, not implementation.** `PBAC_NOT_IMPLEMENTED` but `PBAC_FAILS_CLOSED`.
+No role semantics were written, no custom roles activated, no schema or migration touched, no
+Team surface enabled. Issue #13's own acceptance criteria are **not** met — see *Issue state*
+below — so #13 stays open and the PR carries no auto-closing keyword.
+
+**Provenance.** Fork-authored, derived from the current interfaces and the fail-closed
+requirement alone. Upstream `ab21c7f805` (#28903) deleted `packages/features/pbac/` and pasted a
+permissive placeholder into each former consumer; `calcom/cal.diy@main` still carries all 18 with
+`return true` (verified against `origin/main`, not assumed), so there is no upstream fix to take.
+The deleted implementation was **AGPLv3** and `packages/features/ee/**` is Cal.com Commercial —
+both prohibited as sources by `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0/§3.4. Neither was read,
+restored or adapted. No external-fork code was consulted.
+
+**Inventory, rederived rather than trusted.**
+
+| Measure | Issue #13 states | Measured on `ebc2f36251` |
+| --- | --- | --- |
+| Files declaring a placeholder | 18 | **18** ✓ |
+| Files invoking `checkPermission` (fail-open) | 11 | **11** ✓ |
+| Files invoking only `getTeamIdsWithPermission` (already fail-closed) | 6 | **6** ✓ |
+| Declaration-only | 1 | **1** ✓ |
+| `checkPermission` call sites | 19 | **23** ✗ |
+| `hasPermission` invocations | 0 | **0** ✓ |
+
+Two corrections to the issue's figures. The call-site count is **23**, not 19 — enumerated with
+`file:line`. And the placeholder exists in **two formatting variants**, 15 single-line and 3
+multi-line, semantically identical; a single-pattern edit would have silently missed three files.
+
+**Change.** In all 18 files, `checkPermission` and `hasPermission` return `false` instead of
+`true` (36 methods). All 18 `getTeamIdsWithPermission` keep `[]` — they already failed closed.
+Each placeholder gains a two-line comment so a bare `return false` in a function named
+`checkPermission` is not later read as a defect.
+
+**Call-site safety.** Every one of the 23 sites is structurally gated by a Team, Organization or
+Membership row, or sits in dead code (both watchlist services have zero container callers;
+`createOrgPbacProcedure` has zero call sites). One case deserves naming rather than burying:
+`heavy/create.handler.ts:131` gates **personal** event-type creation for users with
+`organizationId` set, when the organization has `lockEventTypeCreationForUsers = true`. The
+placeholder currently grants org-level permission to everyone, so that lock is entirely
+non-functional; denying makes it work as designed. It still requires an Organization — itself a
+`Team` row — so a stock deployment is unaffected, but an org admin in a locked org is now denied
+too. That is a deliberate over-denial, consistent with preferring false negatives on unsupported
+Team behaviour over cross-tenant false positives.
+
+**Tests asserted the defect.** Eleven pre-existing tests failed on this change, every one of them
+a team-event test, and two documented the fail-open behaviour outright — a test named
+*"should grant permissions for team members (stub always returns true)"* and a comment reading
+*"PermissionCheckService stub always returns true, so org admin access is always granted"*.
+Upstream's fail-open authorization was not merely present, it was **pinned by CI**: any attempt
+to implement PBAC would have produced a red build. Those blocks now assert denial and record what
+they previously claimed.
+
+**Scope proven by failure distribution.** All 6 `personal events` tests passed unchanged —
+including *"should deny team member from accessing another user's personal event"* — as did
+`event not found`, `input validation` and `ensureEmailOrPhoneNumberIsPresent`. Every failure was
+team-scoped. That is the "no supported non-Team path depends on `true`" requirement demonstrated,
+not merely argued.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes fail-open authorization; unimplemented permissions now deny |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** — `getPublicEvent`'s sole affected flag narrows disclosure for authenticated callers |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Team/Org-scoped operations now refuse; personal scheduling unchanged |
+
+**Finding classification.** Before: `CONFIRMED_SECURITY_DEFECT` / `FAIL_OPEN_AUTHORIZATION`.
+After: `REMEDIATED_BY_CONTAINMENT` / `FAIL_CLOSED_UNIMPLEMENTED_AUTHORIZATION`. Deliberately
+**not** `CONFIRMED_VULNERABILITY` — `SECURITY_ASSURANCE.md` §2.1 makes reachability load-bearing,
+and no shipped route creates a `Team`. Equally not dismissed: `scripts/seed.ts` creates seven
+`Team` rows unconditionally and ships in the image with `ts-node` retained, so restored or seeded
+data makes the precondition real. Nothing here claims `PBAC_IMPLEMENTED`, `TEAMS_SECURE` or
+`TEAM_AUTHORIZATION_COMPLETE`. Teams remain unsupported for v6.2.0-6.
+
+**Guard.** `scripts/fork-guard-pbac-fail-closed.sh`, blocking in `forte-ci`. It discovers
+placeholder files semantically, diffs them against a reviewed manifest so a placeholder added to
+a *new* file is caught, then inspects only each class body — an unrelated `return true` elsewhere
+in these files is out of scope. Verified four ways: fails on all 18 pre-fix; passes contained;
+fails naming the single file when one stub is rolled back to `true`; and fails loudly on manifest
+drift when a placeholder file is renamed. Explicitly temporary — retire it when a real permission
+implementation lands, replaced by that implementation's own tests.
+
+**Rollback.** Reverting restores fail-open authorization on any instance holding Team rows. The
+guard and the updated tests are the protection.
+
+**Upstream reevaluation trigger.** Upstream implements PBAC, restores `packages/features/pbac`
+under a compatible licence, or changes the placeholder shape — any of which must be reconciled
+against this divergence rather than merged blindly. Re-verify after every sync that no shipped
+route creates a `Team`.
+
+**Related documentation.** Issue #13 (open); #33 (team role invariants, design-only); #28 (team
+product decision); `docs/PBAC_PLACEHOLDER_AUDIT.md`; `SECURITY_ASSURANCE.md` §2;
+`docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0, §3.4.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the

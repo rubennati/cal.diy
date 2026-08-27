@@ -55,6 +55,83 @@ describe("BookingAccessService", () => {
     (service as any).permissionCheckService = mockPermissionCheckService;
   });
 
+  // Issue #13 containment: these exercise the REAL in-file PermissionCheckService
+  // placeholder, deliberately WITHOUT overriding `permissionCheckService`. While PBAC
+  // is unimplemented the placeholder must deny, so that seeded or restored Team rows
+  // cannot turn a missing implementation into granted access.
+  describe("PBAC placeholder fails closed (issue #13)", () => {
+    let containedService: BookingAccessService;
+
+    beforeEach(() => {
+      containedService = new BookingAccessService(mockPrismaClient);
+    });
+
+    it("case 1: still grants the booking organizer access to their own booking", async () => {
+      mockBookingRepo.findByUidIncludeEventType.mockResolvedValue({
+        id: 1,
+        uid: "personal-booking",
+        userId: 42,
+        eventType: { teamId: null, hosts: [], users: [] },
+      });
+
+      await expect(
+        containedService.doesUserIdHaveAccessToBooking({ userId: 42, bookingUid: "personal-booking" })
+      ).resolves.toBe(true);
+    });
+
+    it("case 3: denies access to a team booking rather than granting it by placeholder", async () => {
+      mockBookingRepo.findByUidIncludeEventType.mockResolvedValue({
+        id: 2,
+        uid: "team-booking",
+        userId: 1,
+        eventType: { teamId: 100, hosts: [], users: [] },
+      });
+
+      await expect(
+        containedService.doesUserIdHaveAccessToBooking({ userId: 999, bookingUid: "team-booking" })
+      ).resolves.toBe(false);
+    });
+
+    it("case 5: denies a co-member access to another user's PERSONAL booking", async () => {
+      // The sharpest instance: before containment the placeholder returned true on the
+      // first membership, so sharing any team with the organizer leaked their personal
+      // bookings.
+      mockBookingRepo.findByUidIncludeEventType.mockResolvedValue({
+        id: 3,
+        uid: "owner-personal-booking",
+        userId: 1,
+        eventType: { teamId: null, hosts: [], users: [] },
+      });
+      mockUserRepo.getUserOrganizationAndTeams.mockResolvedValue({
+        id: 1,
+        organizationId: null,
+        teams: [{ teamId: 300 }, { teamId: 400 }],
+      });
+
+      await expect(
+        containedService.doesUserIdHaveAccessToBooking({ userId: 999, bookingUid: "owner-personal-booking" })
+      ).resolves.toBe(false);
+    });
+
+    it("case 4: denies an org-scoped claim over another user's personal booking", async () => {
+      mockBookingRepo.findByUidIncludeEventType.mockResolvedValue({
+        id: 4,
+        uid: "org-personal-booking",
+        userId: 1,
+        eventType: { teamId: null, hosts: [], users: [] },
+      });
+      mockUserRepo.getUserOrganizationAndTeams.mockResolvedValue({
+        id: 1,
+        organizationId: 200,
+        teams: [],
+      });
+
+      await expect(
+        containedService.doesUserIdHaveAccessToBooking({ userId: 999, bookingUid: "org-personal-booking" })
+      ).resolves.toBe(false);
+    });
+  });
+
   describe("doesUserIdHaveAccessToBooking", () => {
     describe("Case 1: Booking Organizer", () => {
       it("should return true when user is the booking organizer", async () => {
