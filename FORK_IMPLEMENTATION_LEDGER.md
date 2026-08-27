@@ -1556,8 +1556,8 @@ Its **sole** caller (verified live: exactly one, `slots/util.ts:372`) is `getEve
 `errorConversionMiddleware` — no auth, no rate limit — and whose Next adapter ships. An
 unresolvable username leaves `userId` undefined, so a non-existent username plus a common slug
 such as `30min` reached the fallback. `findForSlots` then keys purely on `id` and never
-re-checks ownership, so the caller received availability for a resource they had not addressed,
-including a `hidden` one.
+re-checks ownership, so the caller received another owner's event type and its availability
+under the requested one's name.
 
 **Implementation.** Return `null` when neither selector is present. The caller already throws
 `NOT_FOUND` on a null result, so a wrong resource becomes no resource. Legitimate lookups are
