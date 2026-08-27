@@ -41,6 +41,7 @@ const REJECTED: [label: string, input: unknown][] = [
   ["javascript scheme", "javascript:alert(1)"],
   ["data scheme", "data:text/html,x"],
   ["scheme-relative", "//attacker.example/"],
+  ["scheme-relative, triple slash", "///attacker.example/"],
   ["protocol-relative to cal", "//cal.example.com/x"],
   ["relative path", "/rob/30min"],
   ["bare host", "cal.example.com"],
@@ -108,9 +109,12 @@ describe("resolveCalBookingUrl", () => {
     });
 
     it("a path that looks like a host cannot change the host", () => {
-      // `new URL(path, base)` would resolve a `//host` path as protocol-relative and silently
-      // rehost the request. The target is built from the validated host explicitly instead, so
-      // these stay on this instance rather than becoming a bypass.
+      // A parsed URL's pathname can itself be a network-path reference (`//host/...`).
+      // `new URL(ref, base)` is not unsafe in itself — the hazard is resolving attacker-
+      // influenced text that can parse as an absolute or network-path reference, because that
+      // replaces the base's authority. The target here is built from the already-validated
+      // authority explicitly rather than by resolving such a reference, so these stay on this
+      // instance.
       for (const input of [
         "https://cal.example.com//evil.example/x",
         "https://cal.example.com///evil.example/x",
