@@ -47,6 +47,10 @@ jobs:
         # A guard is only worth blocking on if it still fires. Asserts both directions:
         # documentation may name the removed indicators, executable surfaces may not.
         run: bash scripts/fork-guard-telemetry.test.sh
+      - name: Fork guard — tRPC adapter parity
+        # Blocking on purpose: a viewerRouter key with no Next API adapter 404s before
+        # reaching tRPC, and type-check, Biome and CodeQL are all blind to it. See #32.
+        run: bash scripts/fork-guard-trpc-adapter-parity.sh
       - name: Type check
         run: yarn type-check:ci --force
       - name: Lint (Biome)

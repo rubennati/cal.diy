@@ -58,6 +58,7 @@ reconciled against current history on **2026-08-10**.
 | `561cf889ab` | `integrated-squashed` | `75c8f5c18f` | Full Daily webhook BookingRepository patch. Historical aggregate. |
 | `038381aeca` | `integrated-full` | `29d686fa67` | Forwarded-IP whitespace / banlist-bypass fix; cherry-picked with `-x` on 2026-08-10. Fork-only formatting follow-up: `2ea6ff49b0`. Targeted tests passed (23/23) and filtered `@calcom/lib` type-check passed. First released in `v6.2.0-5`. |
 | `717fed8f86` | `integrated-full` | `943f646850` | Vitest 4.0.16 → 4.1.8 across `vitest`, `@vitest/ui`, `@vitest/coverage-v8` and `packages/testing`; remediates `GHSA-5xrq-8626-4rwp` / `CVE-2026-47429` (Trivy alert #380, issue #45). Cherry-picked with `-x` on 2026-08-27, applied without conflict. The earlier `candidate` note asked to re-check advisory applicability before the next dependency round; that check was performed and the advisory still applied. Not yet released. |
+| `07a288bbd8` | `integrated-full` | `da40b51567` | Missing API-key tRPC adapter (`apps/web/pages/api/trpc/apiKeys/[trpc].ts`), restoring API-key create, edit and **revoke** (issue #32). Cherry-picked with `-x` on 2026-08-27, applied without conflict; the resulting blob is byte-identical to upstream. **Reviewed reversal on 2026-08-27, not a typo correction:** the prior `deferred` decision read this as *"Feature/API expansion not required by current fork scope"*, and re-review against the shipped tree disproved both halves. It is not a feature expansion but the restoration of a deleted leg of an already-wired contract — `apiKeys` was the only `viewerRouter` key of 27 without an adapter — and it is inside fork scope because the settings page, the router key and the client endpoint all ship, and API v2 accepts API keys as bearer credentials. The decision reversal should remain visible. Fork-only follow-ups: `97b74f8c46` (trailing newline), `0af5714714` (parity guard). Not yet released. |
 
 The four patches represented by `75c8f5c18f` have aggregate file statistics matching the
 sum of their upstream patches. No partial hunk intake was found. Their provenance is weak
@@ -78,7 +79,6 @@ on **2026-08-10**. A later status change must record its own date in the decisio
 | `e003426580` | ProfilesRepository write service | `deferred` | Broad repository refactor. |
 | `ff184db553` | Arabic upload/download translation | `deferred` | Translation-only. |
 | `d1ad4ea8b2` | Persist cancellation-reason setting | `candidate` | Functional event-type fix; integrate if affected. |
-| `07a288bbd8` | Missing API-key tRPC route | `deferred` | Feature/API expansion not required by current fork scope. |
 | `c645c0cbf7` | Conferencing metadata null check | `candidate` | Defensive runtime fix; requires focused relevance review. |
 | `75c5eb8531` | Membership write service | `deferred` | Repository refactor. |
 | `ecfb05ba55` | Rethrow unexpected selected-calendar deletion errors | `candidate` | Error-handling correctness; requires API v2 review. |
