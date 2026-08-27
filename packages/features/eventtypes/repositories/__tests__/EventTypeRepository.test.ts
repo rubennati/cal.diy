@@ -7,6 +7,8 @@ vi.mock("@calcom/prisma", () => ({
   readonlyPrisma: {
     eventType: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     team: {
       findMany: vi.fn(),
@@ -193,6 +195,56 @@ describe("EventTypeRepository", () => {
           })
         ).rejects.toThrow("User is not part of a team/org");
       });
+    });
+  });
+
+  describe("findFirstEventTypeId", () => {
+    // Issue #14: findFirstEventTypeId must never resolve an EventType by slug
+    // alone. teamId and userId are the only supported resource-identity
+    // selectors on this path; without one of them, no legitimate caller
+    // exists and there is nothing safe to return.
+    it("returns null when neither teamId nor userId is provided, and never selects a foreign EventType by slug alone", async () => {
+      // Stand in for another owner's event type that happens to share the slug.
+      // Before the fix this value was returned to an unauthenticated caller.
+      vi.mocked(readonlyPrisma.eventType.findFirst).mockResolvedValue({ id: 999 });
+
+      const result = await eventTypeRepository.findFirstEventTypeId({
+        slug: "30min",
+      });
+
+      expect(result).toBeNull();
+      expect(readonlyPrisma.eventType.findFirst).not.toHaveBeenCalled();
+      expect(readonlyPrisma.eventType.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("still resolves by the compound teamId_slug key when teamId is provided", async () => {
+      vi.mocked(readonlyPrisma.eventType.findUnique).mockResolvedValue({ id: 7 });
+
+      const result = await eventTypeRepository.findFirstEventTypeId({
+        slug: "team-30min",
+        teamId: 5,
+      });
+
+      expect(readonlyPrisma.eventType.findUnique).toHaveBeenCalledWith({
+        where: { teamId_slug: { teamId: 5, slug: "team-30min" } },
+        select: { id: true },
+      });
+      expect(result).toEqual({ id: 7 });
+    });
+
+    it("still resolves by the compound userId_slug key when userId is provided", async () => {
+      vi.mocked(readonlyPrisma.eventType.findUnique).mockResolvedValue({ id: 3 });
+
+      const result = await eventTypeRepository.findFirstEventTypeId({
+        slug: "30min",
+        userId: 1,
+      });
+
+      expect(readonlyPrisma.eventType.findUnique).toHaveBeenCalledWith({
+        where: { userId_slug: { userId: 1, slug: "30min" } },
+        select: { id: true },
+      });
+      expect(result).toEqual({ id: 3 });
     });
   });
 
