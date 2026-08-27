@@ -1420,6 +1420,105 @@ affects the 4.1 line, or the `Dockerfile` slim step stops removing `node_modules
 
 ---
 
+### FIL-0017 · API-keys tRPC adapter restoration
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `BUGFIX` / `FUNCTIONAL_AVAILABILITY` |
+| GitHub issue | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+| Code-scanning alert | n/a — no scanner detects this class; that is the point of the guard below |
+| PR | [#53](https://github.com/rubennati/cal.diy/pull/53) |
+| Local commit(s) | `da40b51567` (upstream cherry-pick), `97b74f8c46` (formatting), `0af5714714` (parity guard) |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** Not a fork-authored fix. Official upstream `calcom/cal.diy` published it
+as `07a288bbd8` ("fix(api):missing trpc route added for the api keys (#29517)", KATHIR ESWARAN,
+2026-06-08) — one new file, `+4/−0`. Taken with `git cherry-pick -x`: one upstream commit, one
+local commit, upstream authorship and the `(cherry picked from commit 07a288bbd8…)` line
+preserved, applied without conflict. The resulting blob is byte-identical to upstream
+(`sha256:d03399c1d70ca5e9e4c8506421e353a755152a921a1f99f031fb4a95888fe760`). No external-fork
+material was consulted.
+
+The upstream file omits its final newline, which `biome check` reports as an error and which
+every sibling adapter has. That one byte is corrected in a **separate** commit (`97b74f8c46`) so
+the upstream-derived commit stays byte-identical and its provenance remains verifiable.
+
+**Problem / desired outcome.** The tRPC surface is a three-leg contract — client endpoint
+registry, `viewerRouter` key, Next pages-API adapter. Upstream `ab21c7f805` (#28903) deleted
+`apps/web/pages/api/trpc/apiKeys/[trpc].ts` and left the other two legs wired. This fork
+inherited the deletion but not upstream's later restoration.
+
+Consequences on `develop` before this change, each verified against the tree:
+
+- `apiKeys` was the **only** `viewerRouter` key of 27 with no adapter.
+- `resolveEndpoint` maps a 3-segment path to `parts[1]`, pinning `viewer.apiKeys.*` to the
+  `apiKeys` batch link — a path no handler served. No catch-all, no App-Router route, no
+  `next.config.ts` rewrite covered it.
+- `create`, `edit` and `delete` therefore returned an HTML 404 and never reached tRPC.
+- `list` was unaffected: `page.tsx` reads through `PrismaApiKeyRepository` server-side, so the
+  page rendered populated and presented as working.
+- The page is gated on session alone — no role, flag or environment condition — so every
+  authenticated user could reach it.
+
+**Security relevance, stated precisely.** This is a `FUNCTIONAL_AVAILABILITY_DEFECT`, not an
+authentication bypass, not a credential leak, and no confirmed vulnerability. Its
+security-relevant consequence is narrow and real: **the product offered no way to revoke an API
+key.** `delete` was the broken mutation, and API v2 accepts these keys as bearer credentials
+(`api-auth.strategy.ts` → `sha256Hash` lookup) while exposing only `POST /refresh` — no delete.
+Keys present from a restored database, a migrated instance or the shipped seed scripts could not
+be revoked through the product at all. Since `create` was equally broken, a fresh install had no
+key to revoke; the exposure is bounded to instances that already hold keys.
+
+**Implementation summary.** One 4-line adapter file, matching the 27 sibling adapters. No
+application logic, schema, router or client change. `apiKeysRouter` already exposes `list`,
+`findKeyOfType`, `create`, `edit` and `delete`, all `authedProcedure`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Restores credential revocation through the product; no new privilege |
+| New trust boundary | **NO** — the router, its `authedProcedure` gating and its schemas already existed |
+| Public endpoint | **NO** — all five procedures are `authedProcedure` |
+| Persistent state | **NO** new state; existing `ApiKey` rows become manageable again |
+| External communication | **NO** |
+| Attack-surface impact | A registered authenticated router becomes reachable as designed. Not a widening: the UI, router and client already advertised it |
+| Compatibility impact | None. Adds a route the router and client already expected |
+
+**Finding classification.** `CONFIRMED_DEFECT` (functional availability, with a credential-
+lifecycle consequence) → `REMEDIATED_BY_IMPLEMENTATION`.
+
+**Guard.** `scripts/fork-guard-trpc-adapter-parity.sh`, wired as a blocking `forte-ci` step,
+asserts that every `viewerRouter` key has an adapter. This satisfies Definition-of-Done
+requirement 10: without it the next upstream sync can delete the leg again in silence, exactly as
+`ab21c7f805` did. `forte-ci` runs no test suite, so a vitest assertion would not have been
+enforced by the required check. The guard fails when it parses fewer keys than expected rather
+than reporting success, so a refactor that moves the router cannot turn it into a no-op.
+
+Scope is one direction only. The reverse direction — seven orphan client endpoints, the stale
+`appsRouter` duplicate adapter, the intentional `viewer` alias — needs an allow-list this guard
+should not own and remains **issue #34, still open**.
+
+**Validation.** Guard failed pre-fix naming `apiKeys` (exit 1) and passes post-fix across all 27
+keys. Adapter blob byte-identical to upstream; semantically identical to the `bookings` sibling
+after the newline commit. Biome clean on the changed file. Telemetry guard and its 18-assertion
+self-test still pass. `git diff --check` clean.
+
+**Rollback.** Reverting re-breaks API-key create, edit and revoke while leaving the page visibly
+reachable. The parity guard would fail, which is the intended behaviour.
+
+**Upstream reevaluation trigger.** Upstream restructures `apps/web/pages/api/trpc/`, moves to an
+App-Router tRPC handler, or introduces a catch-all — any of which changes what the guard should
+assert.
+
+**Related documentation.** Issue #32; issue #34 (parity in both directions, open);
+`UPSTREAM_REVIEW_LEDGER.md` (`07a288bbd8`, `integrated-full`); `docs/SELF_HOST_CAPABILITY_AUDIT.md`
+F-05.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
