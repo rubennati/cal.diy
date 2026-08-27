@@ -25,13 +25,15 @@ import {
 } from "@calcom/prisma/zod-utils";
 import type { UserProfile } from "@calcom/types/UserProfile";
 
+// cal.forte: PBAC is unimplemented upstream-side; these placeholders deny by default
+// so missing authorization can never grant access. See issue #13.
 class PermissionCheckService {
   constructor(_prisma?: unknown) {}
   async checkPermission(..._args: unknown[]) {
-    return true;
+    return false;
   }
   async hasPermission(..._args: unknown[]) {
-    return true;
+    return false;
   }
   async getTeamIdsWithPermission(..._args: unknown[]): Promise<number[]> {
     return [];
