@@ -1,0 +1,4 @@
+Temporary fixture for issue #47 branch-protection verification.
+This file exists only to deterministically fail scripts/fork-guard-telemetry.sh
+by naming the flag it protects: CALCOM_TELEMETRY_DISABLED
+This file and its branch are deleted after verification evidence is collected.
