@@ -1337,6 +1337,89 @@ behaviour in every touched file with no fix available.
 
 ---
 
+### FIL-0016 · Vitest security dependency update
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | [#45](https://github.com/rubennati/cal.diy/issues/45) |
+| Code-scanning alert | Trivy #380 |
+| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
+| Local commit(s) | `943f646850` |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** This is **not** a fork-authored change. Official upstream
+`calcom/cal.diy` had already published the exact fix as `717fed8f86`
+("fix(vitest): update to patched version (#29496)", 2026-06-02), and
+`UPSTREAM_REVIEW_LEDGER.md` already carried that commit as a `candidate` with the note
+*"Re-check advisory applicability before the next dependency round."* That re-check was
+performed for this issue, the advisory still applied, and the commit was taken with
+`git cherry-pick -x` — one upstream commit, one local commit, upstream authorship and the
+`(cherry picked from commit 717fed8f86…)` line preserved. The upstream ledger row moved from
+`candidate` to `integrated-full`.
+
+**Advisory.** `GHSA-5xrq-8626-4rwp` / `CVE-2026-47429` — *"When Vitest UI server is listening,
+arbitrary file can be read and executed."* Severity CRITICAL. Vulnerable range for the 4.x line
+is `>= 4.0.0, < 4.1.0`; first patched `4.1.0`. Verified live against the GitHub advisory
+database rather than carried forward from the earlier triage.
+
+**Problem / desired outcome.** `vitest`, `@vitest/ui` and `@vitest/coverage-v8` were all pinned
+at `4.0.16`, inside the vulnerable range. The three are exact-version peers of one another —
+`vitest@4.0.16` declares `"@vitest/ui": 4.0.16` and `@vitest/coverage-v8@4.0.16` declares
+`vitest: 4.0.16` — so they had to move together or the package family would have become
+inconsistent.
+
+**Implementation summary.** All three, plus `packages/testing`'s own `vitest` devDependency,
+move `4.0.16` → `4.1.8`, the version official upstream selected. `4.1.8` is well past the
+`4.1.0` minimum fix and stays within the same minor line, so this is not a speculative jump; it
+also leaves the fork byte-aligned with upstream on these declarations rather than creating a
+new divergence to maintain. No application source changed.
+
+| Dimension | Value |
+| --- | --- |
+| Production runtime | **NOT_AFFECTED** — `Dockerfile` lines 91-97 delete `node_modules/vitest` and `node_modules/@vitest` in the `builder-two` stage, and the runner stage copies from `builder-two` at line 105, after the removal. `nodeLinker: node-modules` with a single hoisted resolution means there is no nested workspace copy to survive the delete. |
+| Developer/test surface | **AFFECTED before this change** — the root `test:ui` script runs `vitest --ui`, which starts exactly the server the advisory concerns. `tdd` (`vitest watch`) does not expose the HTTP server by default. |
+| CI surface | **NOT_AFFECTED** — no workflow under `.github/workflows/` invokes vitest at all; `forte-ci` runs install, a lifecycle-integrity check, the telemetry guard and its self-test, `type-check:ci` and Biome. |
+| Security impact | Removes a vulnerable developer-surface dependency; no production runtime change |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed on the developer surface; production unchanged |
+| Compatibility impact | Patch-level move within the 4.1 line; no application or test source change required |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` on the developer/test surface →
+`REMEDIATED_BY_IMPLEMENTATION`. Scanner severity is CRITICAL; the project assessment stays
+**P2**, because the vulnerable component never reached the published artefact or CI. This is
+**not** evidence of production compromise, and none is claimed.
+
+**Validation.** `yarn install --immutable` accepted the lockfile unchanged; no `4.0.16`
+occurrence remains anywhere in `yarn.lock` or any `package.json`; `vite` stays at `6.4.2`;
+lockfile churn is confined to the Vitest family and its direct transitives. Test suites,
+`@calcom/app-store` type-check, Biome, the telemetry guard and its self-test all run as part of
+this change's validation.
+
+**Scanner expectation.** Trivy should stop matching `CVE-2026-47429` once the PR is scanned.
+Alert #380 was **not** dismissed manually — it is expected to close on merge, the same way
+alerts #37/#38 and #36 did.
+
+**Rollback.** Reverting reinstates a vulnerable Vitest on the developer surface. It does not
+reintroduce a production exposure, because the image never shipped the package — but the
+`Dockerfile` removal step must not be treated as a substitute for keeping the dependency
+patched.
+
+**Upstream reevaluation trigger.** Upstream moves the Vitest family again, a new advisory
+affects the 4.1 line, or the `Dockerfile` slim step stops removing `node_modules/@vitest`.
+
+**Related documentation.** Issue #45; `UPSTREAM_REVIEW_LEDGER.md` (`717fed8f86`,
+`integrated-full`); `SECURITY_ASSURANCE.md` §5b on scanner disposition.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
