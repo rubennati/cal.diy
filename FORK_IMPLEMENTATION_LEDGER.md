@@ -1238,6 +1238,105 @@ observed).
 
 ---
 
+### FIL-0015 · Intercom configuration request-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#44](https://github.com/rubennati/cal.diy/issues/44) |
+| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
+| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the commit it describes |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired. The raw-body
+webhook route shape follows the existing in-repo convention used by the `alby`, `paypal`,
+`btcpayserver` and `stripepayment` webhooks. The signature scheme is Intercom's own documented
+Canvas Kit mechanism. No external fork was consulted and no third-party implementation text was
+incorporated.
+
+**Problem / desired outcome.** `POST /api/integrations/intercom/configure` was reachable with no
+authentication and no Intercom signature verification, on every deployment, whether or not the
+Intercom app was installed — the app-store dispatcher
+(`apps/web/pages/api/integrations/[...args].ts`) requires a session only for the `add` endpoint, and
+the `intercom` handler map entry is unconditional. From that entry point,
+`lib/isValidCalURL.ts` built its host check as a regex interpolated from `CAL_URL` without escaping,
+so every `.` in the host became a wildcard and single-label names such as `cal-example-com` — which
+resolve inside a container network — passed a gate meant to admit only `cal.example.com`. `fetch`
+then followed redirects, so any open redirect on the instance origin would have handed the
+destination decision back to the response. The same unauthenticated entry point also performed
+database reads keyed by a caller-supplied `admin.id`, and wrote the unauthenticated request body to
+the server log via `console.dir`.
+
+The legitimate flow had to keep working: Intercom's servers call this endpoint during Canvas Kit
+configuration, and an operator must still be able to submit a booking link on their own instance and
+have it checked.
+
+**Implementation summary.** Two controls, matching the two halves of the defect.
+
+*Caller authenticity.* `configure` now verifies Intercom's documented `X-Body-Signature` — hex
+HMAC-SHA256 over the raw request body, keyed with the app's OAuth `client_secret` — using a
+timing-safe comparison. Because the signature covers the raw bytes, body parsing is disabled and the
+handler reads the stream itself under a 64 KiB cap; a dedicated route at
+`apps/web/pages/api/integrations/intercom/configure.ts` re-declares that config, following the
+existing webhook convention and taking Next.js routing precedence over the catch-all dispatcher. If
+no client secret is configured the request is refused rather than served, so an uninstalled app is no
+longer an open endpoint. `console.dir` of the request body is removed.
+
+*Outbound destination.* `lib/resolveCalBookingUrl.ts` replaces the regex with parsed-URL component
+comparison — scheme, port, and host equal to `CAL_URL`'s or an explicit single-dot-boundary
+subdomain of it — and rebuilds the request target from those validated components, so caller text
+never decides scheme, host or port. Userinfo is rejected rather than stripped. Redirects are no
+longer followed (`redirect: "manual"`); a redirect is treated as "not a booking link".
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes an unauthenticated server-side request primitive and the unauthenticated database read reachable from it |
+| New trust boundary | **NO** — constrains an existing one; Intercom was already a caller and this instance was already the fetch target |
+| Public endpoint | **WAS YES, NOW NO** — the endpoint is still publicly routable but now serves only signature-verified Intercom requests |
+| Authenticated mutation | **NO** — no persistent write; the handler returns canvas JSON |
+| Persistent state | **NO** change |
+| External communication | **NO NEW** communication; the existing liveness check is constrained to this instance and no longer follows redirects |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Legitimate Intercom configuration is unchanged. A submitted link that only resolves via a redirect is now rejected — deliberate, and documented in the code |
+
+**Rate limiting.** Not added, and the reasoning is recorded rather than left implicit: after
+signature verification an unauthenticated caller cannot reach any work at all, and a caller holding
+the client secret is Intercom. The one remaining pre-authentication cost is reading and hashing a
+body, which the 64 KiB cap bounds. Application-level rate limiting would add a control without a
+corresponding residual risk.
+
+**Validation.** `resolveCalBookingUrl.test.ts` (URL model, including the `cal-example-com` and
+`calxexamplexcom` shapes named in issue #44, plus userinfo, ports, schemes, IPv4/IPv6 literals,
+loopback, RFC1918 and link-local metadata), `verifyCanvasSignature.test.ts` (HMAC accept/reject,
+tampered body, wrong secret, malformed and absent signatures, unconfigured secret), and
+`isValidCalURL.test.ts` (no request before validation, request target is this instance,
+`redirect: "manual"`, redirect treated as invalid, no credentials attached). Plus
+`yarn type-check`, Biome, and the telemetry guard and its self-test.
+
+**Guard.** Behavioural regression tests, not a source-text check. The asserted invariant — every
+resolved request target is this instance, and no unsigned request reaches the step handlers —
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so a sync that restores it fails these tests.
+
+**Rollback.** Reverting restores an unauthenticated server-side request primitive on every
+deployment and must not be done to resolve a merge conflict. Note one asymmetry: the dedicated
+route file must be removed together with the handler change, or Next.js will route `configure` to a
+handler whose body parsing assumptions no longer match.
+
+**Upstream reevaluation trigger.** Official upstream adds Canvas Kit signature verification, changes
+the Intercom configuration flow, or publishes a security fix for
+`packages/app-store/intercom`. At implementation time `calcom/cal.diy` carried the same affected
+behaviour in every touched file with no fix available.
+
+**Related documentation.** Issue #44; `SECURITY_ASSURANCE.md` §2 — the finding is
+`CONFIRMED_SECURITY_DEFECT`; no exploitation was observed or attempted.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
