@@ -65,7 +65,7 @@ ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
 
 ENV NODE_ENV=production
 
-COPY package.json .yarnrc.yml turbo.json i18n.json ./
+COPY package.json .yarnrc.yml turbo.json i18n.json LICENSE ./
 COPY .yarn ./.yarn
 COPY --from=builder /calcom/yarn.lock ./yarn.lock
 COPY --from=builder /calcom/node_modules ./node_modules
