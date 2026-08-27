@@ -202,6 +202,12 @@ Do not run every expensive tool on every change. Four tiers, by what a false neg
 
 ### Tier 1 — PR / fast gates *(minutes; blocks merge)*
 
+"Blocks merge" means the `ci` job is a required status check on `develop` and `release`, with
+`enforce_admins` on — see [FORK_PROCESS.md → Branch Contract and Required
+Checks](FORK_PROCESS.md#branch-contract-and-required-checks) for the enforced settings and why
+`main` is excluded. Before issue #47, nothing enforced this claim mechanically; `develop` sat red
+for over an hour on 2026-08-26 as a direct result.
+
 | Check | Status |
 | --- | --- |
 | `yarn type-check:ci` | **exists**, blocking |

@@ -32,6 +32,57 @@ The goal is a simple operating model:
   - Tags represent reviewed release points.
   - Tags are the release inputs that downstream secure deployment should trust.
 
+## Branch Contract and Required Checks
+
+Everything above is convention; this section is what GitHub actually enforces, as of issue
+#47. Re-read via `gh api repos/rubennati/cal.diy/branches/<branch>/protection` before trusting
+this table — this document records a decision, not a live API mirror.
+
+| Branch | Protected | PR required | Required status check | Approvals | Force-push | Deletion | `enforce_admins` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `main` | yes | no | none | none | blocked | blocked | false |
+| `develop` | yes | yes | `ci` (strict) | 0 | blocked | blocked | true |
+| `release` | yes | yes | `ci` (strict) | 0, code-owner | blocked | blocked | true |
+
+**Why `main` differs.** `main` is the upstream mirror; none of `forte-ci`, `forte-codeql` or
+`forte-trivy` trigger there at all — their `on:` blocks are scoped to `develop`/`release` only.
+Requiring `ci` on `main` would not raise the bar, it would make `main` permanently unmergeable,
+since the check that would need to pass never runs. `main`'s existing protection (no force-push,
+no deletion) is left as-is.
+
+**Why `ci` and not a scanner.** The single required check is the `ci` job from
+`.github/workflows/forte-ci.yml` — GitHub's job id, not the workflow's display name
+(`forte-ci`). It covers lifecycle-script integrity, the telemetry fork guard and its self-test,
+`type-check:ci`, and Biome. CodeQL, Trivy and Scorecard stay **report-only** and are not
+required checks anywhere — see `SECURITY_ASSURANCE.md` §5b.3, which argues against converting
+vulnerability scanners into blocking gates wholesale, since scanner severity alone does not
+establish applicability or reachability. Recent evidence for this fork includes both genuine
+fixes (Zoho, Intercom, Vitest) and reviewed false positives (Giphy, `useBooking`, four Stripe
+placeholder findings) — a severity-only gate would have blocked merges on the false positives
+too.
+
+**`enforce_admins: true` on `develop` and `release`.** With a single maintainer, a check that
+can be silently bypassed during an ordinary merge is not mechanically enforced at all — it is
+the same convention-only gate this section replaces, wearing a different label. `enforce_admins`
+closes that: the maintainer cannot merge past a failing required check in the normal PR-merge
+flow. This is deliberately **not** the same thing as being permanently locked out — recovery
+from a broken or over-strict gate is an explicit `PATCH` to branch protection (a visible,
+attributable settings change), never an invisible bypass folded into a routine merge.
+
+**Zero required approvals.** Both `develop` and `release` require a pull request but 0
+approving reviews, because the sole maintainer cannot approve their own PR — a `>0` requirement
+would create a self-review deadlock GitHub does not resolve. `release` additionally requires a
+code-owner review via the existing `.github/CODEOWNERS` (`@rubennati` for `.github/`), which
+predates this issue and is preserved unchanged.
+
+**Verification, not merely stated.** After a deliberately failing `ci` was pushed on a temporary
+branch, [PR #51](https://github.com/rubennati/cal.diy/pull/51) showed `mergeable_state: blocked`
+(REST) and `mergeStateStatus: BLOCKED` (the CLI's GraphQL-backed view) — both re-read from the
+API after the fact, not merely observed once. The failing step was exactly the intended one
+(the telemetry guard), which also confirmed steps 8-10 skip on that failure the same way they
+did during the original 2026-08-26 incident. The PR was closed unmerged and the temporary
+branch deleted immediately after; it never reached `develop`.
+
 ## Allowed Fork Divergence
 
 Fork-owned changes should stay small and obvious.
