@@ -1519,6 +1519,126 @@ F-05.
 
 ---
 
+### FIL-0018 · Slots owner-resolution fail-closed containment
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `BUGFIX` / `RESOURCE_RESOLUTION` / `SECURITY_HARDENING` |
+| GitHub issue | [#14](https://github.com/rubennati/cal.diy/issues/14) — **remains open** |
+| Code-scanning alert | n/a — no scanner reported this; CodeQL has no notion of owner-scoped resource identity |
+| PR | [#54](https://github.com/rubennati/cal.diy/pull/54) |
+| Local commit(s) | `819144124e` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — this is containment, not full remediation of #14.** Issue #14's acceptance criteria
+also require correct Team/private-link resolution, restoration of the dropped `isTeamEvent`
+branch, four regression tests and a Playwright booking-flow pass. This entry records only the
+release-blocking half. `TEAM_PRIVATE_LINK_CORRECTNESS_REMAINS_OUT_OF_SCOPE_FOR_V6.2.0-6`, and
+#14 stays open for it. The PR does **not** use `Closes #14`.
+
+**Provenance detail.** Fork-authored. Official upstream `calcom/cal.diy@main` carries the
+byte-identical fallback at `eventTypeRepository.ts`, so there is no upstream fix to cherry-pick —
+verified against `origin/main` rather than assumed. The external `Mitch515/cal.diy` commit
+`ab5d8542d3` reported the symptom against a different endpoint; it is `BEHAVIOURAL_REFERENCE`
+evidence only. Its code was not read for implementation, not copied, and its SHA is not
+provenance for this change.
+
+**Problem.** `findFirstEventTypeId` ended in
+`findFirst({ where: { slug } })` — unordered, with no owner, team or `hidden` predicate. A slug
+is unique only within an owner, never globally, so that query returns an arbitrary event type.
+
+Its **sole** caller (verified live: exactly one, `slots/util.ts:372`) is `getEventTypeId` on
+`slots.getSchedule`, a `publicProcedure` whose middleware chain is `perfMiddleware` +
+`errorConversionMiddleware` — no auth, no rate limit — and whose Next adapter ships. An
+unresolvable username leaves `userId` undefined, so a non-existent username plus a common slug
+such as `30min` reached the fallback. `findForSlots` then keys purely on `id` and never
+re-checks ownership, so the caller received availability for a resource they had not addressed,
+including a `hidden` one.
+
+**Implementation.** Return `null` when neither selector is present. The caller already throws
+`NOT_FOUND` on a null result, so a wrong resource becomes no resource. Legitimate lookups are
+unaffected — they resolve a username to a `userId` first and take the compound-key branch.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes a public wrong-resource resolution primitive |
+| New trust boundary | **NO** |
+| Public endpoint | Behaviour changed on an existing public endpoint; no endpoint added |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Unresolvable-owner requests now answer `NOT_FOUND` instead of arbitrary data |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` → `REMEDIATED_BY_IMPLEMENTATION`.
+Deliberately **not** `CONFIRMED_VULNERABILITY`: the defect is reproduced by unit test and the
+path is traced end-to-end in source (`E2`), but no live request was fired against a running
+instance, and `SECURITY_ASSURANCE.md` §2.1 makes demonstrated reachability load-bearing. That
+conservatism should not be read as minimising it — unlike the PBAC placeholders, whose
+reachability genuinely fails for want of team rows, nothing here blocks the path: the endpoint
+is unauthenticated, unthrottled and shipped.
+
+Stated precisely, and no wider: **no authentication bypass, no privilege escalation, no write
+primitive, no code execution.** What it yielded was a slug-existence oracle and another owner's
+availability — a modest unauthenticated disclosure, plus functional corruption of the addressed
+resource.
+
+**Security property established.** On the username/slug resolution path, an event type is
+selected only through an owner-scoped compound key (`userId_slug` or `teamId_slug`); a slug
+alone can never select one. This is deliberately narrower than "public slot resolution always
+binds resource identity" — see the raw-ID analysis below for why the broader phrasing would
+misdescribe the code.
+
+**Adjacent path examined and deliberately excluded — raw `eventTypeId`.**
+`_getEventType` short-circuits on `input.eventTypeId` before owner resolution, and
+`findForSlots({ id })` performs no owner, team or `hidden` check. This was analysed before
+implementing, because if it preserved the same primitive the containment would have been
+incomplete. It does not, and the reasons are structural rather than incidental:
+
+- `eventTypeId` is an **intended, documented** selector. `getScheduleSchema`'s own refine reads
+  `!!data.eventTypeId || (!!data.usernameList && !!data.eventTypeSlug)`, and `useSchedule.ts`
+  sends `eventTypeId` whenever the slug is not yet known.
+- It binds resource identity **exactly**, by primary key. The caller receives precisely the
+  resource named — no substitution. The slug fallback was the opposite: identity was absent, so
+  a *different* owner's resource was served under the requested one's name.
+- A mismatched `usernameList` cannot cross-contaminate: on the regular path hosts derive from
+  the event type's own record, not from `usernameList`.
+- `hidden` means unlisted, not unreachable — `getPublicEvent` selects `hidden` but never filters
+  on it, so hidden event types are intentionally link-reachable and their slots are needed to
+  book them.
+
+Classification: `SEPARATE_SECURITY_CANDIDATE_BUT_NOT_SAME_PROPERTY`. The residue worth tracking
+is that sequential integer ids make availability enumerable across event types — availability
+only, no PII and no booking capability. Recorded here rather than fixed, and it does not weaken
+this containment.
+
+**`_enableTroubleshooter`.** Read after the event type is already resolved, so it discloses host
+user ids for any correctly addressed event type and is independent of this defect.
+`SEPARATE_SECURITY_CANDIDATE`; not touched here, since the containment does not depend on it.
+
+**Validation.** New repository test fails pre-fix with `expected { id: 999 } to be null` — a
+foreign event type returned from a slug alone — and passes after. Two service-level tests cover
+the `NOT_FOUND` conversion and the personal happy path. Full targeted run 11/11; `slots` +
+`eventtypes` sweep 92/92; the six real `getSchedule` consumer suites 68 passed / 3 skipped,
+confirming no supported flow relied on the fallback. Biome warning counts on the changed
+repository file are byte-identical to baseline (4 warnings, 63 infos — all pre-existing).
+
+**Rollback.** Reverting restores the public wrong-resource primitive. The repository test is the
+guard; there is no CI script guard, because the invariant is a return value rather than the
+presence or absence of a file.
+
+**Upstream reevaluation trigger.** Upstream fixes the fallback itself, restores the
+`isTeamEvent` branch, or changes `findForSlots` to take owner context — any of which should be
+reconciled against this divergence rather than merged blindly.
+
+**Related documentation.** Issue #14 (open); issues #13 and #33 (team authorization invariants);
+`FORK_DIVERGENCE.md` → Security And Privacy Changes; `SECURITY_ASSURANCE.md` §2.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
