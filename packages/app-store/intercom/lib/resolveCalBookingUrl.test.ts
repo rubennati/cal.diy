@@ -107,6 +107,20 @@ describe("resolveCalBookingUrl", () => {
       }
     });
 
+    it("a path that looks like a host cannot change the host", () => {
+      // `new URL(path, base)` would resolve a `//host` path as protocol-relative and silently
+      // rehost the request. The target is built from the validated host explicitly instead, so
+      // these stay on this instance rather than becoming a bypass.
+      for (const input of [
+        "https://cal.example.com//evil.example/x",
+        "https://cal.example.com///evil.example/x",
+        "https://cal.example.com/..//evil.example",
+        "https://cal.example.com/\\evil.example",
+      ]) {
+        expect(resolveCalBookingUrl(input, CAL)?.host).toBe("cal.example.com");
+      }
+    });
+
     it("honours a non-default port in the configured origin", () => {
       const base = "https://cal.example.com:8443";
       expect(resolveCalBookingUrl("https://cal.example.com:8443/x", base)?.origin).toBe(base);
