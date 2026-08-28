@@ -66,14 +66,14 @@ Do not approve a release image for downstream use if any of these are true:
 - either architecture or the release finalizer failed
 - generated tracked files differ after install/lifecycle scripts
 
-## Known Accepted Items — Current Release Preparation
+## Known Accepted Items — As Shipped In `v6.2.0-6`
 
-This section records what a release operator needs to know about `develop` right now,
-distinct from the generic checklist above. It is maintained as part of release preparation
-and is not itself release evidence — it does not replace the required record once a release
-actually ships.
+This section records what a release operator needs to know about the state actually
+published as [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6),
+distinct from the generic checklist above. The full artifact record is
+[FORK_STATUS.md](FORK_STATUS.md) → *Latest Release Evidence*.
 
-All implementation blockers identified for the next release are resolved on `develop`.
+All implementation blockers identified for this release were resolved before promotion.
 Specifically:
 
 - issues #43, #44, #45 (security fixes) and #32 (functional availability): fully remediated
@@ -85,17 +85,32 @@ Specifically:
 - issue #13 (PBAC placeholders): the fail-open placeholders now deny by default
   (`FIL-0019`). The issue itself remains **open** — PBAC is not implemented, only contained;
   do not read this as `PBAC_IMPLEMENTED` or `TEAMS_SECURE`
-- issue #40 (MIT `LICENSE` in the runtime image): implemented and verified against a locally
-  built image (`FIL-0020`). The issue remains **open** pending verification against the
-  actual published release artifact — see the checklist item above
-- issue #46 / CodeQL alert #74 (`RecurringBookingService` type confusion): accepted as a
-  known defect for this release; P3, availability-only, no authorization bypass identified.
-  The alert remains open by deliberate disposition, not oversight
+- issue #40 (MIT `LICENSE` in the runtime image): implemented (`FIL-0020`) and **closed**.
+  Verified against the published artifact through the digest chain: `docker-build-and-test`
+  asserted `/calcom/LICENSE` byte-equal to the repository root in the exact image it built
+  (SHA-256 `95f3d2c4bf…ac321c`, both architectures), that same image was runtime-tested, its
+  immutable staging digest was recorded, and the finalizer promoted that exact digest to the
+  final architecture tag with `docker buildx imagetools create` — no rebuild between
+  assertion and publication. Registry digest resolution and `release-record.json` agree
+- issue #46 / CodeQL alert #74 (`RecurringBookingService` type confusion): shipped as an
+  accepted known defect in `v6.2.0-6`; P3, availability-only, no authorization bypass
+  identified. The alert remains open by deliberate disposition, not oversight
 - issue #33 (team role/ownership invariants): design-only, non-blocking; no Team activation
   ships in this release
 
+Two CRITICAL fixable library findings ship in the `v6.2.0-6` images and are accepted under
+the documented report-only scanner policy: `stdlib` CVE-2025-68121 and `tar` package
+CVE-2026-59873. They were visible in the release build's Trivy output and were not treated
+as merge or publication blockers.
+
 Do not read any of the above as: all security issues are fixed, all CRITICAL scanner
 findings are closed, Teams are secure, or PBAC is implemented. None of those are true.
+
+**One process gap, recorded rather than quietly closed.** `release-docker.yaml` does not
+create the GitHub Release object; `v6.2.0-6` is the first tag in this repository to have
+one, and it was created manually after publication. The release contracts do not yet
+describe that step, so it is currently outside the automated pipeline and outside the
+evidence the pipeline itself produces.
 
 ## Incident-Oriented Checks
 
