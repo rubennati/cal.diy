@@ -1978,7 +1978,7 @@ The completion rule these steps serve is
 | Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
 | GitHub issue | n/a — maintainer request, no tracking issue filed |
 | Code-scanning alert | n/a |
-| PR | <pr> |
+| PR | [#62](https://github.com/rubennati/cal.diy/pull/62) |
 | Local commit(s) | `32584ba05b` |
 | Released in | not yet released |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
