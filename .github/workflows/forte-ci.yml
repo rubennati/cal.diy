@@ -2,6 +2,8 @@ name: forte-ci
 
 # Fork-owned CI. Runs only on the fork's working branches, never on `main`
 # (the pristine upstream mirror). Additive: upstream has no forte-* workflows.
+# TEMPORARY BRANCH-PROTECTION PROBE — this comment exists only to place a
+# CODEOWNERS-owned `.github/**` file in a probe PR diff. It must never merge.
 
 on:
   pull_request:
