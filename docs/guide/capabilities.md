@@ -168,7 +168,6 @@ offers a public REST API"* is not, yet. See [roadmap/api-v2.md](roadmap/api-v2.m
 | Insights dashboard | ✅ | ❌ | **NOT INCLUDED** | CODE VERIFIED | absent from the tree |
 | Attributes, delegation, workspace platform, admin panel | ✅ | ❌ | **NOT INCLUDED** | — | enterprise capabilities |
 | Usage telemetry | ✅ | — | **NOT INCLUDED** | REVIEWED | module, endpoint and dependency **removed**; a blocking CI guard prevents reintroduction |
-| Ad-click tracking (`gclid` / `li_fat_id`) | ✅ | — | **NOT INCLUDED** | REVIEWED | Not active in the shipped product. Precisely: the implementation **remains in the tree** and is shipped **off by default** (`GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`) — disabled, **not removed**. Contrast with telemetry above, which was deleted outright. Detail: [FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md) |
 
 ## Operations
 

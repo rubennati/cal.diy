@@ -27,7 +27,13 @@ themes:
 
 - **Telemetry removed.** The inert usage-telemetry module and its opt-out flag are gone,
   and a blocking CI guard prevents an upstream sync from reintroducing them.
-- **Advertising integrations disabled by default.**
+- **Advertising integrations shipped disabled.** Ad-click tracking (`gclid` / `li_fat_id`)
+  is a different case from telemetry, and the difference is deliberate: the implementation
+  **remains in the tree** and is shipped **off by default** (`GOOGLE_ADS_ENABLED=0`,
+  `LINKEDIN_ADS_ENABLED=0`). Telemetry was deleted; this is disabled. It is a configuration
+  default rather than a product capability, which is why it is documented here and not in
+  the [capability matrix](capabilities.md). Full rationale:
+  [FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md).
 - **Trust boundaries repaired.** Several fixes exist in cal.forte that are not upstream —
   Zoho server-location constraint, Intercom endpoint authentication, and a fail-closed
   public slot lookup.
