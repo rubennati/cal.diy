@@ -125,12 +125,18 @@ jobs:
 
       - name: Whitespace and conflict-marker check
         shell: bash
+        # Says what it compared. A clean `git diff --check` prints nothing, so
+        # without this the step's success is indistinguishable in the log from it
+        # having silently skipped — and on the fast path this is one of only two
+        # checks standing between the change and a green required context.
         run: |
           set -euo pipefail
-          if git rev-parse -q --verify HEAD^1 >/dev/null; then
-            git diff --check HEAD^1 HEAD
+          if base="$(git rev-parse -q --verify HEAD^1)"; then
+            echo "Checking $base..$(git rev-parse HEAD)"
+            git diff --check "$base" HEAD
+            echo "No whitespace errors or conflict markers introduced."
           else
-            echo "No parent commit available to diff against; skipping."
+            echo "::warning::HEAD has no first parent here, so nothing was compared."
           fi
 
       # ---------------------------------------------------------------------
@@ -175,7 +181,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ steps.scope.outputs.mode }}" == "fast" ]]; then
-            echo "Documentation/presentation change: guards and whitespace check passed; install, type-check and lint intentionally skipped." >> "$GITHUB_STEP_SUMMARY"
+            echo "Markdown-only change: fork guards and whitespace check passed; install, type-check and lint intentionally skipped. This run is not evidence that the tree type-checks." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Full validation completed." >> "$GITHUB_STEP_SUMMARY"
           fi
