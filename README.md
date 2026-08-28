@@ -31,8 +31,8 @@ compromise; every change here is deliberate and documented.
 **Fork changes:** Security defaults, telemetry, CI, container runtime, and release handling
 intentionally differ from Cal.diy. [See the public divergence register →](FORK_DIVERGENCE.md)
 
-**Latest release:** [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5)
-from [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc).
+**Latest release:** [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6)
+from [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65).
 [Full release evidence →](FORK_STATUS.md#latest-release-evidence)
 
 ## Branch model
@@ -52,11 +52,11 @@ from [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe1338
 ## Releases
 
 The latest published image was built from `release` at
-[`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc):
+[`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65):
 
-- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
-- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
-- Evidence: [Release Docker run 31435807941](https://github.com/rubennati/cal.diy/actions/runs/31435807941)
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
+- Evidence: [Release Docker run 33159543959](https://github.com/rubennati/cal.diy/actions/runs/33159543959)
 - Downstream handoff: [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30)
 
 Tags are architecture-specific; there is currently no combined multi-architecture manifest.
