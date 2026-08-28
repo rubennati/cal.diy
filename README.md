@@ -202,18 +202,26 @@ already removed.
 | | |
 | --- | --- |
 | **Supported** | booking pages and event types · availability · calendar and conferencing integrations · sign-in incl. OAuth · **API-key management** · Zapier and Make · personal webhooks · automatic database migrations · AMD64 and ARM64 images with provenance and SBOMs |
-| **Limited** | **scheduled/background jobs** — the container ships no scheduler, so reminders and calendar refresh need an external trigger · recurring-event request validation · Microsoft/Entra tenant restriction |
-| **Planned** | **REST API v2** — the release ships no API service · Teams · Organizations · PBAC |
-| **Not included** | Workflows · Insights · SAML/SSO · video recordings · API v1 · telemetry and ad tracking (removed by this fork) |
+| **Limited** | **scheduled/background jobs** — the container ships no scheduler, so reminders and calendar refresh need an external trigger · Microsoft/Entra tenant restriction |
+| **Planned** | **REST API v2** — an explicit roadmap decision; not in the current release |
+| **Evaluating** | Teams · Organizations · PBAC · team webhooks · Platform/OAuth clients — present in code, **direction not decided** |
+| **Not included** | Workflows · Insights · SAML/SSO · video recordings · API v1 · usage telemetry (removed) |
+
+**The current release ships the web runtime only.** There is no API service in the
+published image, so there is no cal.forte REST API endpoint to call today.
 
 **API keys work; the REST API is not shipped.** Keys are created in the UI and consumed
 today by the web integrations (Zapier, Make). They are not yet credentials for a public
 REST API — see [the API v2 roadmap](docs/guide/roadmap/api-v2.md).
 
+**Evaluating is not a promise.** Teams, Organizations and PBAC have substantial code and
+schema, but no recorded product decision to ship them — see
+[#28](https://github.com/rubennati/cal.diy/issues/28). Code presence is not a commitment.
+
 This is a summary. The canonical registry — with what Cal.com offers, what upstream
-Cal.diy claims, what cal.forte actually supports, and the evidence for each — is
+Cal.diy claims, what cal.forte supports, and how deeply each has been verified — is
 **[docs/guide/capabilities.md](docs/guide/capabilities.md)**. Where the two disagree, the
-capability matrix is correct and this summary needs fixing.
+capability matrix is the product answer and this summary needs fixing.
 
 📖 **[Full documentation →](docs/README.md)**
 
