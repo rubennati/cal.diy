@@ -2,6 +2,12 @@ export type ZohoAuthCredentials = {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  /**
+   * Canonical Zoho region for this credential. Typed as `string` rather than `ZohoRegion`
+   * because it is read back from persisted JSON that predates validation and may hold a legacy
+   * domain fragment or an unrecognised value. Resolve it with `requireZohoRegion` before it
+   * reaches a request URL.
+   */
   server_location: string;
 };
 

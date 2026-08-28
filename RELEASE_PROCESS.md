@@ -42,60 +42,79 @@ git diff --check
 
 The target model is a source-identical promotion. Do not edit files during promotion.
 
-### One-time historical ancestry reconciliation
+`release` is a protected branch: it requires a pull request, requires the `ci` check, blocks
+force-push, and applies to administrators. **A direct `git push origin release` is refused —
+including for the maintainer.** Promotion therefore goes through a pull request like any
+other change.
 
-As of 2026-08-10, `origin/release` has five release-only commits ending at `f99367c3a7`
-and is not an ancestor of `origin/develop`. Therefore the first promotion under this
-process cannot fast-forward until that topology is reconciled. Do not force-push or reset
-the protected `release` branch.
-
-Use a dedicated reviewed branch from the then-current `origin/develop`. Record the old
-release history as ancestry with an **ours-strategy merge**; this preserves the reviewed
-`develop` tree while making `origin/release` an ancestor:
+### Normal promotion — pull request, merged with "Create a merge commit"
 
 ```bash
 git fetch origin --prune --tags
-git switch --create codex/reconcile-release-ancestry origin/develop
-git merge --strategy=ours --no-ff origin/release \
-  -m "chore(release): reconcile historical release ancestry"
-git diff --exit-code HEAD^1..HEAD
-git merge-base --is-ancestor origin/release HEAD
+
+# Confirm release is still contained in develop. If this fails, stop and
+# reconcile deliberately on develop; never force-push or reset release.
+git merge-base --is-ancestor origin/release origin/develop
+
+# The promotion PR needs a branch; it carries no commits of its own.
+git switch --create release-promotion/vX.Y.Z-N origin/develop
+git push origin release-promotion/vX.Y.Z-N
 ```
 
-The empty-tree merge commit must be reviewed, pass all `develop` gates, and reach
-`origin/develop` through the normal approved push/PR path. Only then use the fast-forward
-promotion below. This is a one-time topology repair, not a general release technique.
+Open a pull request from that branch into `release`, wait for `ci`, and merge it with
+GitHub's **"Create a merge commit"**. Do not use "Squash and merge" or "Rebase and merge".
 
-### Normal fast-forward promotion
+**Why a merge commit, and why not the alternatives.** All three methods are enabled on this
+repository, and only one preserves what the fork's own contracts require:
 
-```bash
-git fetch origin --prune --tags
-git switch release
-git merge --ff-only origin/develop
-git diff --exit-code origin/develop..release
-git push origin release
-```
+| Method | Resulting `release` tree | Effect on history |
+| --- | --- | --- |
+| **Create a merge commit** | **identical to `develop`** — the merge is trivially fast-forwardable, so it takes `develop`'s tree verbatim | keeps every reviewed commit and its SHA, including upstream authorship and `(cherry picked from commit …)` trailers |
+| Squash and merge | identical | collapses the whole delta into one synthetic commit — forbidden by [FORK_PROCESS.md](FORK_PROCESS.md) and by [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md)'s `integrated-squashed` rule ("must not be created again") |
+| Rebase and merge | identical | rewrites every commit SHA and drops the PR merge commits, invalidating the `Local commit(s)` evidence recorded in [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) and breaking `release`↔`develop` ancestry |
 
-If fast-forward is impossible, stop. Do not create an ad-hoc release merge or resolve
-conflicts during promotion. Reconcile branch history deliberately on `develop`, rerun all
-gates, and try again.
+The release workflow checks the **tree**, not the commit SHA
+(`release_tree != develop_tree` is the failure condition in
+`.github/workflows/release-docker.yaml`), so a merge commit satisfies it exactly. Because
+`release` is always an ancestor of `develop` at promotion time, the merge introduces no
+content of its own — see the verification below, which proves this rather than assuming it.
 
-Until the one-time reconciliation is complete, stop before promotion. Do not replace the
-fast-forward with a release-side merge merely because `--ff-only` fails.
+### After merging: bring the merge commit back to `develop`
+
+The promotion merge commit exists only on `release`. Merge it back so `release` stays an
+ancestor of `develop` for the next cycle — the same pattern the `v6.2.0-5` history already
+follows. Do this **after** tagging, so `develop` does not move between the promotion and the
+tag; the workflow compares `release` against `origin/develop` at tag time.
 
 ## 3. Verify Before Tagging
 
 ```bash
 git fetch origin --prune --tags
-git diff --exit-code origin/develop..origin/release
-git status --short --branch
-git log --oneline origin/release..origin/develop
+
+# 1. release contains the approved candidate
+git merge-base --is-ancestor origin/develop origin/release
+
+# 2. the trees are identical — this is what release-docker.yaml actually checks
+test "$(git rev-parse origin/release^{tree})" = "$(git rev-parse origin/develop^{tree})"
+
+# 3. no release-only diff was introduced by the promotion
+git diff --exit-code origin/develop origin/release
+
+# 4. the tag name is still free
 git tag --list 'vX.Y.Z-N'
 ```
 
-Confirm `forte-ci` succeeded for the exact `release` SHA. GitHub branch protection and tag
-rulesets should require review and prevent force-push/tag deletion; these repository
-settings must be verified in GitHub because they are not versioned in this repository.
+All four commands must succeed silently. Check 2 is the one the release workflow enforces;
+checks 1 and 3 catch a promotion that carried unintended content.
+
+Then confirm on GitHub that **`forte-ci`, `forte-codeql` and `forte-trivy` each have a
+successful `push`-event run on `release` for the exact promoted SHA** — the workflow's
+`Require successful release gates for exact source SHA` step queries all three and refuses to
+publish otherwise. Merging the promotion PR triggers them; wait for them before tagging.
+
+GitHub branch protection and tag rulesets should require review and prevent
+force-push/tag deletion; these repository settings must be verified in GitHub because they
+are not versioned in this repository.
 
 ## 4. Create And Push The Release Tag
 

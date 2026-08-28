@@ -1098,6 +1098,843 @@ commit. See §11's note on the 2026-08-10 round.
 
 ---
 
+### FIL-0013 · Scope the telemetry guard to executable surfaces
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `MAINTENANCE` / `SECURITY_GUARD_CORRECTION` |
+| GitHub issue | n/a |
+| PR | [#42](https://github.com/rubennati/cal.diy/pull/42) |
+| Local commit(s) | `c62c42d068` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** The guard added with the telemetry removal (`75a9df1812`) searched
+every tracked file except `.ai/`, `README.md`, the workflow and itself. Once the governance and
+audit records landed on `develop`, the guard began failing on documentation that merely *named*
+the removed indicators — `FORK_IMPLEMENTATION_LEDGER.md`, `docs/EXTERNAL_FORK_INTAKE.md` and
+`docs/EXTERNAL_FORK_INTAKE_EVIDENCE.md`. This is a false-positive scope defect, not a
+vulnerability: the protected invariant was never breached, and no telemetry behaviour returned.
+
+**Implementation summary.** Exclusions are now by file semantics rather than by directory:
+`*.md` and `*.mdx` are out of scope, everything else is in. The blanket `.ai/` and
+`forte-ci.yml` exemptions are removed, so a non-Markdown file in either location is now scanned
+for the first time. The guard itself remains the one unavoidable exception. The protected
+indicators, the blocking CI step and the deletion of `packages/lib/telemetry.ts` are unchanged.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Invariant preserved; scan scope is net wider on executable surfaces |
+| Attack-surface impact | Unchanged — no product code touched |
+| Compatibility impact | None |
+
+**Scope deliberately given up.** The guard previously failed if a hardening document
+re-advertised `CALCOM_TELEMETRY_DISABLED` as a live control. A fixed-string search cannot tell
+that apart from a record that the flag was removed, which is precisely why it fired on the audit
+set. Documentation accuracy remains a review obligation under `SECURITY_ASSURANCE.md`; it is no
+longer claimed to be machine-enforced.
+
+**Validation.** `scripts/fork-guard-telemetry.test.sh` — 18 assertions covering both directions,
+including that an executable placed under `docs/` is still scanned, and that removing the `*.md`
+exclusion reproduces the original failure. Guard passes on the real tree; harness verified to
+report a failure when an expectation is inverted.
+
+**Related documentation.** `FORK_DIVERGENCE.md` (telemetry removal row); `.ai/divergence.md`;
+`.ai/quality-gates.md`.
+
+---
+
+### FIL-0014 · Zoho server-location trust-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#43](https://github.com/rubennati/cal.diy/issues/43) |
+| PR | [#48](https://github.com/rubennati/cal.diy/pull/48) |
+| Local commit(s) | `91b3f60e8f` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired, and the
+sibling in-tree `zohocrm` and `zoho-bigin` callbacks supplied the allowlist convention this fork
+now follows for the same vendor. Region domains come from Zoho's own multi-DC documentation. No
+external fork was consulted, and no third-party implementation text was incorporated. All source
+material is either this MIT tree or official vendor documentation.
+
+**Problem / desired outcome.** `packages/app-store/zohocalendar` accepted the OAuth `location`
+query parameter, type-checked it as a string, mapped `us` and `au` to domain fragments and passed
+every other value through unchanged into `https://accounts.zoho.${value}` and
+`https://calendar.zoho.${value}`. The token request carries the app's `client_id` and
+`client_secret` in its query string, so a `location` of `attacker.example` or
+`com@attacker.example` directed those credentials at an attacker-chosen host.
+
+The value was then **persisted** into `ZohoAuthCredentials.server_location` and re-read by
+`lib/CalendarService.ts` for token refresh, calendar requests and user-info requests. Because the
+attacker's host also supplies `expires_in`, a past value forces a refresh on every subsequent
+call — turning a single callback into a durable exfiltration channel for the instance-wide
+`client_secret` that required no further attacker action. That persistence path is the part no
+scanner flagged.
+
+**Implementation summary.** A canonical region model in `lib/zohoServerLocation.ts` maps the nine
+data centres Zoho documents to hosts fixed at build time. `resolveZohoRegion` accepts only a
+known region identifier or one of the four domain fragments earlier revisions persisted, and
+returns `null` for everything else; `requireZohoRegion` throws on `null`. Both the callback and
+every `CalendarService` request path resolve before any credential is read or sent. No hostname
+is built by concatenating caller-supplied text anywhere in the app.
+
+Two regions were also **functionally broken** and are repaired by the same change: `ca` produced
+`zoho.ca` and `cn` produced `zoho.cn`, where Zoho documents `zohocloud.ca` and `zoho.com.cn`.
+Neither could ever have worked.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Reduces credential-exfiltration / SSRF-style trust-boundary risk; a Zoho URL host can no longer inherit caller-supplied text |
+| New trust boundary | **NO** — hardens an existing one |
+| Public endpoint | **NO** — the callback already required an authenticated session (`callback.ts`), and that check is unchanged |
+| Authenticated mutation | **YES** — the callback creates a `Credential` and `SelectedCalendar` row; unchanged except that the persisted region is now validated |
+| Persistent state | **YES** — `server_location` is now written as a canonical region and revalidated on every read |
+| External communication | **NO NEW** communication; the existing Zoho calls are constrained to documented Zoho hosts |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Existing credentials keep working via the legacy aliases; `ca` and `cn` connections start working for the first time |
+
+**Legacy credential behaviour.** A stored value that resolves — a region identifier, or `com`,
+`com.au`, `com.cn`, `zohocloud.ca` — continues to work and is rewritten to its canonical region on
+the next refresh. Anything else fails closed **before** any request is made, with an error naming
+neither the stored value nor any credential material, and directing the operator to reconnect the
+app. Nothing is silently normalised into a usable host.
+
+**Validation.** `packages/app-store/zohocalendar/lib/zohoServerLocation.test.ts` (mapping
+primitive, 35 rejected input classes) and
+`packages/app-store/zohocalendar/lib/CalendarService.serverLocation.test.ts` (behavioural: a
+poisoned persisted value reaches no `fetch` on either the valid-token or expired-token path).
+Plus `yarn type-check:ci --force`, `yarn biome check`, and the telemetry fork guard and its
+self-test.
+
+**Guard.** Security regression tests, not a source-text check. The invariant asserted is
+behavioural — every Zoho URL resolves to one of a fixed host set regardless of input — which
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so an upstream sync that restores it fails these tests.
+
+**Rollback.** Reverting reintroduces the security defect and must not be done to resolve a merge
+conflict. One asymmetry matters: this change persists a canonical region (`us`, `au`) where the
+previous code persisted a domain fragment (`com`, `com.au`). Older code reading a
+newly-written credential would build `accounts.zoho.us`, which is not a Zoho host, so a revert
+also degrades US and Australian connections until those credentials are recreated. Prefer fixing
+forward.
+
+**Upstream reevaluation trigger.** Official upstream changes Zoho region or host handling, adds
+its own validation, or publishes a security fix for `packages/app-store/zohocalendar`. At
+implementation time `calcom/cal.diy` carried the same affected behaviour with no fix available.
+
+**Related documentation.** Issue #43; `SECURITY_ASSURANCE.md` §2 (the finding is
+`CONFIRMED_SECURITY_DEFECT`, not a confirmed exploited vulnerability — no exploitation was
+observed).
+
+---
+
+### FIL-0015 · Intercom configuration request-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#44](https://github.com/rubennati/cal.diy/issues/44) |
+| PR | [#49](https://github.com/rubennati/cal.diy/pull/49) |
+| Local commit(s) | `1d105892c3` (request-boundary fix), `60690619bd`, `e07f938682`, `4f647c365e` (regression tests) |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired. The raw-body
+webhook route shape follows the existing in-repo convention used by the `alby`, `paypal`,
+`btcpayserver` and `stripepayment` webhooks. The signature scheme is Intercom's own documented
+Canvas Kit mechanism. No external fork was consulted and no third-party implementation text was
+incorporated.
+
+**Problem / desired outcome.** `POST /api/integrations/intercom/configure` was reachable with no
+authentication and no Intercom signature verification, on every deployment, whether or not the
+Intercom app was installed — the app-store dispatcher
+(`apps/web/pages/api/integrations/[...args].ts`) requires a session only for the `add` endpoint, and
+the `intercom` handler map entry is unconditional. From that entry point,
+`lib/isValidCalURL.ts` built its host check as a regex interpolated from `CAL_URL` without escaping,
+so every `.` in the host became a wildcard and single-label names such as `cal-example-com` — which
+resolve inside a container network — passed a gate meant to admit only `cal.example.com`. `fetch`
+then followed redirects, so any open redirect on the instance origin would have handed the
+destination decision back to the response. The same unauthenticated entry point also performed
+database reads keyed by a caller-supplied `admin.id`, and wrote the unauthenticated request body to
+the server log via `console.dir`.
+
+The legitimate flow had to keep working: Intercom's servers call this endpoint during Canvas Kit
+configuration, and an operator must still be able to submit a booking link on their own instance and
+have it checked.
+
+**Implementation summary.** Two controls, matching the two halves of the defect.
+
+*Caller authenticity.* `configure` now verifies Intercom's documented `X-Body-Signature` — hex
+HMAC-SHA256 over the raw request body, keyed with the app's OAuth `client_secret` — using a
+timing-safe comparison. Because the signature covers the raw bytes, body parsing is disabled and the
+handler reads the stream itself under a 64 KiB cap; a dedicated route at
+`apps/web/pages/api/integrations/intercom/configure.ts` re-declares that config, following the
+existing webhook convention and taking Next.js routing precedence over the catch-all dispatcher. If
+no client secret is configured the request is refused rather than served, so an uninstalled app is no
+longer an open endpoint. `console.dir` of the request body is removed.
+
+*Outbound destination.* `lib/resolveCalBookingUrl.ts` replaces the regex with parsed-URL component
+comparison — scheme, port, and host equal to `CAL_URL`'s or an explicit single-dot-boundary
+subdomain of it — and rebuilds the request target from those validated components, so caller text
+never decides scheme, host or port. Userinfo is rejected rather than stripped. Redirects are no
+longer followed (`redirect: "manual"`); a redirect is treated as "not a booking link".
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes an unauthenticated server-side request primitive and the unauthenticated database read reachable from it |
+| New trust boundary | **NO** — constrains an existing one; Intercom was already a caller and this instance was already the fetch target |
+| Public endpoint | **WAS YES, NOW NO** — the endpoint is still publicly routable but now serves only signature-verified Intercom requests |
+| Authenticated mutation | **NO** — no persistent write; the handler returns canvas JSON |
+| Persistent state | **NO** change |
+| External communication | **NO NEW** communication; the existing liveness check is constrained to this instance and no longer follows redirects |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Legitimate Intercom configuration is unchanged. A submitted link that only resolves via a redirect is now rejected — deliberate, and documented in the code |
+
+**Rate limiting.** Not added, and the reasoning is recorded rather than left implicit: after
+signature verification an unauthenticated caller cannot reach any work at all, and a caller holding
+the client secret is Intercom. The one remaining pre-authentication cost is reading and hashing a
+body, which the 64 KiB cap bounds. Application-level rate limiting would add a control without a
+corresponding residual risk.
+
+**Validation.** `resolveCalBookingUrl.test.ts` (URL model, including the `cal-example-com` and
+`calxexamplexcom` shapes named in issue #44, plus userinfo, ports, schemes, IPv4/IPv6 literals,
+loopback, RFC1918 and link-local metadata), `verifyCanvasSignature.test.ts` (HMAC accept/reject,
+tampered body, wrong secret, malformed and absent signatures, unconfigured secret), and
+`isValidCalURL.test.ts` (no request before validation, request target is this instance,
+`redirect: "manual"`, redirect treated as invalid, no credentials attached). Plus
+`yarn type-check`, Biome, and the telemetry guard and its self-test.
+
+**Guard.** Behavioural regression tests, not a source-text check. The asserted invariant — every
+resolved request target is this instance, and no unsigned request reaches the step handlers —
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so a sync that restores it fails these tests.
+
+**Rollback.** Reverting restores an unauthenticated server-side request primitive on every
+deployment and must not be done to resolve a merge conflict. Note one asymmetry: the dedicated
+route file must be removed together with the handler change, or Next.js will route `configure` to a
+handler whose body parsing assumptions no longer match.
+
+**Upstream reevaluation trigger.** Official upstream adds Canvas Kit signature verification, changes
+the Intercom configuration flow, or publishes a security fix for
+`packages/app-store/intercom`. At implementation time `calcom/cal.diy` carried the same affected
+behaviour in every touched file with no fix available.
+
+**Related documentation.** Issue #44; `SECURITY_ASSURANCE.md` §2 — the finding is
+`CONFIRMED_SECURITY_DEFECT`; no exploitation was observed or attempted.
+
+---
+
+### FIL-0016 · Vitest security dependency update
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | [#45](https://github.com/rubennati/cal.diy/issues/45) |
+| Code-scanning alert | Trivy #380 |
+| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
+| Local commit(s) | `943f646850` |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** This is **not** a fork-authored change. Official upstream
+`calcom/cal.diy` had already published the exact fix as `717fed8f86`
+("fix(vitest): update to patched version (#29496)", 2026-06-02), and
+`UPSTREAM_REVIEW_LEDGER.md` already carried that commit as a `candidate` with the note
+*"Re-check advisory applicability before the next dependency round."* That re-check was
+performed for this issue, the advisory still applied, and the commit was taken with
+`git cherry-pick -x` — one upstream commit, one local commit, upstream authorship and the
+`(cherry picked from commit 717fed8f86…)` line preserved. The upstream ledger row moved from
+`candidate` to `integrated-full`.
+
+**Advisory.** `GHSA-5xrq-8626-4rwp` / `CVE-2026-47429` — *"When Vitest UI server is listening,
+arbitrary file can be read and executed."* Severity CRITICAL. Vulnerable range for the 4.x line
+is `>= 4.0.0, < 4.1.0`; first patched `4.1.0`. Verified live against the GitHub advisory
+database rather than carried forward from the earlier triage.
+
+**Problem / desired outcome.** `vitest`, `@vitest/ui` and `@vitest/coverage-v8` were all pinned
+at `4.0.16`, inside the vulnerable range. The three are exact-version peers of one another —
+`vitest@4.0.16` declares `"@vitest/ui": 4.0.16` and `@vitest/coverage-v8@4.0.16` declares
+`vitest: 4.0.16` — so they had to move together or the package family would have become
+inconsistent.
+
+**Implementation summary.** All three, plus `packages/testing`'s own `vitest` devDependency,
+move `4.0.16` → `4.1.8`, the version official upstream selected. `4.1.8` is well past the
+`4.1.0` minimum fix and stays within the same minor line, so this is not a speculative jump; it
+also leaves the fork byte-aligned with upstream on these declarations rather than creating a
+new divergence to maintain. No application source changed.
+
+| Dimension | Value |
+| --- | --- |
+| Production runtime | **NOT_AFFECTED** — `Dockerfile` lines 91-97 delete `node_modules/vitest` and `node_modules/@vitest` in the `builder-two` stage, and the runner stage copies from `builder-two` at line 105, after the removal. `nodeLinker: node-modules` with a single hoisted resolution means there is no nested workspace copy to survive the delete. |
+| Developer/test surface | **AFFECTED before this change** — the root `test:ui` script runs `vitest --ui`, which starts exactly the server the advisory concerns. `tdd` (`vitest watch`) does not expose the HTTP server by default. |
+| CI surface | **NOT_AFFECTED** — no workflow under `.github/workflows/` invokes vitest at all; `forte-ci` runs install, a lifecycle-integrity check, the telemetry guard and its self-test, `type-check:ci` and Biome. |
+| Security impact | Removes a vulnerable developer-surface dependency; no production runtime change |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed on the developer surface; production unchanged |
+| Compatibility impact | Patch-level move within the 4.1 line; no application or test source change required |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` on the developer/test surface →
+`REMEDIATED_BY_IMPLEMENTATION`. Scanner severity is CRITICAL; the project assessment stays
+**P2**, because the vulnerable component never reached the published artefact or CI. This is
+**not** evidence of production compromise, and none is claimed.
+
+**Validation.** `yarn install --immutable` accepted the lockfile unchanged; no `4.0.16`
+occurrence remains anywhere in `yarn.lock` or any `package.json`; `vite` stays at `6.4.2`;
+lockfile churn is confined to the Vitest family and its direct transitives. Test suites,
+`@calcom/app-store` type-check, Biome, the telemetry guard and its self-test all run as part of
+this change's validation.
+
+**Scanner expectation.** Trivy should stop matching `CVE-2026-47429` once the PR is scanned.
+Alert #380 was **not** dismissed manually — it is expected to close on merge, the same way
+alerts #37/#38 and #36 did.
+
+**Rollback.** Reverting reinstates a vulnerable Vitest on the developer surface. It does not
+reintroduce a production exposure, because the image never shipped the package — but the
+`Dockerfile` removal step must not be treated as a substitute for keeping the dependency
+patched.
+
+**Upstream reevaluation trigger.** Upstream moves the Vitest family again, a new advisory
+affects the 4.1 line, or the `Dockerfile` slim step stops removing `node_modules/@vitest`.
+
+**Related documentation.** Issue #45; `UPSTREAM_REVIEW_LEDGER.md` (`717fed8f86`,
+`integrated-full`); `SECURITY_ASSURANCE.md` §5b on scanner disposition.
+
+---
+
+### FIL-0017 · API-keys tRPC adapter restoration
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `BUGFIX` / `FUNCTIONAL_AVAILABILITY` |
+| GitHub issue | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+| Code-scanning alert | n/a — no scanner detects this class; that is the point of the guard below |
+| PR | [#53](https://github.com/rubennati/cal.diy/pull/53) |
+| Local commit(s) | `da40b51567` (upstream cherry-pick), `97b74f8c46` (formatting), `0af5714714` (parity guard) |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** Not a fork-authored fix. Official upstream `calcom/cal.diy` published it
+as `07a288bbd8` ("fix(api):missing trpc route added for the api keys (#29517)", KATHIR ESWARAN,
+2026-06-08) — one new file, `+4/−0`. Taken with `git cherry-pick -x`: one upstream commit, one
+local commit, upstream authorship and the `(cherry picked from commit 07a288bbd8…)` line
+preserved, applied without conflict. The resulting blob is byte-identical to upstream
+(`sha256:d03399c1d70ca5e9e4c8506421e353a755152a921a1f99f031fb4a95888fe760`). No external-fork
+material was consulted.
+
+The upstream file omits its final newline, which `biome check` reports as an error and which
+every sibling adapter has. That one byte is corrected in a **separate** commit (`97b74f8c46`) so
+the upstream-derived commit stays byte-identical and its provenance remains verifiable.
+
+**Problem / desired outcome.** The tRPC surface is a three-leg contract — client endpoint
+registry, `viewerRouter` key, Next pages-API adapter. Upstream `ab21c7f805` (#28903) deleted
+`apps/web/pages/api/trpc/apiKeys/[trpc].ts` and left the other two legs wired. This fork
+inherited the deletion but not upstream's later restoration.
+
+Consequences on `develop` before this change, each verified against the tree:
+
+- `apiKeys` was the **only** `viewerRouter` key of 27 with no adapter.
+- `resolveEndpoint` maps a 3-segment path to `parts[1]`, pinning `viewer.apiKeys.*` to the
+  `apiKeys` batch link — a path no handler served. No catch-all, no App-Router route, no
+  `next.config.ts` rewrite covered it.
+- `create`, `edit` and `delete` therefore returned an HTML 404 and never reached tRPC.
+- `list` was unaffected: `page.tsx` reads through `PrismaApiKeyRepository` server-side, so the
+  page rendered populated and presented as working.
+- The page is gated on session alone — no role, flag or environment condition — so every
+  authenticated user could reach it.
+
+**Security relevance, stated precisely.** This is a `FUNCTIONAL_AVAILABILITY_DEFECT`, not an
+authentication bypass, not a credential leak, and no confirmed vulnerability. Its
+security-relevant consequence is narrow and real: **the product offered no way to revoke an API
+key.** `delete` was the broken mutation, and API v2 accepts these keys as bearer credentials
+(`api-auth.strategy.ts` → `sha256Hash` lookup) while exposing only `POST /refresh` — no delete.
+Keys present from a restored database, a migrated instance or the shipped seed scripts could not
+be revoked through the product at all. Since `create` was equally broken, a fresh install had no
+key to revoke; the exposure is bounded to instances that already hold keys.
+
+**Implementation summary.** One 4-line adapter file, matching the 27 sibling adapters. No
+application logic, schema, router or client change. `apiKeysRouter` already exposes `list`,
+`findKeyOfType`, `create`, `edit` and `delete`, all `authedProcedure`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Restores credential revocation through the product; no new privilege |
+| New trust boundary | **NO** — the router, its `authedProcedure` gating and its schemas already existed |
+| Public endpoint | **NO** — all five procedures are `authedProcedure` |
+| Persistent state | **NO** new state; existing `ApiKey` rows become manageable again |
+| External communication | **NO** |
+| Attack-surface impact | A registered authenticated router becomes reachable as designed. Not a widening: the UI, router and client already advertised it |
+| Compatibility impact | None. Adds a route the router and client already expected |
+
+**Finding classification.** `CONFIRMED_DEFECT` (functional availability, with a credential-
+lifecycle consequence) → `REMEDIATED_BY_IMPLEMENTATION`.
+
+**Guard.** `scripts/fork-guard-trpc-adapter-parity.sh`, wired as a blocking `forte-ci` step,
+asserts that every `viewerRouter` key has an adapter. This satisfies Definition-of-Done
+requirement 10: without it the next upstream sync can delete the leg again in silence, exactly as
+`ab21c7f805` did. `forte-ci` runs no test suite, so a vitest assertion would not have been
+enforced by the required check. The guard fails when it parses fewer keys than expected rather
+than reporting success, so a refactor that moves the router cannot turn it into a no-op.
+
+Scope is one direction only. The reverse direction — seven orphan client endpoints, the stale
+`appsRouter` duplicate adapter, the intentional `viewer` alias — needs an allow-list this guard
+should not own and remains **issue #34, still open**.
+
+**Validation.** Guard failed pre-fix naming `apiKeys` (exit 1) and passes post-fix across all 27
+keys. Adapter blob byte-identical to upstream; semantically identical to the `bookings` sibling
+after the newline commit. Biome clean on the changed file. Telemetry guard and its 18-assertion
+self-test still pass. `git diff --check` clean.
+
+**Rollback.** Reverting re-breaks API-key create, edit and revoke while leaving the page visibly
+reachable. The parity guard would fail, which is the intended behaviour.
+
+**Upstream reevaluation trigger.** Upstream restructures `apps/web/pages/api/trpc/`, moves to an
+App-Router tRPC handler, or introduces a catch-all — any of which changes what the guard should
+assert.
+
+**Related documentation.** Issue #32; issue #34 (parity in both directions, open);
+`UPSTREAM_REVIEW_LEDGER.md` (`07a288bbd8`, `integrated-full`); `docs/SELF_HOST_CAPABILITY_AUDIT.md`
+F-05.
+
+---
+
+### FIL-0018 · Slots owner-resolution fail-closed containment
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `BUGFIX` / `RESOURCE_RESOLUTION` / `SECURITY_HARDENING` |
+| GitHub issue | [#14](https://github.com/rubennati/cal.diy/issues/14) — **remains open** |
+| Code-scanning alert | n/a — no scanner reported this; CodeQL has no notion of owner-scoped resource identity |
+| PR | [#54](https://github.com/rubennati/cal.diy/pull/54) |
+| Local commit(s) | `819144124e` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — this is containment, not full remediation of #14.** Issue #14's acceptance criteria
+also require correct Team/private-link resolution, restoration of the dropped `isTeamEvent`
+branch, four regression tests and a Playwright booking-flow pass. This entry records only the
+release-blocking half. `TEAM_PRIVATE_LINK_CORRECTNESS_REMAINS_OUT_OF_SCOPE_FOR_V6.2.0-6`, and
+#14 stays open for it. The PR does **not** use `Closes #14`.
+
+**Provenance detail.** Fork-authored. Official upstream `calcom/cal.diy@main` carries the
+byte-identical fallback at `eventTypeRepository.ts`, so there is no upstream fix to cherry-pick —
+verified against `origin/main` rather than assumed. The external `Mitch515/cal.diy` commit
+`ab5d8542d3` reported the symptom against a different endpoint; it is `BEHAVIOURAL_REFERENCE`
+evidence only. Its code was not read for implementation, not copied, and its SHA is not
+provenance for this change.
+
+**Problem.** `findFirstEventTypeId` ended in
+`findFirst({ where: { slug } })` — unordered, with no owner, team or `hidden` predicate. A slug
+is unique only within an owner, never globally, so that query returns an arbitrary event type.
+
+Its **sole** caller (verified live: exactly one, `slots/util.ts:372`) is `getEventTypeId` on
+`slots.getSchedule`, a `publicProcedure` whose middleware chain is `perfMiddleware` +
+`errorConversionMiddleware` — no auth, no rate limit — and whose Next adapter ships. An
+unresolvable username leaves `userId` undefined, so a non-existent username plus a common slug
+such as `30min` reached the fallback. `findForSlots` then keys purely on `id` and never
+re-checks ownership, so the caller received another owner's event type and its availability
+under the requested one's name.
+
+**Implementation.** Return `null` when neither selector is present. The caller already throws
+`NOT_FOUND` on a null result, so a wrong resource becomes no resource. Legitimate lookups are
+unaffected — they resolve a username to a `userId` first and take the compound-key branch.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes a public wrong-resource resolution primitive |
+| New trust boundary | **NO** |
+| Public endpoint | Behaviour changed on an existing public endpoint; no endpoint added |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Unresolvable-owner requests now answer `NOT_FOUND` instead of arbitrary data |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` → `REMEDIATED_BY_IMPLEMENTATION`.
+Deliberately **not** `CONFIRMED_VULNERABILITY`: the defect is reproduced by unit test and the
+path is traced end-to-end in source (`E2`), but no live request was fired against a running
+instance, and `SECURITY_ASSURANCE.md` §2.1 makes demonstrated reachability load-bearing. That
+conservatism should not be read as minimising it — unlike the PBAC placeholders, whose
+reachability genuinely fails for want of team rows, nothing here blocks the path: the endpoint
+is unauthenticated, unthrottled and shipped.
+
+Stated precisely, and no wider: **no authentication bypass, no privilege escalation, no write
+primitive, no code execution.** What it yielded was a slug-existence oracle and another owner's
+availability — a modest unauthenticated disclosure, plus functional corruption of the addressed
+resource.
+
+**Security property established.** On the username/slug resolution path, an event type is
+selected only through an owner-scoped compound key (`userId_slug` or `teamId_slug`); a slug
+alone can never select one. This is deliberately narrower than "public slot resolution always
+binds resource identity" — see the raw-ID analysis below for why the broader phrasing would
+misdescribe the code.
+
+**Adjacent path examined and deliberately excluded — raw `eventTypeId`.**
+`_getEventType` short-circuits on `input.eventTypeId` before owner resolution, and
+`findForSlots({ id })` performs no owner, team or `hidden` check. This was analysed before
+implementing, because if it preserved the same primitive the containment would have been
+incomplete. It does not, and the reasons are structural rather than incidental:
+
+- `eventTypeId` is an **intended, documented** selector. `getScheduleSchema`'s own refine reads
+  `!!data.eventTypeId || (!!data.usernameList && !!data.eventTypeSlug)`, and `useSchedule.ts`
+  sends `eventTypeId` whenever the slug is not yet known.
+- It binds resource identity **exactly**, by primary key. The caller receives precisely the
+  resource named — no substitution. The slug fallback was the opposite: identity was absent, so
+  a *different* owner's resource was served under the requested one's name.
+- A mismatched `usernameList` cannot cross-contaminate: on the regular path hosts derive from
+  the event type's own record, not from `usernameList`.
+- `hidden` means unlisted, not unreachable — `getPublicEvent` selects `hidden` but never filters
+  on it, so hidden event types are intentionally link-reachable and their slots are needed to
+  book them.
+
+Classification: `SEPARATE_SECURITY_CANDIDATE_BUT_NOT_SAME_PROPERTY`. The residue worth tracking
+is that sequential integer ids make availability enumerable across event types — availability
+only, no PII and no booking capability. Recorded here rather than fixed, and it does not weaken
+this containment.
+
+**`_enableTroubleshooter`.** Read after the event type is already resolved, so it discloses host
+user ids for any correctly addressed event type and is independent of this defect.
+`SEPARATE_SECURITY_CANDIDATE`; not touched here, since the containment does not depend on it.
+
+**Validation.** New repository test fails pre-fix with `expected { id: 999 } to be null` — a
+foreign event type returned from a slug alone — and passes after. Two service-level tests cover
+the `NOT_FOUND` conversion and the personal happy path. Full targeted run 11/11; `slots` +
+`eventtypes` sweep 92/92; the six real `getSchedule` consumer suites 68 passed / 3 skipped,
+confirming no supported flow relied on the fallback. Biome warning counts on the changed
+repository file are byte-identical to baseline (4 warnings, 63 infos — all pre-existing).
+
+**Rollback.** Reverting restores the public wrong-resource primitive. The repository test is the
+guard; there is no CI script guard, because the invariant is a return value rather than the
+presence or absence of a file.
+
+**Upstream reevaluation trigger.** Upstream fixes the fallback itself, restores the
+`isTeamEvent` branch, or changes `findForSlots` to take owner context — any of which should be
+reconciled against this divergence rather than merged blindly.
+
+**Related documentation.** Issue #14 (open); issues #13 and #33 (team authorization invariants);
+`FORK_DIVERGENCE.md` → Security And Privacy Changes; `SECURITY_ASSURANCE.md` §2.
+
+---
+
+### FIL-0019 · PBAC placeholders fail closed
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `SECURITY_HARDENING` / `AUTHORIZATION_CONTAINMENT` |
+| GitHub issue | [#13](https://github.com/rubennati/cal.diy/issues/13) — **remains open** |
+| Code-scanning alert | n/a — no scanner models owner-scoped permissions; CodeQL cannot see that a function named `checkPermission` returns an unconditional `true` |
+| PR | [#56](https://github.com/rubennati/cal.diy/pull/56) |
+| Local commit(s) | `1bd84ef167` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — containment, not implementation.** `PBAC_NOT_IMPLEMENTED` but `PBAC_FAILS_CLOSED`.
+No role semantics were written, no custom roles activated, no schema or migration touched, no
+Team surface enabled. Issue #13's own acceptance criteria are **not** met — see *Issue state*
+below — so #13 stays open and the PR carries no auto-closing keyword.
+
+**Provenance.** Fork-authored, derived from the current interfaces and the fail-closed
+requirement alone. Upstream `ab21c7f805` (#28903) deleted `packages/features/pbac/` and pasted a
+permissive placeholder into each former consumer; `calcom/cal.diy@main` still carries all 18 with
+`return true` (verified against `origin/main`, not assumed), so there is no upstream fix to take.
+The deleted implementation was **AGPLv3** and `packages/features/ee/**` is Cal.com Commercial —
+both prohibited as sources by `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0/§3.4. Neither was read,
+restored or adapted. No external-fork code was consulted.
+
+**Inventory, rederived rather than trusted.**
+
+| Measure | Issue #13 states | Measured on `ebc2f36251` |
+| --- | --- | --- |
+| Files declaring a placeholder | 18 | **18** ✓ |
+| Files invoking `checkPermission` (fail-open) | 11 | **11** ✓ |
+| Files invoking only `getTeamIdsWithPermission` (already fail-closed) | 6 | **6** ✓ |
+| Declaration-only | 1 | **1** ✓ |
+| `checkPermission` call sites | 19 | **23** ✗ |
+| `hasPermission` invocations | 0 | **0** ✓ |
+
+Two corrections to the issue's figures. The call-site count is **23**, not 19 — enumerated with
+`file:line`. And the placeholder exists in **two formatting variants**, 15 single-line and 3
+multi-line, semantically identical; a single-pattern edit would have silently missed three files.
+
+**Change.** In all 18 files, `checkPermission` and `hasPermission` return `false` instead of
+`true` (36 methods). All 18 `getTeamIdsWithPermission` keep `[]` — they already failed closed.
+Each placeholder gains a two-line comment so a bare `return false` in a function named
+`checkPermission` is not later read as a defect.
+
+**Call-site safety.** Every one of the 23 sites is structurally gated by a Team, Organization or
+Membership row, or sits in dead code (both watchlist services have zero container callers;
+`createOrgPbacProcedure` has zero call sites). One case deserves naming rather than burying:
+`heavy/create.handler.ts:131` gates **personal** event-type creation for users with
+`organizationId` set, when the organization has `lockEventTypeCreationForUsers = true`. The
+placeholder currently grants org-level permission to everyone, so that lock is entirely
+non-functional; denying makes it work as designed. It still requires an Organization — itself a
+`Team` row — so a stock deployment is unaffected, but an org admin in a locked org is now denied
+too. That is a deliberate over-denial, consistent with preferring false negatives on unsupported
+Team behaviour over cross-tenant false positives.
+
+**Tests asserted the defect.** Eleven pre-existing tests failed on this change, every one of them
+a team-event test, and two documented the fail-open behaviour outright — a test named
+*"should grant permissions for team members (stub always returns true)"* and a comment reading
+*"PermissionCheckService stub always returns true, so org admin access is always granted"*.
+Upstream's fail-open authorization was not merely present, it was **pinned by CI**: any attempt
+to implement PBAC would have produced a red build. Those blocks now assert denial and record what
+they previously claimed.
+
+**Scope proven by failure distribution.** All 6 `personal events` tests passed unchanged —
+including *"should deny team member from accessing another user's personal event"* — as did
+`event not found`, `input validation` and `ensureEmailOrPhoneNumberIsPresent`. Every failure was
+team-scoped. That is the "no supported non-Team path depends on `true`" requirement demonstrated,
+not merely argued.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes fail-open authorization; unimplemented permissions now deny |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** — `getPublicEvent`'s sole affected flag narrows disclosure for authenticated callers |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Team/Org-scoped operations now refuse; personal scheduling unchanged |
+
+**Finding classification.** Before: `CONFIRMED_SECURITY_DEFECT` / `FAIL_OPEN_AUTHORIZATION`.
+After: `REMEDIATED_BY_CONTAINMENT` / `FAIL_CLOSED_UNIMPLEMENTED_AUTHORIZATION`. Deliberately
+**not** `CONFIRMED_VULNERABILITY` — `SECURITY_ASSURANCE.md` §2.1 makes reachability load-bearing,
+and no shipped route creates a `Team`. Equally not dismissed: `scripts/seed.ts` creates seven
+`Team` rows unconditionally and ships in the image with `ts-node` retained, so restored or seeded
+data makes the precondition real. Nothing here claims `PBAC_IMPLEMENTED`, `TEAMS_SECURE` or
+`TEAM_AUTHORIZATION_COMPLETE`. Teams remain unsupported for v6.2.0-6.
+
+**Guard.** `scripts/fork-guard-pbac-fail-closed.sh`, blocking in `forte-ci`. It discovers
+placeholder files semantically, diffs them against a reviewed manifest so a placeholder added to
+a *new* file is caught, then inspects only each class body — an unrelated `return true` elsewhere
+in these files is out of scope. Verified four ways: fails on all 18 pre-fix; passes contained;
+fails naming the single file when one stub is rolled back to `true`; and fails loudly on manifest
+drift when a placeholder file is renamed. Explicitly temporary — retire it when a real permission
+implementation lands, replaced by that implementation's own tests.
+
+**Rollback.** Reverting restores fail-open authorization on any instance holding Team rows. The
+guard and the updated tests are the protection.
+
+**Upstream reevaluation trigger.** Upstream implements PBAC, restores `packages/features/pbac`
+under a compatible licence, or changes the placeholder shape — any of which must be reconciled
+against this divergence rather than merged blindly. Re-verify after every sync that no shipped
+route creates a `Team`.
+
+**Related documentation.** Issue #13 (open); #33 (team role invariants, design-only); #28 (team
+product decision); `docs/PBAC_PLACEHOLDER_AUDIT.md`; `SECURITY_ASSURANCE.md` §2;
+`docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0, §3.4.
+
+---
+
+### FIL-0020 · MIT LICENSE notice in the runtime image
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **pending release**, see scope note |
+| Type | `DEPLOYMENT` / `RELEASE_ARTIFACT` |
+| GitHub issue | [#40](https://github.com/rubennati/cal.diy/issues/40) — **remains open** |
+| Code-scanning alert | n/a — not a security finding |
+| PR | [#57](https://github.com/rubennati/cal.diy/pull/57) |
+| Local commit(s) | `a2954c7388` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — implemented, not yet released.** Issue #40's acceptance criteria require the change to
+ship through the normal release review with a new tag and a recorded digest. Neither exists yet.
+`ISSUE_STATE: IMPLEMENTED_PENDING_RELEASE`, not `FULLY_REMEDIATED`. The PR carries no auto-closing
+keyword for #40.
+
+**Artifact evidence, gathered before implementation as the issue requires.** Pulled and inspected
+the exact pinned digest named in the issue —
+`ghcr.io/rubennati/cal.diy@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+(`v6.2.0-5`, AMD64). Confirmed the digest itself resolves correctly (`RepoDigests` and
+`docker buildx imagetools inspect` both echo the requested digest, not merely accepted uncritically).
+`docker run --entrypoint sh … -c 'ls -la /calcom/LICENSE'` exits 2, `No such file or directory` —
+**`LICENSE_ABSENT`**. A control check in the same run — `find /calcom/packages -name LICENSE`
+— located the 8 sub-package `LICENSE` files the issue predicted, proving the check itself is sound
+rather than a broken probe returning a false negative.
+
+**Root cause.** `runner` copies everything from `builder-two`
+(`COPY --from=builder-two /calcom ./`), and `builder-two`'s own root-metadata line
+(`COPY package.json .yarnrc.yml turbo.json i18n.json ./`) pulls directly from the build context —
+not from `builder` — so the file must be added at that line specifically. Adding it only to
+`builder` would not reach `runner`, because `builder-two` never copies `LICENSE` from `builder`.
+
+**Change.** `LICENSE` folded into `builder-two`'s existing root-metadata `COPY` line rather than
+added as a separate `COPY LICENSE ./` line — same effect, one fewer image layer, and consistent
+with how that line already bundles small root files. `LICENSE` content itself is untouched; the
+Cal.com copyright line is not modified, consistent with #24/#25/#26.
+
+**Regression guard.** `.github/actions/docker-build-and-test/action.yml` gains a new step,
+*"Verify MIT LICENSE notice in the exact built image"*, positioned after "Build image once" and
+before "Test exact runtime image" — before the runtime smoke test and well before the publish
+step. It reads the already-built image's filesystem via `docker create`/`docker cp` (no server
+startup dependency, no second build), then fails on absence, on an empty file, and — the strongest
+check — on any byte-level mismatch against the repository root `LICENSE` via `cmp`. The asserted
+property is `SOURCE LICENSE == LICENSE IN EXACT VALIDATED IMAGE`, not merely path existence.
+
+**`SECURITY_REVIEW.md` updated.** The per-release checklist gains: *"root MIT `LICENSE` present in
+the exact runtime image, and its content matches the repository root `LICENSE` byte for byte."*
+`IMAGE_BUILD.md` and `RELEASE_PROCESS.md` were checked and contain no LICENSE-adjacent factual gap
+to close — left untouched rather than adding overlapping documentation.
+
+**SBOM licence-metadata observation (issue #40's secondary question).** Attempted a CycloneDX scan
+of the locally built fixed image with the same tool the release workflow uses
+(`aquasecurity/trivy-action`, run here via its underlying `aquasec/trivy` image), across five
+attempts — increasing timeout, persisting the vulnerability DB across runs, and dropping
+vulnerability matching to isolate plain SBOM generation. Each attempt terminated silently partway
+through package enumeration with no error, while the Docker daemon remained healthy and unrelated
+containers kept running normally throughout — not attributed to the image or the fix.
+**`UNABLE_TO_VERIFY`.**
+
+One partial data point from before an earlier attempt terminated: Trivy logged `[python] Licenses
+acquired from one or more METADATA files may be subject to additional terms`, indicating its SBOM
+tooling captures licence metadata for at least some ecosystems — not sufficient to classify
+npm/Node coverage either way. This is observational only, per the issue's own scope limit — the
+root `LICENSE` requirement stands independently of whatever the SBOM does or does not capture for
+third-party dependencies.
+
+**No legal conclusion drawn, anywhere in this record.** The repository states only that the notice
+was absent and is now present in the build; whether that satisfies the MIT condition is explicitly
+left to a qualified person, per the issue's own `[LEGAL]` marker.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | None — licence-compliance artifact content, not a security control |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None |
+| Compatibility impact | None — adds one file to the image; no runtime behaviour change |
+
+**Finding classification.** `DEPLOYMENT_ARTIFACT_DEFECT` → remediated in source, pending release
+verification. Explicitly **not** `SECURITY_DEFECT` or `VULNERABILITY` — issue #40 itself classifies
+this as licence-compliance, not security, and this entry preserves that distinction.
+
+**Rollback.** Reverting drops the notice from the image again; the new guard step would then fail
+the next `docker-build-and-test` run, which is the intended protection.
+
+**Upstream reevaluation trigger.** Upstream changes its own Dockerfile stage graph in a way this
+fork's `builder-two` copy step depends on, or upstream begins shipping its own `LICENSE` into its
+image (not this fork's contract to track, but worth noting if the divergence narrows).
+
+**Related documentation.** Issue #40 (open); `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §6 item 2;
+`FORK_DIVERGENCE.md` → Container And Deployment Changes; issues #24, #25, #26 (copyright-line
+preservation, deliberately separate).
+
+---
+
+### FIL-0021 · Mechanically enforced branch protection on `develop` and `release`
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
+| GitHub issue | [#47](https://github.com/rubennati/cal.diy/issues/47) |
+| Code-scanning alert | n/a |
+| PR | [#52](https://github.com/rubennati/cal.diy/pull/52) |
+| Local commit(s) | `2482ce292b` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem.** Every gate described in `FORK_PROCESS.md` and `.ai/quality-gates.md` was
+convention only — nothing in GitHub prevented a merge with `forte-ci` failing. `develop` sat
+red for over an hour on 2026-08-26 as a direct consequence: PR #41 merged while the
+telemetry guard was failing, silently skipping the subsequent Type check and Lint steps for
+that entire window.
+
+**Implementation.** The change itself was a GitHub branch-protection configuration applied
+via the API — not a source-tree diff — so this entry's "implementation" is the settings
+change plus the documentation that records and explains it. `2482ce292b` is the recording
+commit (`.ai/quality-gates.md`, `FORK_PROCESS.md` → "Branch Contract and Required Checks",
+`SECURITY_ASSURANCE.md` cross-reference); the settings change it documents was applied and
+verified live, not merely described.
+
+Live-verified at time of this entry (`gh api repos/rubennati/cal.diy/branches/<branch>/protection`,
+re-read from the API rather than assumed from the commit):
+
+| Branch | Required status check | Approvals | Code-owner review | `enforce_admins` | Force-push / deletion |
+| --- | --- | --- | --- | --- | --- |
+| `develop` | `ci` (strict) | 0 | no | `true` | blocked |
+| `release` | `ci` (strict) | 0 | yes | `true` | blocked |
+
+The required context is `ci` — the GitHub **job id** from `forte-ci.yml`, not the workflow's
+display name. CodeQL, Trivy and Scorecard are **not** required status checks on either
+branch and remain report-only, per `SECURITY_ASSURANCE.md` §5b.3's argument against
+converting severity-only scanners into blocking gates. This entry does not claim otherwise
+and any future record must not either.
+
+`enforce_admins: true` closes the specific gap the incident exposed: without it, the sole
+maintainer merging their own PR is exactly the path that let `develop` go red silently,
+since admin merges bypass required checks by default. Recovery from an over-strict gate
+remains an explicit, attributable `PATCH` to branch protection — never an invisible bypass
+folded into a routine merge.
+
+**Fail-closed merge behaviour demonstrated, not merely configured.** [PR #51](https://github.com/rubennati/cal.diy/pull/51)
+pushed a deliberately failing `ci` on a temporary branch and showed `mergeable_state: blocked`
+(REST) and `mergeStateStatus: BLOCKED` (GraphQL) — both re-read from the API after the fact.
+The failing step was exactly the intended one (the telemetry guard), confirming the
+downstream Type-check/Lint steps skip on that failure the same way they did during the
+original incident. The PR was closed unmerged and the temporary branch deleted; it never
+reached `develop`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Converts a convention-only merge gate into a mechanically enforced one |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None — this governs the maintenance/merge path, not the shipped product |
+| Compatibility impact | None to the application; changes what GitHub will allow to merge |
+
+**Finding classification.** `PROCESS_GAP` (convention-only gate, demonstrated exploitable by
+the 2026-08-26 incident) → `REMEDIATED_BY_IMPLEMENTATION`. Not a security defect in the
+shipped product.
+
+**Rollback.** Reverting the documentation commit does not itself change the live GitHub
+settings; reversing this would require a separate, equally explicit `PATCH` to branch
+protection, which this entry's existence is meant to make visible if it ever happens.
+
+**Upstream reevaluation trigger.** N/A — fork-owned maintenance boundary, not upstream-derived.
+
+**Related documentation.** Issue #47 (closed); `FORK_PROCESS.md` → "Branch Contract and
+Required Checks"; `.ai/quality-gates.md` → "Mechanically enforced branch protection";
+`SECURITY_ASSURANCE.md` §5b.3.
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the

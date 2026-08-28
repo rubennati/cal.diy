@@ -43,6 +43,20 @@ jobs:
         # Blocking on purpose: this is the class of regression an upstream sync
         # re-introduces silently. See .ai/divergence.md.
         run: bash scripts/fork-guard-telemetry.sh
+      - name: Fork guard — self-test
+        # A guard is only worth blocking on if it still fires. Asserts both directions:
+        # documentation may name the removed indicators, executable surfaces may not.
+        run: bash scripts/fork-guard-telemetry.test.sh
+      - name: Fork guard — tRPC adapter parity
+        # Blocking on purpose: a viewerRouter key with no Next API adapter 404s before
+        # reaching tRPC, and type-check, Biome and CodeQL are all blind to it. See #32.
+        run: bash scripts/fork-guard-trpc-adapter-parity.sh
+      - name: Fork guard — PBAC fails closed
+        # Blocking on purpose: upstream ships permission placeholders that answer
+        # checkPermission with an unconditional true, and no type check, linter or
+        # scanner can see that a function named checkPermission grants everything.
+        # Temporary — retire when PBAC is actually implemented. See #13.
+        run: bash scripts/fork-guard-pbac-fail-closed.sh
       - name: Type check
         run: yarn type-check:ci --force
       - name: Lint (Biome)

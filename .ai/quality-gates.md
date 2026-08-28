@@ -25,6 +25,22 @@ For fork/release work:
   upstream telemetry module, its Jitsu endpoint/key, `next-collect`, or the
   `CALCOM_TELEMETRY_DISABLED` flag reappear through a sync
 
+## Mechanically enforced branch protection
+
+Prior to issue #47, every gate above was convention only — nothing in GitHub prevented a
+merge with `forte-ci` failing. `develop` sat red for over an hour on 2026-08-26 as a direct
+consequence: PR #41 merged while the telemetry guard was failing, which meant the following
+`Type check` and `Lint` steps had been silently skipped for that entire window. See
+[FORK_PROCESS.md](../FORK_PROCESS.md) → *Branch Contract and Required Checks* for what is
+actually enforced, and why `main` deliberately keeps a different policy from `develop` and
+`release`.
+
+The load-bearing distinction: **required status checks** (`develop`, `release`) are a
+mechanical merge blocker; **report-only scanners** (CodeQL, Trivy, Scorecard) are visible
+findings a human evaluates, per `SECURITY_ASSURANCE.md` §5b.3 — converting them into blocking
+gates wholesale is deliberately rejected there, because their severity alone does not equal
+applicability, reachability, or shipped-component status.
+
 **No markdown gate exists.** `biome check docs/` reports *"Checked 1 file"* — Biome has no markdown
 support configured here, and `lint-staged.config.mjs` covers only `js/ts/jsx/tsx` plus
 `schema.prisma`. Documentation formatting and link integrity are therefore **not** machine-verified

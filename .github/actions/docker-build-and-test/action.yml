@@ -129,6 +129,42 @@ runs:
           DATABASE_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
           DATABASE_DIRECT_URL=postgresql://${{ inputs.postgres-user }}:${{ inputs.postgres-password }}@${{ inputs.database-host }}/${{ inputs.postgres-db }}
 
+    # Issue #40: the root LICENSE must ship in the exact image built above, unmodified.
+    # Reads the built image's filesystem via `docker create`/`docker cp` rather than the
+    # running application, and rebuilds nothing — this is the same image the runtime and
+    # scan steps below use.
+    - name: Verify MIT LICENSE notice in the exact built image
+      shell: bash
+      env:
+        IMAGE_REF: ${{ steps.image.outputs.image_ref }}
+      run: |
+        set -euo pipefail
+
+        container_id="$(docker create "$IMAGE_REF")"
+        cleanup_license_container() {
+          docker rm -f "$container_id" >/dev/null 2>&1 || true
+        }
+        trap cleanup_license_container EXIT
+
+        image_license="$(mktemp)"
+        if ! docker cp "$container_id:/calcom/LICENSE" "$image_license" 2>/dev/null; then
+          echo "::error::/calcom/LICENSE is missing from $IMAGE_REF"
+          exit 1
+        fi
+
+        if [[ ! -s "$image_license" ]]; then
+          echo "::error::/calcom/LICENSE is present but empty in $IMAGE_REF"
+          exit 1
+        fi
+
+        if ! cmp -s "$image_license" LICENSE; then
+          echo "::error::/calcom/LICENSE in $IMAGE_REF does not match the repository root LICENSE"
+          diff -u LICENSE "$image_license" || true
+          exit 1
+        fi
+
+        echo "/calcom/LICENSE in $IMAGE_REF matches the repository root LICENSE ($(sha256sum LICENSE | cut -d' ' -f1))"
+
     - name: Test exact runtime image
       shell: bash
       env:
