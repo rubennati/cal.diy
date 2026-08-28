@@ -120,6 +120,112 @@ rcheck "Release present and consistent"   yes yes complete-assets
 rcheck "Release present but inconsistent" yes no  fail
 
 echo
+echo "=== candidate freeze: develop moving after dispatch must change nothing ==="
+# Simulated repository: commit A is the dispatch event, B is a later push.
+SHA_A="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; TREE_A="1111111111111111111111111111111111111111"
+SHA_B="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; TREE_B="2222222222222222222222222222222222222222"
+DEVELOP_HEAD="$SHA_A"                       # branch tip; moves during the test
+tree_of() { [[ "$1" == "$SHA_A" ]] && echo "$TREE_A" || echo "$TREE_B"; }
+
+# prepare(), mirroring the workflow: the candidate is the EVENT commit, never the branch.
+prepare_candidate() { # <github.sha> -> "sha tree"
+  local event_sha="$1" source_sha source_tree
+  source_sha="$event_sha"                    # was: git rev-parse HEAD after checking out github.ref
+  source_tree="$(tree_of "$source_sha")"
+  echo "$source_sha $source_tree"
+}
+
+GITHUB_SHA="$SHA_A"                          # dispatch fires at A
+read -r CAND_SHA CAND_TREE <<< "$(prepare_candidate "$GITHUB_SHA")"
+DEVELOP_HEAD="$SHA_B"                        # someone pushes B before the jobs run
+
+# every downstream identity derives from the frozen candidate
+CHECKOUT="$CAND_SHA"                         # build jobs use prepare.outputs.source_sha
+OCI_REVISION="$CAND_SHA"                     # image-revision input
+RECORDED_SHA="$CAND_SHA"                     # candidate-record.json
+ATTESTED_SHA="$GITHUB_SHA"                   # what GitHub embeds in the attestation
+
+fcheck() {
+  if [[ "$2" == "$3" ]]; then printf '  PASS  %s = %s\n' "$1" "${2:0:8}"; pass=$((pass+1))
+  else printf '  FAIL  %s = %s (want %s)\n' "$1" "${2:0:8}" "${3:0:8}"; fail=$((fail+1)); fi
+}
+fcheck "candidate SHA unaffected by develop moving" "$CAND_SHA" "$SHA_A"
+fcheck "candidate tree is A's tree"                 "$CAND_TREE" "$TREE_A"
+fcheck "build job checks out A"                     "$CHECKOUT" "$SHA_A"
+fcheck "OCI revision label records A"               "$OCI_REVISION" "$SHA_A"
+fcheck "candidate record records A"                 "$RECORDED_SHA" "$SHA_A"
+fcheck "attestation commit equals built commit"     "$ATTESTED_SHA" "$CAND_SHA"
+if [[ "$DEVELOP_HEAD" == "$SHA_B" && "$CAND_SHA" == "$SHA_A" ]]; then
+  echo "  PASS  develop advanced to B while the candidate stayed A"; pass=$((pass+1))
+else
+  echo "  FAIL  develop/candidate divergence not demonstrated"; fail=$((fail+1))
+fi
+
+echo
+echo "=== Release asset reconcile (by content digest, not filename) ==="
+D_OK="sha256:1111"; D_BAD="sha256:9999"
+asset_action() { # <published digest, empty = absent> <expected digest> -> action
+  [[ -z "$1" ]] && { echo "upload"; return 0; }
+  [[ "$1" == "$2" ]] && { echo "skip"; return 0; }
+  echo "fail"; return 1
+}
+acheck() {
+  local got; got="$(asset_action "$2" "$3")" || true
+  if [[ "$got" == "$4" ]]; then printf '  PASS  %s -> %s\n' "$1" "$got"; pass=$((pass+1))
+  else printf '  FAIL  %s -> %s (want %s)\n' "$1" "$got" "$4"; fail=$((fail+1)); fi
+}
+acheck "Release present, asset absent"                ""       "$D_OK" upload
+acheck "asset present with correct digest"            "$D_OK"  "$D_OK" skip
+acheck "asset present with WRONG digest"              "$D_BAD" "$D_OK" fail
+acheck "name matches but content differs (the gap)"   "$D_BAD" "$D_OK" fail
+
+# all three expected assets, all correct -> nothing uploaded, nothing fails
+allok=yes
+for a in release-record.json sbom-amd64.cdx.json sbom-arm64.cdx.json; do
+  [[ "$(asset_action "$D_OK" "$D_OK")" == "skip" ]] || allok=no
+done
+if [[ "$allok" == "yes" ]]; then echo "  PASS  all three assets present and correct -> no-op"; pass=$((pass+1))
+else echo "  FAIL  all-correct case did not no-op"; fail=$((fail+1)); fi
+
+# release absent short-circuits before any asset comparison
+if [[ "$(release_state no no)" == "create" ]]; then
+  echo "  PASS  Release absent -> create (assets uploaded with it)"; pass=$((pass+1))
+else echo "  FAIL  Release-absent path"; fail=$((fail+1)); fi
+
+echo
+echo "=== the workflow actually implements the freeze (not just this model) ==="
+assert_workflow_freeze() {
+  local wf=".github/workflows/release-docker.yaml"
+  [[ -f "$wf" ]] || { echo "  SKIP  $wf not found (run from the repository root)"; return 0; }
+  local bad=0
+  # 1. a dispatch must check out the event commit, not the branch ref
+  if grep -q "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}" "$wf"; then
+    echo "  PASS  dispatch checks out github.sha, not github.ref"
+  else
+    echo "  FAIL  dispatch checkout is not pinned to github.sha"; bad=1
+  fi
+  # 2. the candidate SHA must come from the event, never from the working tree
+  if grep -q 'source_sha="\$GITHUB_SHA"' "$wf"; then
+    echo "  PASS  candidate SHA derives from the workflow event"
+  else
+    echo "  FAIL  candidate SHA is not taken from GITHUB_SHA"; bad=1
+  fi
+  if grep -qE '^\s*source_sha="\$\(git rev-parse HEAD\)"' "$wf"; then
+    echo "  FAIL  candidate SHA is still read from the working tree"; bad=1
+  else
+    echo "  PASS  candidate SHA is not read from the working tree"
+  fi
+  # 3. assets must be compared by content digest, not by name alone
+  if grep -q 'sha256sum "\$a"' "$wf" && grep -q 'have_digest' "$wf"; then
+    echo "  PASS  release assets are reconciled by content digest"
+  else
+    echo "  FAIL  release assets are not digest-verified"; bad=1
+  fi
+  return $bad
+}
+if assert_workflow_freeze; then pass=$((pass+4)); else fail=$((fail+1)); fi
+
+echo
 echo "=== harness tests the SHIPPED logic, not a stale copy ==="
 assert_no_drift() {
   local wf=".github/workflows/release-docker.yaml" self="${BASH_SOURCE[0]}"

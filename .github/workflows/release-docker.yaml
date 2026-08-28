@@ -60,7 +60,13 @@ jobs:
       - name: Checkout requested source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          ref: ${{ github.ref }}
+          # For a dispatch, check out the event's commit rather than the branch.
+          # `github.ref` is `refs/heads/develop`, which can move between the
+          # dispatch event and this job — and GitHub's artifact attestations
+          # describe `github.sha`, so a moving ref would let the build and its
+          # provenance describe different commits. For a tag push, `github.ref`
+          # is the tag itself and is already immutable.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}
           fetch-depth: 0
 
       - name: Validate release tag or prepare candidate identity
@@ -105,8 +111,16 @@ jobs:
             echo "source_tree=$release_tree" >> "$GITHUB_OUTPUT"
             echo "Validated release tag $tag at $source_sha (tree $release_tree)" >> "$GITHUB_STEP_SUMMARY"
           else
-            source_sha="$(git rev-parse HEAD)"
-            source_tree="$(git rev-parse HEAD^{tree})"
+            # The candidate is the workflow event's commit, full stop. This is the
+            # same commit GitHub embeds in the build attestations, so provenance
+            # and the built artifact cannot describe different sources.
+            source_sha="$GITHUB_SHA"
+            actual_head="$(git rev-parse HEAD)"
+            if [[ "$actual_head" != "$source_sha" ]]; then
+              echo "::error::Checked out $actual_head but the dispatch event is $source_sha"
+              exit 1
+            fi
+            source_tree="$(git rev-parse "$source_sha^{tree}")"
             # Pin to the resolved commit, never to the branch ref. `develop` may
             # move between this job and the build jobs, and a moving ref would let
             # them build a tree other than the one recorded here — the images and
@@ -639,11 +653,23 @@ jobs:
                 exit 1
               fi
             done
-            have="$(gh release view "$RELEASE_TAG" --json assets --jq '[.assets[].name] | join(" ")')"
+            # Verify by CONTENT, not filename. GitHub exposes a sha256 `digest`
+            # per asset, so a name match alone would accept an asset whose bytes
+            # differ from the ones this release actually produced.
+            meta="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
             for a in "${assets[@]}"; do
-              if ! grep -qw "$(basename "$a")" <<< "$have"; then
+              base="$(basename "$a")"
+              want="sha256:$(sha256sum "$a" | cut -d' ' -f1)"
+              have_digest="$(jq -r --arg n "$base" '.assets[] | select(.name==$n) | .digest // ""' <<< "$meta")"
+              if [[ -z "$have_digest" ]]; then
                 gh release upload "$RELEASE_TAG" "$a"
-                echo "uploaded missing asset $(basename "$a")"
+                echo "uploaded missing asset $base"
+              elif [[ "$have_digest" == "$want" ]]; then
+                echo "asset $base already present with the expected content ($want)"
+              else
+                echo "::error::Asset $base already published with digest $have_digest, expected $want."
+                echo "::error::Refusing to overwrite a conflicting published asset."
+                exit 1
               fi
             done
             echo "release $RELEASE_TAG reconciled"
