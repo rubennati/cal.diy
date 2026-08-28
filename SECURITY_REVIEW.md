@@ -66,6 +66,37 @@ Do not approve a release image for downstream use if any of these are true:
 - either architecture or the release finalizer failed
 - generated tracked files differ after install/lifecycle scripts
 
+## Known Accepted Items — Current Release Preparation
+
+This section records what a release operator needs to know about `develop` right now,
+distinct from the generic checklist above. It is maintained as part of release preparation
+and is not itself release evidence — it does not replace the required record once a release
+actually ships.
+
+All implementation blockers identified for the next release are resolved on `develop`.
+Specifically:
+
+- issues #43, #44, #45 (security fixes) and #32 (functional availability): fully remediated
+  and closed
+- issue #47 (mechanically enforced branch protection): implemented and closed
+- issue #14 (slots owner-resolution): the public wrong-resource fallback is closed
+  (`FIL-0018`). The issue itself remains **open** — team/private-link resolution correctness
+  is deliberately out of scope while Teams are inactive
+- issue #13 (PBAC placeholders): the fail-open placeholders now deny by default
+  (`FIL-0019`). The issue itself remains **open** — PBAC is not implemented, only contained;
+  do not read this as `PBAC_IMPLEMENTED` or `TEAMS_SECURE`
+- issue #40 (MIT `LICENSE` in the runtime image): implemented and verified against a locally
+  built image (`FIL-0020`). The issue remains **open** pending verification against the
+  actual published release artifact — see the checklist item above
+- issue #46 / CodeQL alert #74 (`RecurringBookingService` type confusion): accepted as a
+  known defect for this release; P3, availability-only, no authorization bypass identified.
+  The alert remains open by deliberate disposition, not oversight
+- issue #33 (team role/ownership invariants): design-only, non-blocking; no Team activation
+  ships in this release
+
+Do not read any of the above as: all security issues are fixed, all CRITICAL scanner
+findings are closed, Teams are secure, or PBAC is implemented. None of those are true.
+
 ## Incident-Oriented Checks
 
 Because a prior deployment apparently lost SMTP credentials, every release review should explicitly consider:
