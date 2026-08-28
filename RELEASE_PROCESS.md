@@ -50,7 +50,13 @@ git diff --check
    are built in the release path.** It builds AMD64 and ARM64 natively, runtime-tests each
    exact image, asserts the root `LICENSE` byte-for-byte inside it, scans it, generates its
    CycloneDX SBOM, pushes it to a tree-keyed candidate tag, and records both immutable
-   digests in a `candidate-record-<tree>` artifact. It cannot publish a release tag.
+   digests in a `candidate-record-<tree>` artifact, and attests SLSA build provenance for
+   each digest. It cannot publish a release tag.
+
+   The build jobs check out the **exact commit** `prepare` resolved, never a branch ref, and
+   assert that the checked-out commit and tree match what was recorded. A `develop` that
+   moves after dispatch therefore cannot cause the images and the candidate record to
+   describe different sources.
 
    If `develop` moves after this run, the candidate record no longer matches the tree and
    publication will refuse to proceed — re-run the dispatch on the new candidate.
@@ -161,16 +167,30 @@ Pushing the tag runs `Release Docker` in **promotion** mode. It builds nothing.
 
 `promote`:
 
-5. resolves each recorded digest directly in the registry, by digest, not by candidate tag
-6. refuses to overwrite an existing final version tag
-7. creates the final `vX.Y.Z-N` and `vX.Y.Z-N-arm` tags from those exact digests with
-   `docker buildx imagetools create`
-8. updates the convenience `latest` tag to the AMD64 digest
-9. attests SLSA build provenance for both final digests
-10. downloads the candidate SBOMs produced against those same images
-11. writes `release-record.json`
-12. creates the GitHub Release, generating its facts **from `release-record.json`** and
-    attaching both SBOMs and the record itself
+5. requires verifiable build provenance for both candidate digests, and stops if either is
+   missing — an unattested digest is not evidence
+6. resolves each recorded digest directly in the registry, by digest, not by candidate tag
+7. reconciles each final architecture tag: absent → create it from the validated digest;
+   present and equal → already done, continue; present and different → **fail hard**, because
+   a published version tag is immutable and is never redirected
+8. moves the convenience `latest` pointer onto the release AMD64 digest
+9. downloads the candidate SBOMs produced against those same images
+10. writes `release-record.json`
+11. creates the GitHub Release, generating its facts **from `release-record.json`** and
+    attaching both SBOMs and the record itself; if a Release already exists on the immutable
+    tag it completes any missing assets rather than rewriting published facts, and fails if
+    the existing body contradicts the digests being published
+
+Build provenance is **not** produced here. The images were built during candidate
+validation, so that is where their SLSA provenance is generated — attesting at promotion
+would claim this workflow built an image it only re-tagged. What promotion records instead
+is the binding between build identity and release identity, in `release-record.json`:
+candidate SHA, source tree, release SHA, immutable tag, final digests.
+
+**Retry is safe.** Every irreversible step above is idempotent or fails closed, so a
+transient failure after one or both final tags exist does not strand the release: re-running
+the tag workflow converges. The one thing it will never do is repoint a version tag that
+already resolves to a different digest.
 
 Step 12 is why release facts cannot drift between the artifacts and the announcement: the
 published table is rendered from the same JSON the pipeline emitted. Hand-written prose for
@@ -182,9 +202,12 @@ image that passed the runtime test, the `LICENSE` assertion and the Trivy scan d
 candidate validation. Verifying the release therefore requires no local Docker daemon —
 and the release contract does not ask for one.
 
-**Non-transactional caveat, unchanged.** GHCR tag creation is not atomic. If promotion fails
-between tag operations the release is incomplete, and all resulting tags must be inspected
-before preparing a new build-number release.
+**Non-transactional, but recoverable.** GHCR tag creation is still not atomic. The
+difference is that a partial failure is now recoverable by re-running the same tag workflow,
+rather than requiring a new build number: the reconcile logic treats an already-correct tag
+as done and refuses only genuine conflicts. Its behaviour is asserted by
+`scripts/release-promotion-reconcile.test.sh`, which `forte-ci` runs as a blocking step and
+which fails if it drifts from the workflow it is supposed to mirror.
 
 ## 6. Release Record And Downstream Handoff
 
