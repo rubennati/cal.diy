@@ -1969,3 +1969,105 @@ evidence exists.**
 
 The completion rule these steps serve is
 [FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done).
+
+### FIL-0022 · Documentation-only fast path in `forte-ci`
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
+| GitHub issue | n/a — maintainer request, no tracking issue filed |
+| Code-scanning alert | n/a |
+| PR | <pr> |
+| Local commit(s) | `32584ba05b` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem.** Every pull request paid the same required-check cost regardless of what it
+changed. Measured from run 33151635129, the `ci` job spent 235s on `yarn install --immutable`,
+159s on `type-check:ci` and 101s on Biome, against 1s combined for all four fork guards —
+roughly 8.5 minutes wall clock. On a documentation-only change none of the three expensive
+steps produced enforced signal: `type-check:ci` never sees a markdown file, and Biome has no
+markdown support configured here (`biome check docs/` reports *"Checked 1 file"*, per
+`.ai/quality-gates.md` → "No markdown gate exists"). The cost was real; the coverage was not.
+
+**Implementation.** `.github/workflows/forte-ci.yml` gains a `Classify change scope` step that
+resolves a `mode` output, and the expensive steps become conditional on `mode == 'full'`. The
+four fork guards move ahead of dependency installation and lose their conditions, so they run
+on every event on both paths; a `git diff --check` against the first parent joins them so the
+fast path still inspects the change rather than only the tree's invariants.
+`.github/workflows/forte-codeql.yml` gains `paths-ignore` on its `pull_request` trigger only.
+
+**Why steps and not the job or the workflow.** `ci` is the required status context on both
+`develop` and `release`. A workflow-level `paths:` filter would prevent the job from running
+at all on a filtered PR, and GitHub does not synthesise a passing result for a required
+context that never reports — the PR would sit permanently pending and become *less*
+mergeable, which is the opposite of the goal. Skipped *steps* inside a job that always runs
+still produce a green `ci`.
+
+**Classification is an allowlist, deliberately.** A changed path is documentation only if it
+matches `**/*.md` or `docs/**`. Everything else takes the full path, and so does an
+unavailable or empty changed-file list. A denylist of known code paths would silently
+fast-path the next directory added to this repository; an allowlist fails safe by
+construction, at the cost of occasionally running full CI on something that did not need it.
+
+Verified before relying on the allowlist: no build, lint or test configuration
+(`turbo.json`, `biome.json`, `vitest.workspace.ts`) reads `docs/**` or any `*.md`; nothing in
+the tree imports a `.md`; and the `Dockerfile` never copies `docs/` into any stage. The one
+`.md` occurrence inside TypeScript is the Moldova TLD (`"mail.md"`, `"neuro.md"`) in a
+free-email-domain list, which is a string literal, not a module reference.
+
+**What a green `ci` means, by event.**
+
+| Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
+| --- | --- | --- |
+| any `push` to `develop` / `release` | always | always |
+| PR touching any path outside the allowlist | always | always |
+| PR touching *only* `**/*.md` and `docs/**` | always | skipped |
+
+This narrows what a green `ci` asserts on documentation-only pull requests, and that is
+stated plainly rather than papered over: it is evidence that the fork guards hold and that
+nothing outside the allowlist changed, **not** that the tree type-checks.
+
+**Why release evidence is unaffected.** `release-docker.yaml` requires successful
+**push**-event runs of `forte-ci.yml`, `forte-codeql.yml` and `forte-trivy.yml` for the exact
+SHA being published. Push events have no fast path, so publication evidence never depends on
+which paths a commit happened to touch. Skipping CodeQL on a pull request is safe for the
+separate reason that it is not a required status context on either branch — an absent run
+cannot leave a PR pending.
+
+**Guard reordering.** Each of `fork-guard-telemetry.sh`, `fork-guard-telemetry.test.sh`,
+`fork-guard-trpc-adapter-parity.sh` and `fork-guard-pbac-fail-closed.sh` needs only git and
+coreutils; their sole mentions of yarn are comments and a `grep` of `yarn.lock` treated as a
+text file. Confirmed empirically rather than by reading: all four were executed in a worktree
+with no `node_modules` present and all four passed. Running them first also means the full
+path now fails fast on a guard violation instead of after a four-minute install.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Narrows what `ci` asserts on documentation-only PRs; broadens fork-guard coverage to every event |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None — this governs the maintenance/merge path, not the shipped product |
+| Compatibility impact | None to the application |
+
+**Finding classification.** `MAINTENANCE_EFFICIENCY` — not a security finding in either
+direction. It removes no enforced signal (the skipped steps covered nothing about the
+allowlisted files) and adds two blocking checks that previously ran later or not at all.
+
+**Rollback.** Revert `32584ba05b`. Because the change is confined to workflow files and
+documentation, reverting restores the prior behaviour exactly, with no branch-protection or
+registry state to unwind.
+
+**Upstream reevaluation trigger.** N/A — `forte-*` workflows are fork-owned and additive;
+upstream has no equivalent file to diverge from. Revisit the allowlist if a future change
+makes any `*.md` or `docs/**` path a build, test or image input.
+
+**Related documentation.** `FORK_PROCESS.md` → "Branch Contract and Required Checks";
+`.ai/quality-gates.md` → "No markdown gate exists"; `SECURITY_ASSURANCE.md` §1;
+`agents/rules/ci-check-failures.md`; `FORK_DIVERGENCE.md` → Maintenance And Developer
+Workflow Changes.
