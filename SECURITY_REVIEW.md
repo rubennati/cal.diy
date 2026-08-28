@@ -48,6 +48,8 @@ Focus on these areas first:
 - non-publishing AMD64 and ARM64 workflow validation
 - exact release-tag-to-`origin/release` identity check
 - architecture-specific digest, SBOM, and provenance capture plan
+- root MIT `LICENSE` present in the exact runtime image, and its content matches the
+  repository root `LICENSE` byte for byte (issue #40; asserted by `docker-build-and-test`)
 
 ## Release Blocking Conditions
 

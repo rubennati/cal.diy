@@ -1752,6 +1752,107 @@ product decision); `docs/PBAC_PLACEHOLDER_AUDIT.md`; `SECURITY_ASSURANCE.md` §2
 
 ---
 
+### FIL-0020 · MIT LICENSE notice in the runtime image
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **pending release**, see scope note |
+| Type | `DEPLOYMENT` / `RELEASE_ARTIFACT` |
+| GitHub issue | [#40](https://github.com/rubennati/cal.diy/issues/40) — **remains open** |
+| Code-scanning alert | n/a — not a security finding |
+| PR | [#57](https://github.com/rubennati/cal.diy/pull/57) |
+| Local commit(s) | `a2954c7388` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — implemented, not yet released.** Issue #40's acceptance criteria require the change to
+ship through the normal release review with a new tag and a recorded digest. Neither exists yet.
+`ISSUE_STATE: IMPLEMENTED_PENDING_RELEASE`, not `FULLY_REMEDIATED`. The PR carries no auto-closing
+keyword for #40.
+
+**Artifact evidence, gathered before implementation as the issue requires.** Pulled and inspected
+the exact pinned digest named in the issue —
+`ghcr.io/rubennati/cal.diy@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+(`v6.2.0-5`, AMD64). Confirmed the digest itself resolves correctly (`RepoDigests` and
+`docker buildx imagetools inspect` both echo the requested digest, not merely accepted uncritically).
+`docker run --entrypoint sh … -c 'ls -la /calcom/LICENSE'` exits 2, `No such file or directory` —
+**`LICENSE_ABSENT`**. A control check in the same run — `find /calcom/packages -name LICENSE`
+— located the 8 sub-package `LICENSE` files the issue predicted, proving the check itself is sound
+rather than a broken probe returning a false negative.
+
+**Root cause.** `runner` copies everything from `builder-two`
+(`COPY --from=builder-two /calcom ./`), and `builder-two`'s own root-metadata line
+(`COPY package.json .yarnrc.yml turbo.json i18n.json ./`) pulls directly from the build context —
+not from `builder` — so the file must be added at that line specifically. Adding it only to
+`builder` would not reach `runner`, because `builder-two` never copies `LICENSE` from `builder`.
+
+**Change.** `LICENSE` folded into `builder-two`'s existing root-metadata `COPY` line rather than
+added as a separate `COPY LICENSE ./` line — same effect, one fewer image layer, and consistent
+with how that line already bundles small root files. `LICENSE` content itself is untouched; the
+Cal.com copyright line is not modified, consistent with #24/#25/#26.
+
+**Regression guard.** `.github/actions/docker-build-and-test/action.yml` gains a new step,
+*"Verify MIT LICENSE notice in the exact built image"*, positioned after "Build image once" and
+before "Test exact runtime image" — before the runtime smoke test and well before the publish
+step. It reads the already-built image's filesystem via `docker create`/`docker cp` (no server
+startup dependency, no second build), then fails on absence, on an empty file, and — the strongest
+check — on any byte-level mismatch against the repository root `LICENSE` via `cmp`. The asserted
+property is `SOURCE LICENSE == LICENSE IN EXACT VALIDATED IMAGE`, not merely path existence.
+
+**`SECURITY_REVIEW.md` updated.** The per-release checklist gains: *"root MIT `LICENSE` present in
+the exact runtime image, and its content matches the repository root `LICENSE` byte for byte."*
+`IMAGE_BUILD.md` and `RELEASE_PROCESS.md` were checked and contain no LICENSE-adjacent factual gap
+to close — left untouched rather than adding overlapping documentation.
+
+**SBOM licence-metadata observation (issue #40's secondary question).** Attempted a CycloneDX scan
+of the locally built fixed image with the same tool the release workflow uses
+(`aquasecurity/trivy-action`, run here via its underlying `aquasec/trivy` image), across five
+attempts — increasing timeout, persisting the vulnerability DB across runs, and dropping
+vulnerability matching to isolate plain SBOM generation. Each attempt terminated silently partway
+through package enumeration with no error, while the Docker daemon remained healthy and unrelated
+containers kept running normally throughout — not attributed to the image or the fix.
+**`UNABLE_TO_VERIFY`.**
+
+One partial data point from before an earlier attempt terminated: Trivy logged `[python] Licenses
+acquired from one or more METADATA files may be subject to additional terms`, indicating its SBOM
+tooling captures licence metadata for at least some ecosystems — not sufficient to classify
+npm/Node coverage either way. This is observational only, per the issue's own scope limit — the
+root `LICENSE` requirement stands independently of whatever the SBOM does or does not capture for
+third-party dependencies.
+
+**No legal conclusion drawn, anywhere in this record.** The repository states only that the notice
+was absent and is now present in the build; whether that satisfies the MIT condition is explicitly
+left to a qualified person, per the issue's own `[LEGAL]` marker.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | None — licence-compliance artifact content, not a security control |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None |
+| Compatibility impact | None — adds one file to the image; no runtime behaviour change |
+
+**Finding classification.** `DEPLOYMENT_ARTIFACT_DEFECT` → remediated in source, pending release
+verification. Explicitly **not** `SECURITY_DEFECT` or `VULNERABILITY` — issue #40 itself classifies
+this as licence-compliance, not security, and this entry preserves that distinction.
+
+**Rollback.** Reverting drops the notice from the image again; the new guard step would then fail
+the next `docker-build-and-test` run, which is the intended protection.
+
+**Upstream reevaluation trigger.** Upstream changes its own Dockerfile stage graph in a way this
+fork's `builder-two` copy step depends on, or upstream begins shipping its own `LICENSE` into its
+image (not this fork's contract to track, but worth noting if the divergence narrows).
+
+**Related documentation.** Issue #40 (open); `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §6 item 2;
+`FORK_DIVERGENCE.md` → Container And Deployment Changes; issues #24, #25, #26 (copyright-line
+preservation, deliberately separate).
+
+---
+
 ## 12. Items requiring provenance research
 
 Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
