@@ -69,13 +69,16 @@ every event:
 | Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
 | --- | --- | --- |
 | any `push` to `develop` / `release` | always | always |
-| PR touching any path outside `**/*.md` and `docs/**` | always | always |
-| PR touching *only* `**/*.md` and `docs/**` | always | skipped |
+| PR touching any path that is not `*.md` | always | always |
+| PR touching *only* `*.md` files | always | skipped |
 
-The classification is an **allowlist**: a changed path is documentation only if it matches
-`**/*.md` or `docs/**`, and everything else — including any directory added to this repository
-later — takes the full path. An unavailable or empty changed-file list also takes the full
-path. This is deliberate; a denylist would silently fast-path the next unfamiliar directory.
+The classification is an **allowlist** with exactly one rule: a changed path is documentation
+only if its name ends in `.md`. Everything else — including any directory added to this
+repository later — takes the full path, as does an unavailable or empty changed-file list. A
+denylist would silently fast-path the next unfamiliar directory. The rule is keyed on the
+extension and not on a directory because `docs/` is **not** documentation-only: it holds
+`docs/brand/build.py` and the generated `docs/api-reference/v2/openapi.json`, both of which a
+`docs/**` rule would have fast-pathed.
 
 Two consequences worth stating plainly. First, a green `ci` on a documentation-only PR is
 **not** evidence that the tree type-checks — it is evidence that the fork guards hold and that

@@ -23,10 +23,10 @@ An inventory of every control that exists today, verified against
 
 | Workflow / control | Category | Trigger | Blocking? |
 | --- | --- | --- | --- |
-| `forte-ci.yml` — `yarn type-check:ci` | TESTS | all pushes; PRs outside the docs allowlist | **blocking** |
+| `forte-ci.yml` — `yarn type-check:ci` | TESTS | all pushes; PRs touching any non-`.md` path | **blocking** |
 | `forte-ci.yml` — 4 `scripts/fork-guard-*.sh` | REGRESSION GUARD | every PR + push → `develop`, `release` | **blocking** |
-| `forte-ci.yml` — Biome lint | TESTS | all pushes; PRs outside the docs allowlist | report-only |
-| `forte-codeql.yml` | SAST | all pushes + weekly (Tue); PRs outside the docs allowlist | report-only |
+| `forte-ci.yml` — Biome lint | TESTS | all pushes; PRs touching any non-`.md` path | report-only |
+| `forte-codeql.yml` | SAST | all pushes + weekly (Tue); PRs touching any non-`.md` path | report-only |
 | `forte-trivy.yml` (`vuln`, `secret`, `misconfig`) | DEPENDENCIES · SECRETS · IAC | PR + push + weekly (Mon) | report-only |
 | `forte-scorecard.yml` | GITHUB_ACTIONS posture | weekly (Mon) + push `develop` | report-only |
 | `release-docker.yaml` | CONTAINER · SBOM · provenance | `v*` tags, dispatch | **blocking on identity/provenance**, not on findings |
@@ -34,11 +34,12 @@ An inventory of every control that exists today, verified against
 | `.github/dependabot.yml` | DEPENDENCIES · ACTIONS · base images | weekly, 4 ecosystems | non-blocking by construction |
 | GitHub secret scanning + push protection | SECRETS | platform | push protection blocks |
 
-The *docs allowlist* is `**/*.md` and `docs/**`; a pull request whose changed files all match it
-runs the fork guards and a whitespace/conflict-marker check and skips the rest. Anything else,
-and every push event, takes the full path — see `FORK_PROCESS.md` → *Branch Contract and
-Required Checks*. Release evidence is unaffected: `release-docker.yaml` validates push-event
-runs, which have no fast path.
+A pull request whose changed files are **all** `*.md` runs the fork guards and a
+whitespace/conflict-marker check and skips the rest. Anything else, and every push event, takes
+the full path — see `FORK_PROCESS.md` → *Branch Contract and Required Checks*. Note that the
+rule is by extension, not directory: `docs/` also contains `docs/brand/build.py` and the
+generated `docs/api-reference/v2/openapi.json`, which take the full path. Release evidence is
+unaffected: `release-docker.yaml` validates push-event runs, which have no fast path.
 
 **Covered:** SECRETS · SAST · DEPENDENCIES · CONTAINER · IAC · SBOM · GITHUB_ACTIONS
 **Not covered:** **LICENCES** (§4) · **DAST** (§7) · **MALWARE** — the last of these is uncovered

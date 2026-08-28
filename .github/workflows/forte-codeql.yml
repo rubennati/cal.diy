@@ -13,7 +13,6 @@ on:
     # not depend on which paths a commit happened to touch.
     paths-ignore:
       - "**/*.md"
-      - "docs/**"
   push:
     branches: [develop, release]
   schedule:

@@ -63,17 +63,22 @@ jobs:
             exit 0
           fi
 
-          # Deliberately a small allowlist, not a denylist of code paths. Anything
-          # not matched here — including any directory added to this repository in
-          # future — takes the full path. Verified when this was written: no build,
-          # lint or test configuration reads `docs/**` or any `*.md`, nothing
-          # imports a `.md`, and the Dockerfile never copies `docs/` into the image.
+          # Deliberately one narrow allowlist rule, not a denylist of code paths.
+          # Anything not matched — including any directory added to this repository
+          # in future — takes the full path.
+          #
+          # Keyed on the extension rather than on a directory, because `docs/` is
+          # NOT documentation-only: it holds `docs/brand/build.py` and the generated
+          # `docs/api-reference/v2/openapi.json`, and a `docs/**` rule would
+          # fast-path both. The extension is what actually implies "not a build
+          # input" here — verified when this was written: no build, lint or test
+          # configuration reads a `*.md`, nothing in the tree imports one, and the
+          # Dockerfile copies none into any stage.
           mode=fast
           while IFS= read -r f; do
             [[ -z "$f" ]] && continue
             case "$f" in
-              *.md)   ;;
-              docs/*) ;;
+              *.md) ;;
               *)
                 echo "Code-relevant path: $f"
                 mode=full
@@ -83,7 +88,7 @@ jobs:
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           if [[ "$mode" == "fast" ]]; then
-            echo "All changed paths are documentation or presentation material -> fast path."
+            echo "Every changed path is markdown -> fast path."
           else
             echo "-> full validation."
           fi

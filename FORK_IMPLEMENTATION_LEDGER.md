@@ -2007,25 +2007,32 @@ context that never reports — the PR would sit permanently pending and become *
 mergeable, which is the opposite of the goal. Skipped *steps* inside a job that always runs
 still produce a green `ci`.
 
-**Classification is an allowlist, deliberately.** A changed path is documentation only if it
-matches `**/*.md` or `docs/**`. Everything else takes the full path, and so does an
-unavailable or empty changed-file list. A denylist of known code paths would silently
-fast-path the next directory added to this repository; an allowlist fails safe by
-construction, at the cost of occasionally running full CI on something that did not need it.
+**Classification is an allowlist, deliberately.** A changed path is documentation only if its
+name ends in `.md`. Everything else takes the full path, and so does an unavailable or empty
+changed-file list. A denylist of known code paths would silently fast-path the next directory
+added to this repository; an allowlist fails safe by construction, at the cost of occasionally
+running full CI on something that did not need it.
+
+**Why extension and not directory.** The first draft allowlisted `docs/**` alongside
+`**/*.md`, and an adversarial pass over the classification logic caught that as wrong before
+it merged: `docs/` is not documentation-only. It tracks `docs/brand/build.py` and the
+generated `docs/api-reference/v2/openapi.json` — a build script and an API contract that a
+directory-shaped rule would have fast-pathed. Dropping the directory rule costs nothing,
+because `**/*.md` already covers all ten markdown files under `docs/`.
 
 Verified before relying on the allowlist: no build, lint or test configuration
-(`turbo.json`, `biome.json`, `vitest.workspace.ts`) reads `docs/**` or any `*.md`; nothing in
-the tree imports a `.md`; and the `Dockerfile` never copies `docs/` into any stage. The one
-`.md` occurrence inside TypeScript is the Moldova TLD (`"mail.md"`, `"neuro.md"`) in a
-free-email-domain list, which is a string literal, not a module reference.
+(`turbo.json`, `biome.json`, `vitest.workspace.ts`) reads any `*.md`; nothing in the tree
+imports a `.md`; and the `Dockerfile` copies none into any stage. The one `.md` occurrence
+inside TypeScript is the Moldova TLD (`"mail.md"`, `"neuro.md"`) in a free-email-domain list,
+which is a string literal, not a module reference.
 
 **What a green `ci` means, by event.**
 
 | Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
 | --- | --- | --- |
 | any `push` to `develop` / `release` | always | always |
-| PR touching any path outside the allowlist | always | always |
-| PR touching *only* `**/*.md` and `docs/**` | always | skipped |
+| PR touching any path that is not `*.md` | always | always |
+| PR touching *only* `*.md` files | always | skipped |
 
 This narrows what a green `ci` asserts on documentation-only pull requests, and that is
 stated plainly rather than papered over: it is evidence that the fork guards hold and that
@@ -2064,8 +2071,9 @@ documentation, reverting restores the prior behaviour exactly, with no branch-pr
 registry state to unwind.
 
 **Upstream reevaluation trigger.** N/A — `forte-*` workflows are fork-owned and additive;
-upstream has no equivalent file to diverge from. Revisit the allowlist if a future change
-makes any `*.md` or `docs/**` path a build, test or image input.
+upstream has no equivalent file to diverge from. Revisit the allowlist if a future change ever
+makes a `*.md` file a build, test or image input — a docs-site generator reading them, or a
+markdown linter worth blocking on, would each qualify.
 
 **Related documentation.** `FORK_PROCESS.md` → "Branch Contract and Required Checks";
 `.ai/quality-gates.md` → "No markdown gate exists"; `SECURITY_ASSURANCE.md` §1;
