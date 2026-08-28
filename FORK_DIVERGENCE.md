@@ -25,8 +25,8 @@ Last reconciled: **2026-08-11**
 | --- | --- |
 | Upstream base | Cal.com 6.2.0 at merge-base `46eb533dbd` |
 | Upstream reviewed through | `176037d0af` on 2026-08-10 |
-| Latest published fork baseline | `201b016984` |
-| Latest published fork release | `v6.2.0-5` |
+| Latest published fork baseline | `9b9df424e3` |
+| Latest published fork release | `v6.2.0-6` |
 | Exact source comparison | [`main...develop`](https://github.com/rubennati/cal.diy/compare/main...develop) |
 
 `Released` below names the first fork release known to contain the change. `Unreleased`
