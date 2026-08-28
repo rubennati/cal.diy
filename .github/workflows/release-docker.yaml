@@ -55,6 +55,7 @@ jobs:
       candidate_arm64_digest: ${{ steps.evidence.outputs.arm64_digest }}
       candidate_amd64_ref: ${{ steps.evidence.outputs.amd64_ref }}
       candidate_arm64_ref: ${{ steps.evidence.outputs.arm64_ref }}
+      candidate_sha: ${{ steps.evidence.outputs.candidate_sha }}
     steps:
       - name: Checkout requested source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -106,7 +107,11 @@ jobs:
           else
             source_sha="$(git rev-parse HEAD)"
             source_tree="$(git rev-parse HEAD^{tree})"
-            echo "checkout_ref=$GITHUB_REF" >> "$GITHUB_OUTPUT"
+            # Pin to the resolved commit, never to the branch ref. `develop` may
+            # move between this job and the build jobs, and a moving ref would let
+            # them build a tree other than the one recorded here — the images and
+            # the candidate record would then describe different sources.
+            echo "checkout_ref=$source_sha" >> "$GITHUB_OUTPUT"
             echo "image_tag=candidate-${source_tree:0:12}" >> "$GITHUB_OUTPUT"
             echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
             echo "source_tree=$source_tree" >> "$GITHUB_OUTPUT"
@@ -191,6 +196,7 @@ jobs:
             echo "arm64_digest=$arm64_digest"
             echo "amd64_ref=$(jq -r '.amd64.image' candidate-record.json)"
             echo "arm64_ref=$(jq -r '.arm64.image' candidate-record.json)"
+            echo "candidate_sha=$(jq -r '.source_sha' candidate-record.json)"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -211,6 +217,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     outputs:
       image_ref: ${{ steps.image.outputs.image_ref }}
       digest: ${{ steps.image.outputs.digest }}
@@ -219,6 +227,21 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
+
+      - name: Assert the checked-out source is the recorded candidate
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.prepare.outputs.source_sha }}
+          EXPECTED_TREE: ${{ needs.prepare.outputs.source_tree }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          actual_tree="$(git rev-parse HEAD^{tree})"
+          echo "commit $actual_sha / tree $actual_tree"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" || "$actual_tree" != "$EXPECTED_TREE" ]]; then
+            echo "::error::Checked out $actual_sha ($actual_tree), expected $EXPECTED_SHA ($EXPECTED_TREE)"
+            exit 1
+          fi
 
       # The only application image build in the whole release path. It is pushed
       # so that publication can promote this exact digest instead of rebuilding.
@@ -230,6 +253,7 @@ jobs:
           platform-suffix: "-amd64"
           image-tag: ${{ needs.prepare.outputs.image_tag }}
           image-version: ${{ needs.prepare.outputs.image_tag }}
+          image-revision: ${{ needs.prepare.outputs.source_sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
           postgres-password: ${{ env.POSTGRES_PASSWORD }}
@@ -237,6 +261,15 @@ jobs:
           database-host: ${{ env.DATABASE_HOST }}
           push-image: "true"
           allow-existing-tag: "true"
+
+      # Provenance is generated HERE, by the job that actually built the image.
+      # Attesting during promotion would claim the promoting workflow built it.
+      - name: Attest AMD64 build provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          push-to-registry: true
 
       - name: Upload AMD64 SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -253,6 +286,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     outputs:
       image_ref: ${{ steps.image.outputs.image_ref }}
       digest: ${{ steps.image.outputs.digest }}
@@ -262,6 +297,21 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
+      - name: Assert the checked-out source is the recorded candidate
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.prepare.outputs.source_sha }}
+          EXPECTED_TREE: ${{ needs.prepare.outputs.source_tree }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          actual_tree="$(git rev-parse HEAD^{tree})"
+          echo "commit $actual_sha / tree $actual_tree"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" || "$actual_tree" != "$EXPECTED_TREE" ]]; then
+            echo "::error::Checked out $actual_sha ($actual_tree), expected $EXPECTED_SHA ($EXPECTED_TREE)"
+            exit 1
+          fi
+
       - name: Build, test, scan, and publish the candidate ARM64 image
         id: image
         uses: ./.github/actions/docker-build-and-test
@@ -270,6 +320,7 @@ jobs:
           platform-suffix: "-arm64"
           image-tag: ${{ needs.prepare.outputs.image_tag }}
           image-version: ${{ needs.prepare.outputs.image_tag }}
+          image-revision: ${{ needs.prepare.outputs.source_sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
           postgres-password: ${{ env.POSTGRES_PASSWORD }}
@@ -277,6 +328,15 @@ jobs:
           database-host: ${{ env.DATABASE_HOST }}
           push-image: "true"
           allow-existing-tag: "true"
+
+      # Provenance is generated HERE, by the job that actually built the image.
+      # Attesting during promotion would claim the promoting workflow built it.
+      - name: Attest ARM64 build provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          push-to-registry: true
 
       - name: Upload ARM64 SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -351,8 +411,6 @@ jobs:
       contents: write
       packages: write
       actions: read
-      id-token: write
-      attestations: write
     steps:
       - name: Checkout release tag
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -369,67 +427,84 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
+      # Fail closed on missing provenance: a digest with no attestation is not
+      # evidence of anything, and promotion is the last point at which that can
+      # still be caught cheaply.
+      - name: Require build provenance for the candidate digests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CAND_AMD64_DIGEST: ${{ needs.prepare.outputs.candidate_amd64_digest }}
+          CAND_ARM64_DIGEST: ${{ needs.prepare.outputs.candidate_arm64_digest }}
+        run: |
+          set -euo pipefail
+          for d in "$CAND_AMD64_DIGEST" "$CAND_ARM64_DIGEST"; do
+            if ! gh attestation verify "oci://$IMAGE_NAME@$d" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "::error::No verifiable build provenance for $IMAGE_NAME@$d"
+              exit 1
+            fi
+            echo "provenance verified for $d"
+          done
+
+      # Idempotent by construction, so a transient failure part-way through does
+      # not strand the release behind an immutable tag it already created:
+      #   absent          -> create from the expected candidate digest
+      #   present, equal  -> already done, continue
+      #   present, other  -> fail hard; never redirect a published version tag
       - name: Promote validated digests to final architecture tags
         id: publish_tags
         env:
           RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
-          CAND_AMD64_REF: ${{ needs.prepare.outputs.candidate_amd64_ref }}
           CAND_AMD64_DIGEST: ${{ needs.prepare.outputs.candidate_amd64_digest }}
-          CAND_ARM64_REF: ${{ needs.prepare.outputs.candidate_arm64_ref }}
           CAND_ARM64_DIGEST: ${{ needs.prepare.outputs.candidate_arm64_digest }}
         run: |
           set -euo pipefail
 
-          final_amd64_ref="$IMAGE_NAME:$RELEASE_TAG"
-          final_arm64_ref="$IMAGE_NAME:$RELEASE_TAG-arm"
+          digest_of() { docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' 2>/dev/null | jq -r '.digest // empty'; }
 
-          # Resolve each recorded digest directly. The candidate tag is only a
-          # handle; if it had been moved, this still promotes the validated bytes.
+          reconcile() {
+            local ref="$1" want="$2" have
+            have="$(digest_of "$ref")"
+            if [[ -z "$have" ]]; then
+              docker buildx imagetools create --tag "$ref" "$IMAGE_NAME@$want"
+              have="$(digest_of "$ref")"
+              if [[ "$have" != "$want" ]]; then
+                echo "::error::$ref resolved to $have after creation, expected $want"
+                exit 1
+              fi
+              echo "created  $ref -> $have"
+            elif [[ "$have" == "$want" ]]; then
+              echo "existing $ref already resolves to $have; nothing to do"
+            else
+              echo "::error::$ref already exists and points to $have, not the validated $want."
+              echo "::error::A published version tag is immutable and will not be redirected."
+              exit 1
+            fi
+          }
+
+          # Both candidate digests must resolve before anything is published.
           docker buildx imagetools inspect "$IMAGE_NAME@$CAND_AMD64_DIGEST" >/dev/null
           docker buildx imagetools inspect "$IMAGE_NAME@$CAND_ARM64_DIGEST" >/dev/null
 
-          for final_ref in "$final_amd64_ref" "$final_arm64_ref"; do
-            if docker buildx imagetools inspect "$final_ref" >/dev/null 2>&1; then
-              echo "::error::Final release tag already exists and will not be overwritten: $final_ref"
-              exit 1
-            fi
-          done
+          final_amd64_ref="$IMAGE_NAME:$RELEASE_TAG"
+          final_arm64_ref="$IMAGE_NAME:$RELEASE_TAG-arm"
+          reconcile "$final_amd64_ref" "$CAND_AMD64_DIGEST"
+          reconcile "$final_arm64_ref" "$CAND_ARM64_DIGEST"
 
-          docker buildx imagetools create --tag "$final_amd64_ref" "$IMAGE_NAME@$CAND_AMD64_DIGEST"
-          docker buildx imagetools create --tag "$final_arm64_ref" "$IMAGE_NAME@$CAND_ARM64_DIGEST"
-
-          amd64_digest="$(docker buildx imagetools inspect "$final_amd64_ref" --format '{{json .Manifest}}' | jq -r '.digest')"
-          arm64_digest="$(docker buildx imagetools inspect "$final_arm64_ref" --format '{{json .Manifest}}' | jq -r '.digest')"
-
-          if [[ ! "$amd64_digest" =~ ^sha256:[a-f0-9]{64}$ || ! "$arm64_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-            echo "::error::Unable to capture final architecture digests"
-            exit 1
+          # `latest` is a mutable convenience pointer, so moving it onto the
+          # release AMD64 digest is idempotent and safe to repeat.
+          latest_have="$(digest_of "$IMAGE_NAME:latest")"
+          if [[ "$latest_have" != "$CAND_AMD64_DIGEST" ]]; then
+            docker buildx imagetools create --tag "$IMAGE_NAME:latest" "$IMAGE_NAME@$CAND_AMD64_DIGEST"
           fi
-
-          docker buildx imagetools create --tag "$IMAGE_NAME:latest" "$final_amd64_ref@$amd64_digest"
-          latest_digest="$(docker buildx imagetools inspect "$IMAGE_NAME:latest" --format '{{json .Manifest}}' | jq -r '.digest')"
+          latest_digest="$(digest_of "$IMAGE_NAME:latest")"
 
           {
             echo "amd64_ref=$final_amd64_ref"
-            echo "amd64_digest=$amd64_digest"
+            echo "amd64_digest=$CAND_AMD64_DIGEST"
             echo "arm64_ref=$final_arm64_ref"
-            echo "arm64_digest=$arm64_digest"
+            echo "arm64_digest=$CAND_ARM64_DIGEST"
             echo "latest_digest=$latest_digest"
           } >> "$GITHUB_OUTPUT"
-
-      - name: Attest final AMD64 build provenance
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
-        with:
-          subject-name: ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.publish_tags.outputs.amd64_digest }}
-          push-to-registry: true
-
-      - name: Attest final ARM64 build provenance
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
-        with:
-          subject-name: ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.publish_tags.outputs.arm64_digest }}
-          push-to-registry: true
 
       - name: Download validated candidate SBOMs
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -454,12 +529,14 @@ jobs:
           CAND_AMD64_DIGEST: ${{ needs.prepare.outputs.candidate_amd64_digest }}
           CAND_ARM64_DIGEST: ${{ needs.prepare.outputs.candidate_arm64_digest }}
           CANDIDATE_RUN: ${{ needs.prepare.outputs.candidate_run_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
         run: |
           set -euo pipefail
           jq -n \
             --arg tag "$RELEASE_TAG" \
-            --arg source_sha "$SOURCE_SHA" \
-            --arg source_tree "$SOURCE_TREE" \
+            --arg release_sha "$SOURCE_SHA" \
+            --arg release_tree "$SOURCE_TREE" \
+            --arg candidate_sha "$CANDIDATE_SHA" \
             --arg amd64_ref "$AMD64_REF" \
             --arg amd64_digest "$AMD64_DIGEST" \
             --arg arm64_ref "$ARM64_REF" \
@@ -469,10 +546,15 @@ jobs:
             --arg cand_arm64 "$CAND_ARM64_DIGEST" \
             --arg candidate_run "$CANDIDATE_RUN" \
             --arg workflow_run "$GITHUB_RUN_ID" \
-            '{tag: $tag, source_sha: $source_sha, source_tree: $source_tree,
-              amd64: {image: $amd64_ref, digest: $amd64_digest, validated_digest: $cand_amd64},
-              arm64: {image: $arm64_ref, digest: $arm64_digest, validated_digest: $cand_arm64},
+            '{tag: $tag,
+              build_identity:   {candidate_sha: $candidate_sha, source_tree: $release_tree,
+                                 validation_run: $candidate_run,
+                                 amd64_digest: $cand_amd64, arm64_digest: $cand_arm64},
+              release_identity: {release_sha: $release_sha, source_tree: $release_tree, tag: $tag},
+              amd64: {image: $amd64_ref, digest: $amd64_digest},
+              arm64: {image: $arm64_ref, digest: $arm64_digest},
               latest_digest: $latest_digest,
+              source_sha: $release_sha, source_tree: $release_tree,
               candidate_validation_run: $candidate_run,
               workflow_run: $workflow_run}' \
             > release-record.json
@@ -518,21 +600,54 @@ jobs:
             "CycloneDX SBOMs and `release-record.json` are attached below."
           ' release-record.json >> release-notes.md
 
-      - name: Publish the GitHub Release
+      # Idempotent, so a retry after a partial publication completes the release
+      # instead of colliding with it:
+      #   absent            -> create with notes and assets
+      #   present, matching  -> upload any missing assets, leave the notes alone
+      #   present, mismatched -> fail; never silently rewrite published facts
+      - name: Publish or complete the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          EXPECTED_SHA: ${{ needs.prepare.outputs.source_sha }}
         run: |
           set -euo pipefail
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::GitHub Release $RELEASE_TAG already exists and will not be overwritten"
-            exit 1
+          assets=(release-record.json sbom/*.cdx.json)
+
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --title "cal.forte $RELEASE_TAG" \
+              --notes-file release-notes.md \
+              "${assets[@]}"
+            echo "created GitHub Release $RELEASE_TAG"
+          else
+            echo "GitHub Release $RELEASE_TAG already exists; verifying it describes this release"
+            existing_tag="$(gh release view "$RELEASE_TAG" --json tagName --jq '.tagName')"
+            if [[ "$existing_tag" != "$RELEASE_TAG" ]]; then
+              echo "::error::Existing release resolves to tag $existing_tag, not $RELEASE_TAG"
+              exit 1
+            fi
+            # The tag is immutable and already verified to point at EXPECTED_SHA by
+            # `prepare`, so a release on this tag necessarily describes this source.
+            # Only a body asserting a different digest indicates a genuine conflict.
+            body="$(gh release view "$RELEASE_TAG" --json body --jq '.body')"
+            for d in "${{ steps.publish_tags.outputs.amd64_digest }}" "${{ steps.publish_tags.outputs.arm64_digest }}"; do
+              if [[ -n "$body" ]] && ! grep -qF "$d" <<< "$body"; then
+                echo "::error::Existing release body does not mention $d; refusing to overwrite published facts."
+                echo "::error::Inspect $RELEASE_TAG manually and delete it deliberately if it is wrong."
+                exit 1
+              fi
+            done
+            have="$(gh release view "$RELEASE_TAG" --json assets --jq '[.assets[].name] | join(" ")')"
+            for a in "${assets[@]}"; do
+              if ! grep -qw "$(basename "$a")" <<< "$have"; then
+                gh release upload "$RELEASE_TAG" "$a"
+                echo "uploaded missing asset $(basename "$a")"
+              fi
+            done
+            echo "release $RELEASE_TAG reconciled"
           fi
-          gh release create "$RELEASE_TAG" \
-            --verify-tag \
-            --title "cal.forte $RELEASE_TAG" \
-            --notes-file release-notes.md \
-            release-record.json sbom/*.cdx.json
 
           {
             echo "## Published $RELEASE_TAG"

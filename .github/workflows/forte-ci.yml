@@ -178,6 +178,12 @@ jobs:
         # Temporary — retire when PBAC is actually implemented. See #13.
         run: bash scripts/fork-guard-pbac-fail-closed.sh
 
+      - name: Release promotion state machine
+        # Blocking on purpose: the promote job publishes immutable version tags and
+        # cannot be rehearsed. This asserts its recovery behaviour, and fails if the
+        # harness has drifted from the logic the workflow actually ships.
+        run: bash scripts/release-promotion-reconcile.test.sh
+
       - name: Whitespace and conflict-marker check
         shell: bash
         # Says what it compared. A clean `git diff --check` prints nothing, so

@@ -16,6 +16,13 @@ inputs:
     description: "Public source version stored in OCI labels"
     required: false
     default: ""
+  image-revision:
+    description: >-
+      Commit recorded in org.opencontainers.image.revision. Defaults to github.sha,
+      which for a workflow_dispatch is the branch head at dispatch time — pass the
+      pinned candidate SHA so the label describes the commit actually built.
+    required: false
+    default: ""
   github-token:
     description: "GitHub token used only when push-image is true"
     required: false
@@ -126,7 +133,7 @@ runs:
         tags: ${{ steps.image.outputs.image_ref }}
         labels: |
           org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.revision=${{ inputs.image-revision || github.sha }}
           org.opencontainers.image.version=${{ inputs.image-version || inputs.image-tag }}
         build-args: |
           NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
