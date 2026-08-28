@@ -12,10 +12,19 @@ tags: ci, debugging, workflow
 Only fork-owned workflows run — the upstream workflows are disabled on `main`
 (see [FORK_DIVERGENCE.md](../../FORK_DIVERGENCE.md) → Security And Privacy Changes):
 
-- **`forte-ci`** — `yarn type-check:ci` (blocking) + Biome lint (report-only for now)
+- **`forte-ci`** — four fork guards + a whitespace check (blocking, every event), then
+  `yarn type-check:ci` (blocking) + Biome lint (report-only for now)
 - **`forte-codeql` / `forte-trivy` / `forte-scorecard`** — security scans; findings go to
   **Security → Code scanning** and do not block merges
 - **`release-docker`** — builds and publishes the GHCR image on `v*` tags only
+
+`forte-ci` takes a fast path on pull requests whose changed files are *all* `*.md`: the guards
+and whitespace check still run, install/type-check/Biome do not. Every push, and every PR
+touching any non-markdown path, takes the full path — including `docs/brand/build.py` and
+`docs/api-reference/v2/openapi.json`, which live under `docs/` but are not documentation. So on a documentation-only PR,
+a green `ci` does not tell you the tree type-checks — run `yarn type-check:ci --force` locally
+if you need that. See [FORK_PROCESS.md](../../FORK_PROCESS.md) → *Branch Contract and Required
+Checks*.
 
 ## What to focus on
 

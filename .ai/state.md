@@ -41,8 +41,9 @@ Future promotions use the normal fast-forward process in
 **Security posture:**
 - Security fixes are taken from upstream by default; validate they are *real* fixes
   (CVE/advisory + diff) per [../FORK_STRATEGY.md](../FORK_STRATEGY.md).
-- Fork CI: `forte-ci` (install/**fork-guard**/type-check/biome), `forte-codeql`,
-  `forte-trivy`, `forte-scorecard`, Dependabot. Upstream workflows disabled on `main`.
+- Fork CI: `forte-ci` (**fork-guards**/whitespace, then install/type-check/biome),
+  `forte-codeql`, `forte-trivy`, `forte-scorecard`, Dependabot. Upstream workflows disabled
+  on `main`. PRs changing only `*.md` skip install/type-check/biome; pushes never do.
 - **Known gate limitation:** `type-check:ci` covers only the 8 packages that define the
   script, out of 113 in turbo's scope. Files with no importers are in no tsc program and rot
   unnoticed. Do not read a green CI run as "the tree compiles" —

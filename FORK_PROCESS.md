@@ -61,6 +61,37 @@ fixes (Zoho, Intercom, Vitest) and reviewed false positives (Giphy, `useBooking`
 placeholder findings) — a severity-only gate would have blocked merges on the false positives
 too.
 
+**What `ci` green actually means depends on the event.** The `ci` job always runs and always
+resolves — that is a precondition of it being the required context, and it is why the fast path
+below skips *steps* rather than the job or the workflow. But its coverage is not identical on
+every event:
+
+| Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
+| --- | --- | --- |
+| any `push` to `develop` / `release` | always | always |
+| PR touching any path that is not `*.md` | always | always |
+| PR touching *only* `*.md` files | always | skipped |
+
+The classification is an **allowlist** with exactly one rule: a changed path is documentation
+only if its name ends in `.md`. Everything else — including any directory added to this
+repository later — takes the full path, as does an unavailable or empty changed-file list. A
+denylist would silently fast-path the next unfamiliar directory. The rule is keyed on the
+extension and not on a directory because `docs/` is **not** documentation-only: it holds
+`docs/brand/build.py` and the generated `docs/api-reference/v2/openapi.json`, both of which a
+`docs/**` rule would have fast-pathed.
+
+Two consequences worth stating plainly. First, a green `ci` on a documentation-only PR is
+**not** evidence that the tree type-checks — it is evidence that the fork guards hold and that
+nothing outside the allowlist changed. Second, that distinction never reaches a release,
+because `release-docker.yaml` validates successful **push**-event runs for an exact SHA, and
+push events have no fast path. Release evidence therefore never depends on which paths a
+commit happened to touch. The same reasoning governs `forte-codeql.yml`, whose `paths-ignore`
+is scoped to its `pull_request` trigger only.
+
+The four fork guards run before dependency installation because each is a plain shell script
+needing only git and coreutils. That is what makes them affordable on every event, and it also
+makes the full path fail fast on a guard violation instead of after a ~4-minute install.
+
 **`enforce_admins: true` on `develop` and `release`.** With a single maintainer, a check that
 can be silently bypassed during an ordinary merge is not mechanically enforced at all — it is
 the same convention-only gate this section replaces, wearing a different label. `enforce_admins`
