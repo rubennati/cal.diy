@@ -4,9 +4,18 @@ name: forte-ci
 # (the pristine upstream mirror). Additive: upstream has no forte-* workflows.
 #
 # `ci` is the required status context on `develop` and `release`. It therefore
-# always runs and always resolves — the fast path skips expensive *steps*, never
+# always runs and always resolves — the fast paths skip expensive *steps*, never
 # the job or the workflow. A workflow-level `paths:` filter would leave the
 # required context permanently pending and block the PR instead of speeding it up.
+#
+# Three modes:
+#   full            everything runs. Every push to `develop`, and every PR that
+#                   touches a non-markdown path outside a promotion.
+#   fast            markdown-only pull request.
+#   tree-validated  promotion into/onto `release` whose tree already has a green
+#                   full-path run on `develop`. Skipping here is not a weaker
+#                   guarantee — the same tree was validated, and the mode is only
+#                   entered after proving that run exists.
 
 on:
   pull_request:
@@ -39,11 +48,57 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
+          REPO="${{ github.repository }}"
 
-          # Push events always take the full path. Release publication requires
-          # successful push-event runs for an exact branch SHA, and that evidence
-          # must not depend on which files a particular commit happened to touch.
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+          # Does this exact source tree already have authoritative full-path
+          # validation on `develop`? Promotion to `release` re-creates the approved
+          # tree under a new commit SHA, so the tree — not the SHA — is what says
+          # "this source was already validated". Only a run whose `Type check` step
+          # actually executed counts; a markdown fast-path run is not evidence.
+          tree_already_validated() {
+            local want; want="$(git rev-parse HEAD^{tree} 2>/dev/null)" || return 1
+            [[ -n "$want" ]] || return 1
+            local runs
+            runs="$(gh api "repos/$REPO/actions/workflows/forte-ci.yml/runs?branch=develop&event=push&status=success&per_page=30" \
+                    --jq '.workflow_runs[] | "\(.id) \(.head_sha)"' 2>/dev/null)" || return 1
+            while read -r run_id sha; do
+              [[ -n "${sha:-}" ]] || continue
+              local t
+              t="$(gh api "repos/$REPO/commits/$sha" --jq '.commit.tree.sha' 2>/dev/null)" || continue
+              [[ "$t" == "$want" ]] || continue
+              local tc
+              tc="$(gh api "repos/$REPO/actions/runs/$run_id/jobs" \
+                    --jq '.jobs[] | select(.name=="ci") | .steps[] | select(.name=="Type check") | .conclusion' 2>/dev/null)"
+              if [[ "$tc" == "success" ]]; then
+                echo "Tree $want was fully validated by run $run_id ($sha)."
+                EVIDENCE_RUN="$run_id"; return 0
+              fi
+            done <<< "$runs"
+            return 1
+          }
+
+          EVENT="${{ github.event_name }}"
+          BASE="${{ github.base_ref }}"
+
+          # A promotion carries an already-validated tree under a new commit. Both
+          # the promotion PR into `release` and the resulting push to `release` may
+          # therefore skip the expensive source validation — but ONLY after proving
+          # the evidence exists. If it does not, this falls through to full
+          # validation rather than trusting the branch name.
+          if [[ ( "$EVENT" == "pull_request" && "$BASE" == "release" ) || ( "$EVENT" == "push" && "$GITHUB_REF" == "refs/heads/release" ) ]]; then
+            if tree_already_validated; then
+              echo "mode=tree-validated" >> "$GITHUB_OUTPUT"
+              echo "evidence_run=$EVIDENCE_RUN" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::notice::No full-path validation found for this tree -> full validation (fail-safe)."
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Every other push — notably every push to `develop` — takes the full
+          # path unconditionally. That is what produces the evidence above.
+          if [[ "$EVENT" != "pull_request" ]]; then
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Push event -> full validation."
             exit 0
@@ -179,9 +234,25 @@ jobs:
 
       - name: Result
         shell: bash
+        env:
+          MODE: ${{ steps.scope.outputs.mode }}
+          EVIDENCE_RUN: ${{ steps.scope.outputs.evidence_run }}
         run: |
-          if [[ "${{ steps.scope.outputs.mode }}" == "fast" ]]; then
-            echo "Markdown-only change: fork guards and whitespace check passed; install, type-check and lint intentionally skipped. This run is not evidence that the tree type-checks." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Full validation completed." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          case "$MODE" in
+            fast)
+              echo "Markdown-only change: fork guards and whitespace check passed; install, type-check and lint intentionally skipped. This run is not evidence that the tree type-checks." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            tree-validated)
+              {
+                echo "Promotion of an already-validated tree."
+                echo
+                echo "Fork guards and the whitespace check passed. Install, type-check and lint were"
+                echo "skipped because this exact source tree was fully validated by"
+                echo "[run $EVIDENCE_RUN]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$EVIDENCE_RUN)"
+                echo "on \`develop\`. This run asserts that evidence exists; it does not re-derive it."
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "Full validation completed." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac

@@ -37,15 +37,27 @@ Each architecture is built once. The same local image is runtime-tested, scanned
 an SBOM, and then pushed with `docker push`; there is no second untested rebuild. The
 registry digest is read after push and exposed as a job output.
 
-The release finalizer uploads `release-record.json` containing source SHA, architecture
-image references, architecture digests, workflow run ID, and the convenience `latest`
-digest. GitHub build-provenance attestations are pushed for both architecture images.
+The release promote job uploads `release-record.json` containing source SHA, source tree,
+architecture image references, final architecture digests, the validated candidate digests
+those were promoted from, the candidate validation run, the publication run ID, and the
+convenience `latest` digest. GitHub build-provenance attestations are pushed for both final
+architecture digests, and the GitHub Release is generated from that same record.
+
+**Images are built exactly once.** The build happens during candidate validation on
+`develop`; publication promotes the recorded immutable digests with
+`docker buildx imagetools create` and rebuilds nothing. The digest published under
+`vX.Y.Z-N` is therefore byte-identical to the image that passed the runtime test, the
+`LICENSE` byte-equality assertion and the Trivy scan. Verifying a release needs no local
+Docker daemon.
 
 ## Current Security Gates
 
-- Runtime health check: blocking.
-- Existing-tag overwrite protection: blocking.
+- Runtime health check: blocking (at candidate validation, on the image that is published).
+- Root `LICENSE` byte-equality inside the image: blocking (same image).
+- Existing-tag overwrite protection on final version tags: blocking.
 - Tag/source identity validation: blocking.
+- Candidate-record presence for the exact release tree: blocking. Publication cannot
+  proceed without validation evidence for that tree, and has no build fallback.
 - `forte-ci` install/source-clean check, fork guard, and typecheck: blocking.
 - Trivy image scan: **report-only** (`exit-code: 0`) while inherited runtime findings remain.
 - Biome in `forte-ci`: report-only until inherited baseline findings are resolved.
