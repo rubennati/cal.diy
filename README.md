@@ -104,6 +104,12 @@ tracked as open issues; see [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PR
 
 ## 📚 Documentation & knowledge base
 
+**Using or operating cal.forte? Start at [docs/README.md](docs/README.md)** — overview,
+capabilities, getting started, configuration, security model, operations and roadmap.
+
+The records below are the fork's engineering memory. You should not need them to run the
+product.
+
 Everything we know about this fork, grouped. Entry point for tooling: [.ai/index.md](.ai/index.md).
 
 **Fork process & release**
@@ -188,14 +194,27 @@ Full list with rationale: [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md). One caveat w
 before you audit: `type-check` runs for only 8 of 113 packages, so a green CI run is not
 proof that the whole tree compiles — [.ai/quality-gates.md](.ai/quality-gates.md).
 
-## Edition & state at a glance
+## Capabilities at a glance
 
-- **Community Edition (MIT)** — Enterprise Edition is absent. **Present:** event types,
-  availability, bookings, calendar/video integrations, payments, webhooks, API v2, embed.
-  **Absent:** Workflows, Insights, SAML/SSO, audit logs, team management (details:
-  [.ai/branding.md](.ai/branding.md)).
-- The old cal.com "buy Enterprise" **paywall is already removed**.
-- App-store apps are **disabled by default** — active only with credentials
-  ([.ai/architecture.md](.ai/architecture.md) §3).
+Community Edition (MIT); Enterprise Edition is absent. The old "buy Enterprise" paywall is
+already removed.
+
+| | |
+| --- | --- |
+| **Supported** | booking pages and event types · availability · calendar and conferencing integrations · sign-in incl. OAuth · **API-key management** · Zapier and Make · personal webhooks · automatic database migrations · AMD64 and ARM64 images with provenance and SBOMs |
+| **Limited** | **scheduled/background jobs** — the container ships no scheduler, so reminders and calendar refresh need an external trigger · recurring-event request validation · Microsoft/Entra tenant restriction |
+| **Planned** | **REST API v2** — the release ships no API service · Teams · Organizations · PBAC |
+| **Not included** | Workflows · Insights · SAML/SSO · video recordings · API v1 · telemetry and ad tracking (removed by this fork) |
+
+**API keys work; the REST API is not shipped.** Keys are created in the UI and consumed
+today by the web integrations (Zapier, Make). They are not yet credentials for a public
+REST API — see [the API v2 roadmap](docs/guide/roadmap/api-v2.md).
+
+This is a summary. The canonical registry — with what Cal.com offers, what upstream
+Cal.diy claims, what cal.forte actually supports, and the evidence for each — is
+**[docs/guide/capabilities.md](docs/guide/capabilities.md)**. Where the two disagree, the
+capability matrix is correct and this summary needs fixing.
+
+📖 **[Full documentation →](docs/README.md)**
 
 For the full upstream README (install reference), see the [`main` branch](https://github.com/rubennati/cal.diy/blob/main/README.md).
