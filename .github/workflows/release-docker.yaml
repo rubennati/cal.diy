@@ -1,5 +1,23 @@
 name: "Release Docker"
 
+# Artifact-promotion release pipeline.
+#
+# The image that is published is the image that was tested. Application images
+# are built EXACTLY ONCE, during candidate validation on `develop`. Tagging does
+# not rebuild them — it promotes the already-validated immutable digests to the
+# final version tags with `docker buildx imagetools create`.
+#
+# The hand-off identity between validation and publication is the **digest**
+# recorded in a `candidate-record-<tree>` artifact, never a mutable tag. The
+# candidate tags that exist in the registry are garbage-collection handles, and
+# the promote job resolves each recorded digest independently before using it.
+#
+# Candidate evidence is keyed by the source **tree**, not the commit SHA,
+# because promotion to `release` deliberately creates a new merge commit whose
+# tree is byte-identical to the approved `develop` candidate. The tree is
+# therefore the thing that proves "this is the same source"; the commit SHA is
+# not, and cannot be.
+
 on:
   push:
     tags:
@@ -31,6 +49,12 @@ jobs:
       checkout_ref: ${{ steps.identity.outputs.checkout_ref }}
       image_tag: ${{ steps.identity.outputs.image_tag }}
       source_sha: ${{ steps.identity.outputs.source_sha }}
+      source_tree: ${{ steps.identity.outputs.source_tree }}
+      candidate_run_id: ${{ steps.evidence.outputs.candidate_run_id }}
+      candidate_amd64_digest: ${{ steps.evidence.outputs.amd64_digest }}
+      candidate_arm64_digest: ${{ steps.evidence.outputs.arm64_digest }}
+      candidate_amd64_ref: ${{ steps.evidence.outputs.amd64_ref }}
+      candidate_arm64_ref: ${{ steps.evidence.outputs.arm64_ref }}
     steps:
       - name: Checkout requested source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -38,7 +62,7 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Validate release tag or prepare validation identity
+      - name: Validate release tag or prepare candidate identity
         id: identity
         shell: bash
         run: |
@@ -77,17 +101,24 @@ jobs:
             echo "checkout_ref=refs/tags/$tag" >> "$GITHUB_OUTPUT"
             echo "image_tag=$tag" >> "$GITHUB_OUTPUT"
             echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-            echo "Validated release tag $tag at $source_sha" >> "$GITHUB_STEP_SUMMARY"
+            echo "source_tree=$release_tree" >> "$GITHUB_OUTPUT"
+            echo "Validated release tag $tag at $source_sha (tree $release_tree)" >> "$GITHUB_STEP_SUMMARY"
           else
             source_sha="$(git rev-parse HEAD)"
-            branch="${GITHUB_REF#refs/heads/}"
-            sanitized_branch="$(printf '%s' "$branch" | sed 's/[^a-zA-Z0-9_.-]/-/g' | sed 's/^[-.]*//')"
-            image_tag="validation-${sanitized_branch}-${source_sha:0:10}"
-
+            source_tree="$(git rev-parse HEAD^{tree})"
             echo "checkout_ref=$GITHUB_REF" >> "$GITHUB_OUTPUT"
-            echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
+            echo "image_tag=candidate-${source_tree:0:12}" >> "$GITHUB_OUTPUT"
             echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-            echo "Manual dispatch is validation-only; no image will be published." >> "$GITHUB_STEP_SUMMARY"
+            echo "source_tree=$source_tree" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Candidate validation"
+              echo
+              echo "- source: \`$source_sha\`"
+              echo "- tree: \`$source_tree\`"
+              echo "- candidate images: \`$IMAGE_NAME:candidate-${source_tree:0:12}-amd64\` / \`-arm64\`"
+              echo
+              echo "No release tag is published by this run."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Require successful release gates for exact source SHA
@@ -109,6 +140,69 @@ jobs:
             fi
           done
 
+      # Publication depends on validation evidence for THIS EXACT TREE. Without a
+      # matching candidate record there is nothing validated to promote, and the
+      # release stops here rather than falling back to building something new.
+      - name: Resolve validated candidate artifacts for this tree
+        id: evidence
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_TREE: ${{ steps.identity.outputs.source_tree }}
+          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+
+          name="candidate-record-$SOURCE_TREE"
+          artifact="$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$GITHUB_REPOSITORY/actions/artifacts?name=$name&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last')"
+
+          if [[ -z "$artifact" || "$artifact" == "null" ]]; then
+            echo "::error::No unexpired $name artifact. Run the candidate validation dispatch on develop for tree $SOURCE_TREE before tagging."
+            exit 1
+          fi
+
+          artifact_id="$(jq -r '.id' <<< "$artifact")"
+          run_id="$(jq -r '.workflow_run.id' <<< "$artifact")"
+
+          gh api "/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > record.zip
+          unzip -p record.zip candidate-record.json > candidate-record.json
+          cat candidate-record.json
+
+          record_tree="$(jq -r '.source_tree' candidate-record.json)"
+          if [[ "$record_tree" != "$SOURCE_TREE" ]]; then
+            echo "::error::Candidate record tree $record_tree does not match release tree $SOURCE_TREE"
+            exit 1
+          fi
+
+          amd64_digest="$(jq -r '.amd64.digest' candidate-record.json)"
+          arm64_digest="$(jq -r '.arm64.digest' candidate-record.json)"
+          for d in "$amd64_digest" "$arm64_digest"; do
+            if [[ ! "$d" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+              echo "::error::Malformed digest in candidate record: $d"
+              exit 1
+            fi
+          done
+
+          {
+            echo "candidate_run_id=$run_id"
+            echo "amd64_digest=$amd64_digest"
+            echo "arm64_digest=$arm64_digest"
+            echo "amd64_ref=$(jq -r '.amd64.image' candidate-record.json)"
+            echo "arm64_ref=$(jq -r '.arm64.image' candidate-record.json)"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Promoting validated candidate artifacts"
+            echo
+            echo "- candidate validation run: [$run_id]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id)"
+            echo "- AMD64 digest: \`$amd64_digest\`"
+            echo "- ARM64 digest: \`$arm64_digest\`"
+            echo
+            echo "No application image is built by this run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   validate-amd64:
     name: "Validate AMD64"
     if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -116,29 +210,38 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+      digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout validated source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
-      - name: Build, test, and scan without publishing
+      # The only application image build in the whole release path. It is pushed
+      # so that publication can promote this exact digest instead of rebuilding.
+      - name: Build, test, scan, and publish the candidate AMD64 image
         id: image
         uses: ./.github/actions/docker-build-and-test
         with:
           platform: "linux/amd64"
-          platform-suffix: ""
+          platform-suffix: "-amd64"
           image-tag: ${{ needs.prepare.outputs.image_tag }}
+          image-version: ${{ needs.prepare.outputs.image_tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
           postgres-password: ${{ env.POSTGRES_PASSWORD }}
           postgres-db: ${{ env.POSTGRES_DB }}
           database-host: ${{ env.DATABASE_HOST }}
-          push-image: "false"
+          push-image: "true"
+          allow-existing-tag: "true"
 
       - name: Upload AMD64 SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: validation-sbom-amd64-${{ needs.prepare.outputs.source_sha }}
+          name: candidate-sbom-amd64-${{ needs.prepare.outputs.source_tree }}
           path: ${{ steps.image.outputs.sbom_path }}
           if-no-files-found: error
 
@@ -149,56 +252,23 @@ jobs:
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+      digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout validated source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.prepare.outputs.checkout_ref }}
 
-      - name: Build, test, and scan without publishing
+      - name: Build, test, scan, and publish the candidate ARM64 image
         id: image
         uses: ./.github/actions/docker-build-and-test
         with:
           platform: "linux/arm64"
-          platform-suffix: "-arm"
+          platform-suffix: "-arm64"
           image-tag: ${{ needs.prepare.outputs.image_tag }}
-          postgres-user: ${{ env.POSTGRES_USER }}
-          postgres-password: ${{ env.POSTGRES_PASSWORD }}
-          postgres-db: ${{ env.POSTGRES_DB }}
-          database-host: ${{ env.DATABASE_HOST }}
-          push-image: "false"
-
-      - name: Upload ARM64 SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: validation-sbom-arm64-${{ needs.prepare.outputs.source_sha }}
-          path: ${{ steps.image.outputs.sbom_path }}
-          if-no-files-found: error
-
-  release-amd64:
-    name: "Release AMD64"
-    if: ${{ github.event_name == 'push' }}
-    needs: prepare
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image_ref: ${{ steps.image.outputs.image_ref }}
-      digest: ${{ steps.image.outputs.digest }}
-    steps:
-      - name: Checkout validated release tag
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          ref: ${{ needs.prepare.outputs.checkout_ref }}
-
-      - name: Build, test, scan, and publish exact AMD64 image
-        id: image
-        uses: ./.github/actions/docker-build-and-test
-        with:
-          platform: "linux/amd64"
-          platform-suffix: "-amd64"
-          image-tag: staging-${{ github.run_id }}-${{ github.run_attempt }}
           image-version: ${{ needs.prepare.outputs.image_tag }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           postgres-user: ${{ env.POSTGRES_USER }}
@@ -206,64 +276,89 @@ jobs:
           postgres-db: ${{ env.POSTGRES_DB }}
           database-host: ${{ env.DATABASE_HOST }}
           push-image: "true"
-
-      - name: Upload AMD64 SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: release-sbom-amd64-${{ needs.prepare.outputs.image_tag }}
-          path: ${{ steps.image.outputs.sbom_path }}
-          if-no-files-found: error
-
-  release-arm64:
-    name: "Release ARM64"
-    if: ${{ github.event_name == 'push' }}
-    needs: prepare
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image_ref: ${{ steps.image.outputs.image_ref }}
-      digest: ${{ steps.image.outputs.digest }}
-    steps:
-      - name: Checkout validated release tag
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          ref: ${{ needs.prepare.outputs.checkout_ref }}
-
-      - name: Build, test, scan, and publish exact ARM64 image
-        id: image
-        uses: ./.github/actions/docker-build-and-test
-        with:
-          platform: "linux/arm64"
-          platform-suffix: "-arm"
-          image-tag: staging-${{ github.run_id }}-${{ github.run_attempt }}
-          image-version: ${{ needs.prepare.outputs.image_tag }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          postgres-user: ${{ env.POSTGRES_USER }}
-          postgres-password: ${{ env.POSTGRES_PASSWORD }}
-          postgres-db: ${{ env.POSTGRES_DB }}
-          database-host: ${{ env.DATABASE_HOST }}
-          push-image: "true"
+          allow-existing-tag: "true"
 
       - name: Upload ARM64 SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-sbom-arm64-${{ needs.prepare.outputs.image_tag }}
+          name: candidate-sbom-arm64-${{ needs.prepare.outputs.source_tree }}
           path: ${{ steps.image.outputs.sbom_path }}
           if-no-files-found: error
 
-  finalize-release:
-    name: "Finalize release evidence and latest"
-    if: ${{ github.event_name == 'push' }}
-    needs: [prepare, release-amd64, release-arm64]
+  record-candidate:
+    name: "Record validated candidate digests"
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: [prepare, validate-amd64, validate-arm64]
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    steps:
+      - name: Write candidate record
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          SOURCE_TREE: ${{ needs.prepare.outputs.source_tree }}
+          AMD64_REF: ${{ needs.validate-amd64.outputs.image_ref }}
+          AMD64_DIGEST: ${{ needs.validate-amd64.outputs.digest }}
+          ARM64_REF: ${{ needs.validate-arm64.outputs.image_ref }}
+          ARM64_DIGEST: ${{ needs.validate-arm64.outputs.digest }}
+        run: |
+          set -euo pipefail
+          for d in "$AMD64_DIGEST" "$ARM64_DIGEST"; do
+            if [[ ! "$d" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+              echo "::error::Validation did not produce a usable digest: '$d'"
+              exit 1
+            fi
+          done
+
+          jq -n \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg source_tree "$SOURCE_TREE" \
+            --arg amd64_ref "$AMD64_REF" \
+            --arg amd64_digest "$AMD64_DIGEST" \
+            --arg arm64_ref "$ARM64_REF" \
+            --arg arm64_digest "$ARM64_DIGEST" \
+            --arg run "$GITHUB_RUN_ID" \
+            '{source_sha: $source_sha, source_tree: $source_tree,
+              amd64: {image: $amd64_ref, digest: $amd64_digest},
+              arm64: {image: $arm64_ref, digest: $arm64_digest},
+              validation_run: $run}' > candidate-record.json
+          cat candidate-record.json
+
+          {
+            echo "## Candidate validated"
+            echo
+            echo "Tree \`$SOURCE_TREE\` is releasable. Promotion will publish these exact digests."
+            echo
+            echo "- AMD64: \`$AMD64_REF@$AMD64_DIGEST\`"
+            echo "- ARM64: \`$ARM64_REF@$ARM64_DIGEST\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload candidate record
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-record-${{ needs.prepare.outputs.source_tree }}
+          path: candidate-record.json
+          if-no-files-found: error
+          retention-days: 90
+
+  promote:
+    name: "Promote validated digests and publish the release"
+    if: ${{ github.event_name == 'push' }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
       packages: write
+      actions: read
       id-token: write
       attestations: write
     steps:
+      - name: Checkout release tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+
       - name: Log in to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
@@ -274,22 +369,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Publish final architecture tags and latest
+      - name: Promote validated digests to final architecture tags
         id: publish_tags
         env:
           RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
-          STAGING_AMD64_REF: ${{ needs.release-amd64.outputs.image_ref }}
-          STAGING_AMD64_DIGEST: ${{ needs.release-amd64.outputs.digest }}
-          STAGING_ARM64_REF: ${{ needs.release-arm64.outputs.image_ref }}
-          STAGING_ARM64_DIGEST: ${{ needs.release-arm64.outputs.digest }}
+          CAND_AMD64_REF: ${{ needs.prepare.outputs.candidate_amd64_ref }}
+          CAND_AMD64_DIGEST: ${{ needs.prepare.outputs.candidate_amd64_digest }}
+          CAND_ARM64_REF: ${{ needs.prepare.outputs.candidate_arm64_ref }}
+          CAND_ARM64_DIGEST: ${{ needs.prepare.outputs.candidate_arm64_digest }}
         run: |
           set -euo pipefail
 
           final_amd64_ref="$IMAGE_NAME:$RELEASE_TAG"
           final_arm64_ref="$IMAGE_NAME:$RELEASE_TAG-arm"
 
-          docker buildx imagetools inspect "$STAGING_AMD64_REF@$STAGING_AMD64_DIGEST" >/dev/null
-          docker buildx imagetools inspect "$STAGING_ARM64_REF@$STAGING_ARM64_DIGEST" >/dev/null
+          # Resolve each recorded digest directly. The candidate tag is only a
+          # handle; if it had been moved, this still promotes the validated bytes.
+          docker buildx imagetools inspect "$IMAGE_NAME@$CAND_AMD64_DIGEST" >/dev/null
+          docker buildx imagetools inspect "$IMAGE_NAME@$CAND_ARM64_DIGEST" >/dev/null
 
           for final_ref in "$final_amd64_ref" "$final_arm64_ref"; do
             if docker buildx imagetools inspect "$final_ref" >/dev/null 2>&1; then
@@ -298,17 +395,11 @@ jobs:
             fi
           done
 
-          docker buildx imagetools create \
-            --tag "$final_amd64_ref" \
-            "$STAGING_AMD64_REF@$STAGING_AMD64_DIGEST"
-          docker buildx imagetools create \
-            --tag "$final_arm64_ref" \
-            "$STAGING_ARM64_REF@$STAGING_ARM64_DIGEST"
+          docker buildx imagetools create --tag "$final_amd64_ref" "$IMAGE_NAME@$CAND_AMD64_DIGEST"
+          docker buildx imagetools create --tag "$final_arm64_ref" "$IMAGE_NAME@$CAND_ARM64_DIGEST"
 
-          amd64_manifest="$(docker buildx imagetools inspect "$final_amd64_ref" --format '{{json .Manifest}}')"
-          arm64_manifest="$(docker buildx imagetools inspect "$final_arm64_ref" --format '{{json .Manifest}}')"
-          amd64_digest="$(jq -r '.digest' <<< "$amd64_manifest")"
-          arm64_digest="$(jq -r '.digest' <<< "$arm64_manifest")"
+          amd64_digest="$(docker buildx imagetools inspect "$final_amd64_ref" --format '{{json .Manifest}}' | jq -r '.digest')"
+          arm64_digest="$(docker buildx imagetools inspect "$final_arm64_ref" --format '{{json .Manifest}}' | jq -r '.digest')"
 
           if [[ ! "$amd64_digest" =~ ^sha256:[a-f0-9]{64}$ || ! "$arm64_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
             echo "::error::Unable to capture final architecture digests"
@@ -316,14 +407,15 @@ jobs:
           fi
 
           docker buildx imagetools create --tag "$IMAGE_NAME:latest" "$final_amd64_ref@$amd64_digest"
-          latest_manifest="$(docker buildx imagetools inspect "$IMAGE_NAME:latest" --format '{{json .Manifest}}')"
-          latest_digest="$(jq -r '.digest' <<< "$latest_manifest")"
+          latest_digest="$(docker buildx imagetools inspect "$IMAGE_NAME:latest" --format '{{json .Manifest}}' | jq -r '.digest')"
 
-          echo "amd64_ref=$final_amd64_ref" >> "$GITHUB_OUTPUT"
-          echo "amd64_digest=$amd64_digest" >> "$GITHUB_OUTPUT"
-          echo "arm64_ref=$final_arm64_ref" >> "$GITHUB_OUTPUT"
-          echo "arm64_digest=$arm64_digest" >> "$GITHUB_OUTPUT"
-          echo "latest_digest=$latest_digest" >> "$GITHUB_OUTPUT"
+          {
+            echo "amd64_ref=$final_amd64_ref"
+            echo "amd64_digest=$amd64_digest"
+            echo "arm64_ref=$final_arm64_ref"
+            echo "arm64_digest=$arm64_digest"
+            echo "latest_digest=$latest_digest"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Attest final AMD64 build provenance
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
@@ -339,41 +431,116 @@ jobs:
           subject-digest: ${{ steps.publish_tags.outputs.arm64_digest }}
           push-to-registry: true
 
+      - name: Download validated candidate SBOMs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: candidate-sbom-*-${{ needs.prepare.outputs.source_tree }}
+          run-id: ${{ needs.prepare.outputs.candidate_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          merge-multiple: true
+          path: sbom
+
       - name: Write release record
         id: record
         env:
           RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          SOURCE_TREE: ${{ needs.prepare.outputs.source_tree }}
           AMD64_REF: ${{ steps.publish_tags.outputs.amd64_ref }}
           AMD64_DIGEST: ${{ steps.publish_tags.outputs.amd64_digest }}
           ARM64_REF: ${{ steps.publish_tags.outputs.arm64_ref }}
           ARM64_DIGEST: ${{ steps.publish_tags.outputs.arm64_digest }}
           LATEST_DIGEST: ${{ steps.publish_tags.outputs.latest_digest }}
-          STAGING_AMD64_REF: ${{ needs.release-amd64.outputs.image_ref }}
-          STAGING_ARM64_REF: ${{ needs.release-arm64.outputs.image_ref }}
+          CAND_AMD64_DIGEST: ${{ needs.prepare.outputs.candidate_amd64_digest }}
+          CAND_ARM64_DIGEST: ${{ needs.prepare.outputs.candidate_arm64_digest }}
+          CANDIDATE_RUN: ${{ needs.prepare.outputs.candidate_run_id }}
         run: |
           set -euo pipefail
           jq -n \
             --arg tag "$RELEASE_TAG" \
             --arg source_sha "$SOURCE_SHA" \
+            --arg source_tree "$SOURCE_TREE" \
             --arg amd64_ref "$AMD64_REF" \
             --arg amd64_digest "$AMD64_DIGEST" \
             --arg arm64_ref "$ARM64_REF" \
             --arg arm64_digest "$ARM64_DIGEST" \
             --arg latest_digest "$LATEST_DIGEST" \
-            --arg staging_amd64 "$STAGING_AMD64_REF" \
-            --arg staging_arm64 "$STAGING_ARM64_REF" \
+            --arg cand_amd64 "$CAND_AMD64_DIGEST" \
+            --arg cand_arm64 "$CAND_ARM64_DIGEST" \
+            --arg candidate_run "$CANDIDATE_RUN" \
             --arg workflow_run "$GITHUB_RUN_ID" \
-            '{tag: $tag, source_sha: $source_sha, amd64: {image: $amd64_ref, digest: $amd64_digest, staging_image: $staging_amd64}, arm64: {image: $arm64_ref, digest: $arm64_digest, staging_image: $staging_arm64}, latest_digest: $latest_digest, workflow_run: $workflow_run}' \
+            '{tag: $tag, source_sha: $source_sha, source_tree: $source_tree,
+              amd64: {image: $amd64_ref, digest: $amd64_digest, validated_digest: $cand_amd64},
+              arm64: {image: $arm64_ref, digest: $arm64_digest, validated_digest: $cand_arm64},
+              latest_digest: $latest_digest,
+              candidate_validation_run: $candidate_run,
+              workflow_run: $workflow_run}' \
             > release-record.json
+          cat release-record.json
+
+      # Notes are generated FROM release-record.json so the published facts cannot
+      # drift from the artifacts. Optional hand-written prose for this release is
+      # taken verbatim from docs/release-notes/<tag>.md when that file exists.
+      - name: Compose release notes from the release record
+        id: notes
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          prose="docs/release-notes/${RELEASE_TAG}.md"
+          : > release-notes.md
+          if [[ -f "$prose" ]]; then
+            cat "$prose" >> release-notes.md
+            printf '\n\n---\n\n' >> release-notes.md
+          else
+            echo "::warning::No $prose in the release tree; publishing the artifact record only."
+          fi
+
+          jq -r '
+            "## Release artifacts\n",
+            "Deploy by digest. `latest` is a convenience pointer and is not the release identity.\n",
+            "```",
+            "\(.amd64.image)@\(.amd64.digest)",
+            "\(.arm64.image)@\(.arm64.digest)",
+            "```\n",
+            "| | |",
+            "| --- | --- |",
+            "| Source commit | `\(.source_sha)` |",
+            "| Source tree | `\(.source_tree)` |",
+            "| AMD64 | `\(.amd64.image)` · `\(.amd64.digest)` |",
+            "| ARM64 | `\(.arm64.image)` · `\(.arm64.digest)` |",
+            "| `latest` | `\(.latest_digest)` (convenience only) |",
+            "| Candidate validation run | \(.candidate_validation_run) |",
+            "| Publication run | \(.workflow_run) |\n",
+            "Both images were built, runtime-tested, licence-asserted, scanned and SBOM'\''d once",
+            "during candidate validation on native runners. Publication promoted those exact",
+            "digests without rebuilding, so the published artifact is the tested artifact.\n",
+            "CycloneDX SBOMs and `release-record.json` are attached below."
+          ' release-record.json >> release-notes.md
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::GitHub Release $RELEASE_TAG already exists and will not be overwritten"
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --title "cal.forte $RELEASE_TAG" \
+            --notes-file release-notes.md \
+            release-record.json sbom/*.cdx.json
 
           {
-            echo "## Published release $RELEASE_TAG"
+            echo "## Published $RELEASE_TAG"
             echo
-            echo "- Source: \`$SOURCE_SHA\`"
-            echo "- AMD64: \`$AMD64_REF@$AMD64_DIGEST\`"
-            echo "- ARM64: \`$ARM64_REF@$ARM64_DIGEST\`"
-            echo "- latest (convenience only): \`$IMAGE_NAME:latest@$LATEST_DIGEST\`"
+            echo "- $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
+            echo "- AMD64: \`${{ steps.publish_tags.outputs.amd64_ref }}@${{ steps.publish_tags.outputs.amd64_digest }}\`"
+            echo "- ARM64: \`${{ steps.publish_tags.outputs.arm64_ref }}@${{ steps.publish_tags.outputs.arm64_digest }}\`"
+            echo "- no application image was rebuilt during publication"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload release record

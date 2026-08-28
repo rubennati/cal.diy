@@ -17,7 +17,18 @@ validation.
   `origin/release` HEAD.
 - Version tags and GHCR tags are immutable identities and must not be overwritten.
 - Manual workflow dispatch is validation-only and cannot publish.
-- `latest` is convenience metadata, updated only after both architecture jobs succeed;
+- **The published artifact is the validated artifact.** Application images are built
+  exactly once, during candidate validation. Tagging promotes those immutable digests;
+  it never rebuilds.
+- Candidate evidence is keyed by the source **tree**, not the commit SHA. Promotion
+  deliberately creates a new merge commit whose tree is identical to the approved
+  candidate, so the tree is what proves "same source" — the SHA cannot.
+- The hand-off identity between validation and publication is a **digest** recorded in a
+  `candidate-record-<tree>` artifact. Candidate image tags are garbage-collection handles
+  and are never trusted as the hand-off identity.
+- Releasing requires no local Docker daemon. Every artifact assertion happens in CI, on
+  native runners, against the exact image that is published.
+- `latest` is convenience metadata, updated only after promotion succeeds;
   downstream must never rely on it.
 
 ## 1. Prepare The Candidate On `develop`
@@ -35,8 +46,14 @@ git diff --check
 
 5. Run focused tests for changed security/runtime paths.
 6. Run `forte-ci`, CodeQL, and Trivy on `develop` and record known non-blocking findings.
-7. Run `Release Docker` manually on `develop`. This builds, runtime-tests, scans, and
-   produces SBOM artifacts for AMD64 and ARM64, but cannot publish.
+7. Run `Release Docker` manually on `develop`. **This is the only time application images
+   are built in the release path.** It builds AMD64 and ARM64 natively, runtime-tests each
+   exact image, asserts the root `LICENSE` byte-for-byte inside it, scans it, generates its
+   CycloneDX SBOM, pushes it to a tree-keyed candidate tag, and records both immutable
+   digests in a `candidate-record-<tree>` artifact. It cannot publish a release tag.
+
+   If `develop` moves after this run, the candidate record no longer matches the tree and
+   publication will refuse to proceed — re-run the dispatch on the new candidate.
 
 ## 2. Promote To `release`
 
@@ -130,23 +147,44 @@ the current `origin/release` head.
 
 ## 5. Workflow Publication
 
-For each architecture, the workflow:
+Pushing the tag runs `Release Docker` in **promotion** mode. It builds nothing.
 
-1. checks out the validated tag
-2. builds one local image
-3. runtime-tests that exact image
-4. scans that exact image with Trivy (currently report-only)
-5. generates a CycloneDX SBOM
-6. pushes the exact tested image under a unique workflow staging tag
-7. records the staging registry digest
+`prepare`:
 
-After both architecture jobs succeed, the finalizer verifies both staging digests, refuses
-to overwrite existing public version tags, creates the final AMD64 and ARM64 tags, updates
-the convenience `latest` tag to AMD64, creates provenance attestations for the final
-digests, and uploads `release-record.json`. If either architecture job fails, no public
-version tag or `latest` update occurs. GHCR tag creation itself is not transactional; if
-the finalizer fails between tag operations, the release is incomplete and all resulting
-tags must be inspected before a new build-number release is prepared.
+1. rejects a malformed or lightweight tag, or one not pointing at `origin/release` HEAD
+2. rejects a `release` tree that differs from `origin/develop`
+3. requires successful `forte-ci`, `forte-codeql` and `forte-trivy` push runs for the exact
+   release SHA
+4. locates the `candidate-record-<tree>` artifact for this exact tree and reads both
+   validated digests from it — **if no unexpired record exists for this tree, the release
+   stops here.** There is no fallback that builds something new
+
+`promote`:
+
+5. resolves each recorded digest directly in the registry, by digest, not by candidate tag
+6. refuses to overwrite an existing final version tag
+7. creates the final `vX.Y.Z-N` and `vX.Y.Z-N-arm` tags from those exact digests with
+   `docker buildx imagetools create`
+8. updates the convenience `latest` tag to the AMD64 digest
+9. attests SLSA build provenance for both final digests
+10. downloads the candidate SBOMs produced against those same images
+11. writes `release-record.json`
+12. creates the GitHub Release, generating its facts **from `release-record.json`** and
+    attaching both SBOMs and the record itself
+
+Step 12 is why release facts cannot drift between the artifacts and the announcement: the
+published table is rendered from the same JSON the pipeline emitted. Hand-written prose for
+a release is optional and lives at `docs/release-notes/vX.Y.Z-N.md` in the release tree; when
+present it is prepended verbatim, when absent the Release carries the artifact record alone.
+
+Because no image is rebuilt, the digest published under `vX.Y.Z-N` is byte-identical to the
+image that passed the runtime test, the `LICENSE` assertion and the Trivy scan during
+candidate validation. Verifying the release therefore requires no local Docker daemon —
+and the release contract does not ask for one.
+
+**Non-transactional caveat, unchanged.** GHCR tag creation is not atomic. If promotion fails
+between tag operations the release is incomplete, and all resulting tags must be inspected
+before preparing a new build-number release.
 
 ## 6. Release Record And Downstream Handoff
 

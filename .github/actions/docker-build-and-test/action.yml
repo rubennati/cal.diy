@@ -36,6 +36,13 @@ inputs:
     description: "Push the exact locally validated image"
     required: false
     default: "false"
+  allow-existing-tag:
+    description: >-
+      Permit pushing over an existing tag. True only for candidate tags, which are
+      keyed by source tree and may legitimately be re-validated. Final vX.Y.Z-N
+      tags must never set this — they are immutable release identities.
+    required: false
+    default: "false"
 
 outputs:
   image_ref:
@@ -241,7 +248,7 @@ runs:
         password: ${{ inputs.github-token }}
 
     - name: Refuse to overwrite an existing release tag
-      if: ${{ inputs.push-image == 'true' }}
+      if: ${{ inputs.push-image == 'true' && inputs.allow-existing-tag != 'true' }}
       shell: bash
       env:
         IMAGE_REF: ${{ steps.image.outputs.image_ref }}

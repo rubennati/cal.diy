@@ -106,11 +106,12 @@ as merge or publication blockers.
 Do not read any of the above as: all security issues are fixed, all CRITICAL scanner
 findings are closed, Teams are secure, or PBAC is implemented. None of those are true.
 
-**One process gap, recorded rather than quietly closed.** `release-docker.yaml` does not
-create the GitHub Release object; `v6.2.0-6` is the first tag in this repository to have
-one, and it was created manually after publication. The release contracts do not yet
-describe that step, so it is currently outside the automated pipeline and outside the
-evidence the pipeline itself produces.
+**One process gap, now closed.** For `v6.2.0-6` the GitHub Release object was created
+manually after publication: `release-docker.yaml` did not produce one and no release
+contract described the step. The artifact-promotion pipeline moves Release creation into
+the workflow and generates its facts from `release-record.json`, so the published
+announcement and the artifacts cannot disagree. `v6.2.0-6` remains the one release whose
+Release object was authored by hand.
 
 ## Incident-Oriented Checks
 
