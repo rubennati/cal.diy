@@ -1978,8 +1978,8 @@ The completion rule these steps serve is
 | Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
 | GitHub issue | n/a — maintainer request, no tracking issue filed |
 | Code-scanning alert | n/a |
-| PR | [#62](https://github.com/rubennati/cal.diy/pull/62) |
-| Local commit(s) | `32584ba05b` |
+| PR | [#62](https://github.com/rubennati/cal.diy/pull/62), [#63](https://github.com/rubennati/cal.diy/pull/63) |
+| Local commit(s) | `32584ba05b`, `00cb4797e0`, merged as `689bb82f96` |
 | Released in | not yet released |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
@@ -2066,9 +2066,18 @@ path now fails fast on a guard violation instead of after a four-minute install.
 direction. It removes no enforced signal (the skipped steps covered nothing about the
 allowlisted files) and adds two blocking checks that previously ran later or not at all.
 
-**Rollback.** Revert `32584ba05b`. Because the change is confined to workflow files and
-documentation, reverting restores the prior behaviour exactly, with no branch-protection or
-registry state to unwind.
+**Split across two PRs, and why.** PR #62 merged at `00cb4797e0` while a follow-up commit was
+still being prepared. That commit was pushed to the branch about ninety seconds later, and a
+push to the branch of an already-merged PR raises no `synchronize` event — so it neither
+entered #62 nor reached `develop`, and the CI run that would have confirmed it never started.
+It is recovered by PR #63 (`git cherry-pick -x`). This is the second occurrence of the pattern
+in this repository; the first was the FIL-0018 wording correction after PR #54. The general
+lesson is recorded rather than the incident: after pushing to a branch, confirm the PR is still
+open before waiting on a run, because a merged PR absorbs no further pushes.
+
+**Rollback.** Revert `32584ba05b` and `00cb4797e0`. Because the change is confined to workflow
+files and documentation, reverting restores the prior behaviour exactly, with no
+branch-protection or registry state to unwind.
 
 **Upstream reevaluation trigger.** N/A — `forte-*` workflows are fork-owned and additive;
 upstream has no equivalent file to diverge from. Revisit the allowlist if a future change ever
