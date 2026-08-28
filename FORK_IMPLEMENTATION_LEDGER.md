@@ -1807,10 +1807,20 @@ the exact runtime image, and its content matches the repository root `LICENSE` b
 to close — left untouched rather than adding overlapping documentation.
 
 **SBOM licence-metadata observation (issue #40's secondary question).** Attempted a CycloneDX scan
-of the pinned image with the same tool the release workflow uses (`aquasecurity/trivy-action`, run
-here via its underlying `aquasec/trivy` image). Result recorded in a follow-up governance note once the scan completes. This is observational
-only, per the issue's own scope limit — the root `LICENSE` requirement stands independently of
-whatever the SBOM does or does not capture for third-party dependencies.
+of the locally built fixed image with the same tool the release workflow uses
+(`aquasecurity/trivy-action`, run here via its underlying `aquasec/trivy` image), across five
+attempts — increasing timeout, persisting the vulnerability DB across runs, and dropping
+vulnerability matching to isolate plain SBOM generation. Each attempt terminated silently partway
+through package enumeration with no error, while the Docker daemon remained healthy and unrelated
+containers kept running normally throughout — not attributed to the image or the fix.
+**`UNABLE_TO_VERIFY`.**
+
+One partial data point from before an earlier attempt terminated: Trivy logged `[python] Licenses
+acquired from one or more METADATA files may be subject to additional terms`, indicating its SBOM
+tooling captures licence metadata for at least some ecosystems — not sufficient to classify
+npm/Node coverage either way. This is observational only, per the issue's own scope limit — the
+root `LICENSE` requirement stands independently of whatever the SBOM does or does not capture for
+third-party dependencies.
 
 **No legal conclusion drawn, anywhere in this record.** The repository states only that the notice
 was absent and is now present in the build; whether that satisfies the MIT condition is explicitly
