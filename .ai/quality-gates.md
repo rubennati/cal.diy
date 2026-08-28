@@ -47,6 +47,14 @@ support configured here, and `lint-staged.config.mjs` covers only `js/ts/jsx/tsx
 by any gate. The 2026-08-26 audit validated its own output with an ad-hoc relative-link check; if
 documentation volume keeps growing, a link checker is the cheapest gate to add.
 
+That absence is also what makes the `forte-ci` fast path defensible: on a pull request whose
+changed files all match `**/*.md` or `docs/**`, install, `type-check:ci` and Biome are skipped,
+and none of the three was contributing enforced signal about those files in the first place.
+The fork guards and a `git diff --check` still run on every event. What the fast path *does*
+change is the meaning of a green `ci` on such a PR — it no longer implies the tree type-checks.
+Push events have no fast path, so release evidence is unaffected. See
+[../FORK_PROCESS.md](../FORK_PROCESS.md) → *Branch Contract and Required Checks*.
+
 **Coverage caveat — `type-check:ci` does not cover the repo.** turbo has 113 packages in
 scope but only the packages that *define* the script actually run one (7 upstream + this
 fork's `packages/lib`). Files with no importers are otherwise in no tsc program at all and

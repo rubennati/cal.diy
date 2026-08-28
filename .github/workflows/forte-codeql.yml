@@ -5,6 +5,15 @@ name: forte-codeql
 on:
   pull_request:
     branches: [develop, release]
+    # Skipping CodeQL on a pull request is safe only because it is not a required
+    # status context on either branch — the sole required context is `ci`, so an
+    # absent run cannot leave a PR indefinitely pending. The `push` and `schedule`
+    # triggers below are deliberately unfiltered: release publication requires a
+    # successful push-event CodeQL run for the exact SHA, and that evidence must
+    # not depend on which paths a commit happened to touch.
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   push:
     branches: [develop, release]
   schedule:
