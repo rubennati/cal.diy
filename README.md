@@ -1,9 +1,25 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/forte-banner-dark.svg">
+    <img src="docs/brand/forte-banner-light.svg" width="100%"
+         alt="cal.forte — security-first, review-gated fork of Cal.diy">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="FORK_STATUS.md#latest-release-evidence"><img alt="Latest reviewed release" src="https://img.shields.io/github/v/tag/rubennati/cal.diy?filter=v*-*&amp;style=flat-square&amp;label=release&amp;labelColor=0b0f14&amp;color=e2703a"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-ci.yml"><img alt="forte-ci status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-ci.yml?branch=develop&amp;style=flat-square&amp;label=forte-ci&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-codeql.yml"><img alt="codeql status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-codeql.yml?branch=develop&amp;style=flat-square&amp;label=codeql&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-trivy.yml"><img alt="trivy status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-trivy.yml?branch=develop&amp;style=flat-square&amp;label=trivy&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/pkgs/container/cal.diy"><img alt="Container image on GHCR" src="https://img.shields.io/badge/ghcr.io-cal.diy-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/compare/main...develop"><img alt="Reviewed diff against upstream" src="https://img.shields.io/badge/diff-main...develop-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+</p>
+
 > [!IMPORTANT]
 > **cal.forte — a hardened, controlled fork of Cal.diy. This is not upstream.**
 > Changes are reviewed on `develop`; deployable images come only from reviewed tags on
 > `release`. Use a versioned, architecture-specific digest — never `latest` as a trust anchor.
-
-# cal.forte
 
 A security-first, review-gated fork of Cal.diy (the MIT community edition of Cal.com).
 Goal: a stable, hardened, **auditable** self-host — stay current on upstream security
@@ -111,6 +127,7 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | [.ai/architecture.md](.ai/architecture.md) | monorepo layout, 3 config planes (env / DB / file), hardening levers |
 | [.ai/env-reference.md](.ai/env-reference.md) | every env var: meaning, format, priority, recommendation |
 | [.ai/branding.md](.ai/branding.md) | white-labeling (build vs runtime), CE-vs-EE table, paywall/teams reality |
+| [docs/brand/](docs/brand/) | the fork's own identity: mark, wordmark, palette, and where it is *not* applied yet |
 
 **Capability, security & licence audits (`docs/`)**
 
