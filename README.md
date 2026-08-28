@@ -1,9 +1,25 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/forte-banner-dark.svg">
+    <img src="docs/brand/forte-banner-light.svg" width="100%"
+         alt="cal.forte — security-first, review-gated fork of Cal.diy">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="FORK_STATUS.md#latest-release-evidence"><img alt="Latest reviewed release" src="https://img.shields.io/github/v/tag/rubennati/cal.diy?filter=v*-*&amp;style=flat-square&amp;label=release&amp;labelColor=0b0f14&amp;color=e2703a"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-ci.yml"><img alt="forte-ci status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-ci.yml?branch=develop&amp;style=flat-square&amp;label=forte-ci&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-codeql.yml"><img alt="codeql status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-codeql.yml?branch=develop&amp;style=flat-square&amp;label=codeql&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/actions/workflows/forte-trivy.yml"><img alt="trivy status" src="https://img.shields.io/github/actions/workflow/status/rubennati/cal.diy/forte-trivy.yml?branch=develop&amp;style=flat-square&amp;label=trivy&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/pkgs/container/cal.diy"><img alt="Container image on GHCR" src="https://img.shields.io/badge/ghcr.io-cal.diy-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+  <a href="https://github.com/rubennati/cal.diy/compare/main...develop"><img alt="Reviewed diff against upstream" src="https://img.shields.io/badge/diff-main...develop-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-e2703a?style=flat-square&amp;labelColor=0b0f14"></a>
+</p>
+
 > [!IMPORTANT]
 > **cal.forte — a hardened, controlled fork of Cal.diy. This is not upstream.**
 > Changes are reviewed on `develop`; deployable images come only from reviewed tags on
 > `release`. Use a versioned, architecture-specific digest — never `latest` as a trust anchor.
-
-# cal.forte
 
 A security-first, review-gated fork of Cal.diy (the MIT community edition of Cal.com).
 Goal: a stable, hardened, **auditable** self-host — stay current on upstream security
@@ -47,6 +63,45 @@ Tags are architecture-specific; there is currently no combined multi-architectur
 See [FORK_STATUS.md](FORK_STATUS.md) for the maintenance snapshot and
 [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md) for the downstream trust contract.
 
+## How cal.forte differs from Cal.diy
+
+cal.forte maintains **reviewed, deliberate divergence** from upstream. Divergence is not a goal —
+it is a cost, accepted only where the fork's purpose requires it. Every material change is
+recorded with its provenance, security impact and licence status.
+
+| Category | What it means here |
+|----------|--------------------|
+| **Privacy / telemetry reduction** | Inert usage telemetry deleted rather than disabled, with a blocking CI guard against its return; ad-click integrations shipped off by default |
+| **Security hardening** | Fork-owned security CI replacing upstream's estate; non-root web and API v2 runtimes; digest-pinned base images and SHA-pinned Actions |
+| **Self-host productization** | The distribution presents its own identity, support contact and legal surface rather than upstream's — **in progress, not complete** |
+| **Selected regression fixes** | Security-relevant upstream commits taken by default, one `cherry-pick -x` at a time |
+| **Reduced hosted / commercial surface** | The Enterprise paywall *gating* is gone; dead upsell residue and unused scope removed where it had no importers |
+| **Controlled feature additions** | Features are opt-in decisions, never defaults. **None have been added to date** |
+| **Attack-surface reduction** | Runtime image slimmed; orphaned and unreachable code deleted rather than left inert |
+
+**Where the records live**
+
+| Question | Document |
+|----------|----------|
+| What is different today? | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) |
+| **What did we change, from what source, and what was verified?** | [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) |
+| Which upstream commits were taken, deferred or rejected? | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) |
+| When is a change actually finished? | [FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done) |
+| How is security assured, and what is *not* yet verified? | [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) |
+
+**Provenance.** External repositories may be used as discovery or reference sources. Material
+implementations are independently evaluated for provenance, licence compatibility and security
+impact before incorporation into cal.forte. Each material change records its implementation
+relationship, source usage and licence disposition in the
+[implementation ledger](FORK_IMPLEMENTATION_LEDGER.md); the completion rule is
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done), and the security
+model is [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md).
+
+**Two honest caveats.** Branding is only partly applied — the published image still carries some
+upstream defaults, and its Terms/Privacy links still point at Cal.com. And two commercial Cal.com
+prompts remain reachable in a fresh install, one of them on the public booking page. Both are
+tracked as open issues; see [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PRODUCTIZATION.md).
+
 ## 📚 Documentation & knowledge base
 
 Everything we know about this fork, grouped. Entry point for tooling: [.ai/index.md](.ai/index.md).
@@ -60,6 +115,8 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) | public register of fork-added, modified and removed behavior |
 | [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) | how upstream is pulled in (security-first) |
 | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) | commit-level accepted, partial, deferred and rejected upstream changes |
+| [FORK_IMPLEMENTATION_LEDGER.md](FORK_IMPLEMENTATION_LEDGER.md) | what the fork actually implemented: provenance, licence, security impact, guards |
+| [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) | security-assurance model — ASVS mapping, CI tiers, tooling, licence policy (design) |
 | [RELEASE_PROCESS.md](RELEASE_PROCESS.md) · [IMAGE_BUILD.md](IMAGE_BUILD.md) | cutting & building a release |
 | [SECURITY_REVIEW.md](SECURITY_REVIEW.md) · [CALDIY_RELEASE_CONTRACT.md](CALDIY_RELEASE_CONTRACT.md) | review gate & downstream trust |
 
@@ -70,6 +127,22 @@ Everything we know about this fork, grouped. Entry point for tooling: [.ai/index
 | [.ai/architecture.md](.ai/architecture.md) | monorepo layout, 3 config planes (env / DB / file), hardening levers |
 | [.ai/env-reference.md](.ai/env-reference.md) | every env var: meaning, format, priority, recommendation |
 | [.ai/branding.md](.ai/branding.md) | white-labeling (build vs runtime), CE-vs-EE table, paywall/teams reality |
+| [docs/brand/](docs/brand/) | the fork's own identity: mark, wordmark, palette, and where it is *not* applied yet |
+
+**Capability, security & licence audits (`docs/`)**
+
+Point-in-time forensic audits of the tree at `41689d1d6e`, consolidated 2026-08-26 from a static pass, a
+live-deployment session and an external-fork intake. They record evidence, not process — treat them as
+dated findings, not standing rules. The **master** carries the single ranked candidate registry.
+
+| Doc | What |
+|-----|------|
+| [docs/SELF_HOST_CAPABILITY_AUDIT.md](docs/SELF_HOST_CAPABILITY_AUDIT.md) | master inventory: active, stripped, stubbed, orphaned and residual capabilities + ranked candidates |
+| [docs/PBAC_PLACEHOLDER_AUDIT.md](docs/PBAC_PLACEHOLDER_AUDIT.md) | authorization placeholder call graph, per-endpoint verdicts, minimum reproducible tests |
+| [docs/TEAM_CAPABILITY_EVALUATION.md](docs/TEAM_CAPABILITY_EVALUATION.md) | team architecture, missing layers, role model, invariants required before any team feature |
+| [docs/LICENSE_AND_PROVENANCE_REVIEW.md](docs/LICENSE_AND_PROVENANCE_REVIEW.md) | MIT scope and notice duty, the AGPL/Commercial history boundary, what may not be restored |
+| [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PRODUCTIZATION.md) | legal URLs, residual hosted-Cal upsells, hard-coded `cal.com` references |
+| [docs/EXTERNAL_FORK_INTAKE.md](docs/EXTERNAL_FORK_INTAKE.md) | external-fork evidence register — discovery only, with per-claim verification verdicts |
 
 **Harden & secure**
 

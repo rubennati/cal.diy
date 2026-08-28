@@ -4,6 +4,11 @@
 
 This is the minimum recurring security review checklist for this fork before a reviewed image is allowed to move toward downstream deployment.
 
+It is a **per-release gate**. The per-change completion rule is
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done), and the broader
+assurance strategy — ASVS mapping, risk-based CI tiers, tooling evaluation, licence policy and
+the runtime/DAST model — is [SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md) (design only).
+
 ## Review Priorities
 
 Focus on these areas first:
@@ -43,6 +48,8 @@ Focus on these areas first:
 - non-publishing AMD64 and ARM64 workflow validation
 - exact release-tag-to-`origin/release` identity check
 - architecture-specific digest, SBOM, and provenance capture plan
+- root MIT `LICENSE` present in the exact runtime image, and its content matches the
+  repository root `LICENSE` byte for byte (issue #40; asserted by `docker-build-and-test`)
 
 ## Release Blocking Conditions
 
@@ -58,6 +65,37 @@ Do not approve a release image for downstream use if any of these are true:
 - the published digest is not the digest of the tested image
 - either architecture or the release finalizer failed
 - generated tracked files differ after install/lifecycle scripts
+
+## Known Accepted Items — Current Release Preparation
+
+This section records what a release operator needs to know about `develop` right now,
+distinct from the generic checklist above. It is maintained as part of release preparation
+and is not itself release evidence — it does not replace the required record once a release
+actually ships.
+
+All implementation blockers identified for the next release are resolved on `develop`.
+Specifically:
+
+- issues #43, #44, #45 (security fixes) and #32 (functional availability): fully remediated
+  and closed
+- issue #47 (mechanically enforced branch protection): implemented and closed
+- issue #14 (slots owner-resolution): the public wrong-resource fallback is closed
+  (`FIL-0018`). The issue itself remains **open** — team/private-link resolution correctness
+  is deliberately out of scope while Teams are inactive
+- issue #13 (PBAC placeholders): the fail-open placeholders now deny by default
+  (`FIL-0019`). The issue itself remains **open** — PBAC is not implemented, only contained;
+  do not read this as `PBAC_IMPLEMENTED` or `TEAMS_SECURE`
+- issue #40 (MIT `LICENSE` in the runtime image): implemented and verified against a locally
+  built image (`FIL-0020`). The issue remains **open** pending verification against the
+  actual published release artifact — see the checklist item above
+- issue #46 / CodeQL alert #74 (`RecurringBookingService` type confusion): accepted as a
+  known defect for this release; P3, availability-only, no authorization bypass identified.
+  The alert remains open by deliberate disposition, not oversight
+- issue #33 (team role/ownership invariants): design-only, non-blocking; no Team activation
+  ships in this release
+
+Do not read any of the above as: all security issues are fixed, all CRITICAL scanner
+findings are closed, Teams are secure, or PBAC is implemented. None of those are true.
 
 ## Incident-Oriented Checks
 

@@ -163,7 +163,16 @@ describe("createEventPbacProcedure", () => {
     });
   });
 
-  describe("team events - with permission", () => {
+  // Issue #13 containment. These blocks previously asserted that team-event access was
+  // GRANTED — one of them said so outright: "PermissionCheckService stub always returns
+  // true, so org admin access is always granted". That encoded upstream's fail-open
+  // placeholder as expected behaviour. While PBAC is unimplemented the placeholder denies,
+  // so team events are refused and these assert that instead.
+  //
+  // The user-assignment validation that used to be exercised here now sits behind the
+  // permission check and is unreachable for team events; it stays covered for personal
+  // events in the "personal events" block above.
+  describe("team events - denied while PBAC is unimplemented", () => {
     const teamEvent = {
       id: 2,
       userId: null,
@@ -174,179 +183,51 @@ describe("createEventPbacProcedure", () => {
       },
     };
 
-    it("should allow team member with permission to access team event", async () => {
+    const callWith = (input: Record<string, unknown>, fallbackRoles?: MembershipRole[]) => {
       mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update", [
-        MembershipRole.ADMIN,
-        MembershipRole.OWNER,
-      ]);
+      const procedure = createEventPbacProcedure("eventType.update", fallbackRoles);
       const middleware = getMiddleware(procedure);
-
-      await expect(
-        middleware({
-          ctx: mockCtx,
-          input: { id: 2 },
-          next: mockNext,
-          path: "test",
-          type: "mutation",
-          getRawInput: async () => ({}),
-          meta: undefined,
-        })
-      ).resolves.not.toThrow();
-    });
-
-    it("should allow org admin without team membership to access team event", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      // PermissionCheckService stub always returns true, so org admin access is always granted
-      await expect(
-        middleware({
-          ctx: mockCtx,
-          input: { id: 2 },
-          next: mockNext,
-          path: "test",
-          type: "mutation",
-          getRawInput: async () => ({}),
-          meta: undefined,
-        })
-      ).resolves.not.toThrow();
-    });
-  });
-
-  describe("team events - user assignment validation", () => {
-    const teamEvent = {
-      id: 2,
-      userId: null,
-      teamId: 10,
-      users: [],
-      team: {
-        members: [{ userId: 1 }, { userId: 2 }, { userId: 3 }],
-      },
+      return middleware({
+        ctx: mockCtx,
+        input,
+        next: mockNext,
+        path: "test",
+        type: "mutation",
+        getRawInput: async () => ({}),
+        meta: undefined,
+      });
     };
 
-    it("should allow assigning team members to team event", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
+    it("denies a team member rather than granting by placeholder", async () => {
       await expect(
-        middleware({
-          ctx: mockCtx,
-          input: { id: 2, users: [1, 2, 3] },
-          next: mockNext,
-          path: "test",
-          type: "mutation",
-          getRawInput: async () => ({}),
-          meta: undefined,
-        })
-      ).resolves.not.toThrow();
+        callWith({ id: 2 }, [MembershipRole.ADMIN, MembershipRole.OWNER])
+      ).rejects.toThrow("Permission required: eventType.update");
     });
 
-    it("should deny assigning non-team members to team event", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      const result = middleware({
-        ctx: mockCtx,
-        input: { id: 2, users: [1, 2, 999] },
-        next: mockNext,
-        path: "test",
-        type: "mutation",
-        getRawInput: async () => ({}),
-        meta: undefined,
-      });
-
-      await expect(result).rejects.toThrow(TRPCError);
-      await expect(result).rejects.toThrow("Cannot assign event to users outside of team membership");
+    it("denies an org admin who is not a team member", async () => {
+      await expect(callWith({ id: 2 })).rejects.toThrow(TRPCError);
     });
 
-    it("should deny org admin from assigning org members who are not in the team", async () => {
-      // Org admin (user 1) has permission but tries to assign org member (user 50) who's not in team
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      const result = middleware({
-        ctx: mockCtx,
-        input: { id: 2, users: [1, 50] }, // User 50 is an org member but not team member
-        next: mockNext,
-        path: "test",
-        type: "mutation",
-        getRawInput: async () => ({}),
-        meta: undefined,
-      });
-
-      await expect(result).rejects.toThrow(TRPCError);
-      await expect(result).rejects.toThrow("Cannot assign event to users outside of team membership");
+    it("denies before reaching user-assignment validation", async () => {
+      // Previously this combination was allowed through to the assignment check.
+      await expect(callWith({ id: 2, users: [2, 3] })).rejects.toThrow(
+        "Permission required: eventType.update"
+      );
     });
 
-    it("should deny assigning only non-team members even if user has permission", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      const result = middleware({
-        ctx: mockCtx,
-        input: { id: 2, users: [100, 200, 300] }, // All users not in team
-        next: mockNext,
-        path: "test",
-        type: "mutation",
-        getRawInput: async () => ({}),
-        meta: undefined,
-      });
-
-      await expect(result).rejects.toThrow(TRPCError);
-      await expect(result).rejects.toThrow("Cannot assign event to users outside of team membership");
+    it("denies an empty users array on a team event", async () => {
+      await expect(callWith({ id: 2, users: [] })).rejects.toThrow(TRPCError);
     });
 
-    it("should allow empty users array", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      await expect(
-        middleware({
-          ctx: mockCtx,
-          input: { id: 2, users: [] },
-          next: mockNext,
-          path: "test",
-          type: "mutation",
-          getRawInput: async () => ({}),
-          meta: undefined,
-        })
-      ).resolves.not.toThrow();
+    it("denies when users are not provided at all", async () => {
+      await expect(callWith({ id: 2 })).rejects.toThrow(TRPCError);
     });
 
-    it("should not validate users when not provided", async () => {
-      mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
-
-      const procedure = createEventPbacProcedure("eventType.update");
-      const middleware = getMiddleware(procedure);
-
-      await expect(
-        middleware({
-          ctx: mockCtx,
-          input: { id: 2 },
-          next: mockNext,
-          path: "test",
-          type: "mutation",
-          getRawInput: async () => ({}),
-          meta: undefined,
-        })
-      ).resolves.not.toThrow();
+    it("does not call next() for a team event", async () => {
+      await expect(callWith({ id: 2 })).rejects.toThrow(TRPCError);
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
-
   describe("event not found", () => {
     it("should throw NOT_FOUND when event does not exist", async () => {
       mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(null);
@@ -402,24 +283,23 @@ describe("createEventPbacProcedure", () => {
     });
   });
 
-  describe("different permissions and fallback roles", () => {
+  describe("different permissions and fallback roles (team events denied while PBAC is unimplemented)", () => {
     const teamEvent = {
       id: 2,
       userId: null,
       teamId: 10,
       users: [],
       team: {
-        members: [{ userId: 1 }],
+        members: [{ userId: 1 }, { userId: 2 }, { userId: 3 }],
       },
     };
 
-    it("should allow access with custom permission string", async () => {
+    it("denies a custom permission string on a team event", async () => {
       mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
 
       const procedure = createEventPbacProcedure("eventType.delete");
       const middleware = getMiddleware(procedure);
 
-      // PermissionCheckService stub always returns true
       await expect(
         middleware({
           ctx: mockCtx,
@@ -430,16 +310,15 @@ describe("createEventPbacProcedure", () => {
           getRawInput: async () => ({}),
           meta: undefined,
         })
-      ).resolves.not.toThrow();
+      ).rejects.toThrow("Permission required: eventType.delete");
     });
 
-    it("should allow access with custom fallback roles", async () => {
+    it("denies regardless of the fallbackRoles argument, which the placeholder ignores", async () => {
       mockPrisma.eventType.findUnique = vi.fn().mockResolvedValue(teamEvent);
 
-      const procedure = createEventPbacProcedure("eventType.create", [MembershipRole.OWNER]);
+      const procedure = createEventPbacProcedure("eventType.update", [MembershipRole.MEMBER]);
       const middleware = getMiddleware(procedure);
 
-      // PermissionCheckService stub always returns true
       await expect(
         middleware({
           ctx: mockCtx,
@@ -450,10 +329,9 @@ describe("createEventPbacProcedure", () => {
           getRawInput: async () => ({}),
           meta: undefined,
         })
-      ).resolves.not.toThrow();
+      ).rejects.toThrow(TRPCError);
     });
   });
-
   describe("ensureEmailOrPhoneNumberIsPresent", () => {
     it("should throw error when both email and phone are hidden", () => {
       const fields = [

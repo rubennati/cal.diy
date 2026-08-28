@@ -171,7 +171,9 @@ describe("getUserEventGroups", () => {
   });
 
   describe("Permissions", () => {
-    it("should grant permissions for team members (stub always returns true)", async () => {
+    // Issue #13 containment: the placeholder denies while PBAC is unimplemented, so a team
+      // membership no longer implies canCreateEventType. This previously asserted the opposite.
+      it("does not grant team event-type creation while PBAC is unimplemented", async () => {
       const { ProfileRepository } = await import("@calcom/features/profile/repositories/ProfileRepository");
 
       const mockTeamMembership = {
@@ -210,7 +212,7 @@ describe("getUserEventGroups", () => {
       });
 
       expect(result.teamPermissions[100]).toMatchObject({
-        canCreateEventType: true,
+        canCreateEventType: false,
       });
     });
   });

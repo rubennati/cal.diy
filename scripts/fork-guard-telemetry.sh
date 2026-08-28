@@ -8,6 +8,7 @@
 # enforceable instead of a one-time cleanup.
 #
 # Run locally:  yarn fork:guard:telemetry
+# Test locally: yarn fork:guard:telemetry:test
 # Runs in CI:   .github/workflows/forte-ci.yml (blocking)
 
 set -euo pipefail
@@ -23,17 +24,28 @@ report() {
 # Only tracked files, so a stray local build artefact or an unrelated node_modules copy
 # cannot fail the build.
 #
-# The exclusions are the places that must be able to *name* what was removed in order to
-# document it — this guard itself, the fork's operational layer, the workflow that runs it,
-# and the README section explaining the removal. Everything else, including the other
-# hardening docs, stays in scope: re-advertising CALCOM_TELEMETRY_DISABLED as a control in
-# hardening-checklist.md is exactly the regression worth failing on.
+# The invariant is behavioural: telemetry must not return in any surface that can *execute
+# or configure* it — application and package source, scripts, build/runtime config, Docker,
+# CI workflows. Documentation has to be able to name the endpoint, the key and the flag in
+# order to record that they were removed; prose cannot re-arm anything.
+#
+# Excluded by file semantics (extension), never by directory. A directory exclusion would
+# let an executable bypass the guard by being placed under the excluded path; an extension
+# rule cannot, so `docs/deploy.sh` and `.ai/anything.yml` stay in scope. The guard's own
+# source is the one unavoidable exception — it must contain the literals it searches for.
+#
+# Deliberately no longer covered: this guard used to fail when a hardening doc re-advertised
+# CALCOM_TELEMETRY_DISABLED as a live control. A fixed-string search cannot distinguish
+# "records that it was removed" from "claims it still works", which is why it fired on every
+# audit record that named it. That documentation-accuracy concern is real, but it is a review
+# question rather than a grep question — see SECURITY_ASSURANCE.md.
+#
+# Both directions are covered by scripts/fork-guard-telemetry.test.sh.
 tracked_grep() {
   git grep -n --fixed-strings -- "$1" -- \
     ':!scripts/fork-guard-telemetry.sh' \
-    ':!.ai/' \
-    ':!.github/workflows/forte-ci.yml' \
-    ':!README.md' \
+    ':!*.md' \
+    ':!*.mdx' \
     2>/dev/null || true
 }
 

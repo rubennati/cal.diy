@@ -2,6 +2,11 @@ name: forte-ci
 
 # Fork-owned CI. Runs only on the fork's working branches, never on `main`
 # (the pristine upstream mirror). Additive: upstream has no forte-* workflows.
+#
+# `ci` is the required status context on `develop` and `release`. It therefore
+# always runs and always resolves — the fast path skips expensive *steps*, never
+# the job or the workflow. A workflow-level `paths:` filter would leave the
+# required context permanently pending and block the PR instead of speeding it up.
 
 on:
   pull_request:
@@ -11,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: forte-ci-${{ github.ref }}
@@ -22,15 +28,136 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Two commits is enough to diff a pull_request merge ref against its base.
+          fetch-depth: 2
+
+      - name: Classify change scope
+        id: scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+
+          # Push events always take the full path. Release publication requires
+          # successful push-event runs for an exact branch SHA, and that evidence
+          # must not depend on which files a particular commit happened to touch.
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "Push event -> full validation."
+            exit 0
+          fi
+
+          if ! files="$(gh api --paginate \
+                "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+                --jq '.[].filename')"; then
+            echo "::notice::Could not list changed files -> full validation (fail-safe)."
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -z "$files" ]]; then
+            echo "::notice::Empty changed-file list -> full validation (fail-safe)."
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Deliberately one narrow allowlist rule, not a denylist of code paths.
+          # Anything not matched — including any directory added to this repository
+          # in future — takes the full path.
+          #
+          # Keyed on the extension rather than on a directory, because `docs/` is
+          # NOT documentation-only: it holds `docs/brand/build.py` and the generated
+          # `docs/api-reference/v2/openapi.json`, and a `docs/**` rule would
+          # fast-path both. The extension is what actually implies "not a build
+          # input" here — verified when this was written: no build, lint or test
+          # configuration reads a `*.md`, nothing in the tree imports one, and the
+          # Dockerfile copies none into any stage.
+          mode=fast
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            case "$f" in
+              *.md) ;;
+              *)
+                echo "Code-relevant path: $f"
+                mode=full
+                ;;
+            esac
+          done <<< "$files"
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [[ "$mode" == "fast" ]]; then
+            echo "Every changed path is markdown -> fast path."
+          else
+            echo "-> full validation."
+          fi
+
+      # ---------------------------------------------------------------------
+      # Cheap invariant checks. These run on EVERY pull request and push, on both
+      # paths, and deliberately run before any dependency install: each guard is a
+      # plain shell script needing only git and coreutils (their only mentions of
+      # yarn are comments and a `grep` of yarn.lock as a text file). Running them
+      # first also makes the full path fail fast on a guard violation instead of
+      # after a ~4-minute install.
+      # ---------------------------------------------------------------------
+      - name: Fork guard — telemetry stays removed
+        # Blocking on purpose: this is the class of regression an upstream sync
+        # re-introduces silently. See .ai/divergence.md.
+        run: bash scripts/fork-guard-telemetry.sh
+
+      - name: Fork guard — self-test
+        # A guard is only worth blocking on if it still fires. Asserts both directions:
+        # documentation may name the removed indicators, executable surfaces may not.
+        run: bash scripts/fork-guard-telemetry.test.sh
+
+      - name: Fork guard — tRPC adapter parity
+        # Blocking on purpose: a viewerRouter key with no Next API adapter 404s before
+        # reaching tRPC, and type-check, Biome and CodeQL are all blind to it. See #32.
+        run: bash scripts/fork-guard-trpc-adapter-parity.sh
+
+      - name: Fork guard — PBAC fails closed
+        # Blocking on purpose: upstream ships permission placeholders that answer
+        # checkPermission with an unconditional true, and no type check, linter or
+        # scanner can see that a function named checkPermission grants everything.
+        # Temporary — retire when PBAC is actually implemented. See #13.
+        run: bash scripts/fork-guard-pbac-fail-closed.sh
+
+      - name: Whitespace and conflict-marker check
+        shell: bash
+        # Says what it compared. A clean `git diff --check` prints nothing, so
+        # without this the step's success is indistinguishable in the log from it
+        # having silently skipped — and on the fast path this is one of only two
+        # checks standing between the change and a green required context.
+        run: |
+          set -euo pipefail
+          if base="$(git rev-parse -q --verify HEAD^1)"; then
+            echo "Checking $base..$(git rev-parse HEAD)"
+            git diff --check "$base" HEAD
+            echo "No whitespace errors or conflict markers introduced."
+          else
+            echo "::warning::HEAD has no first parent here, so nothing was compared."
+          fi
+
+      # ---------------------------------------------------------------------
+      # Expensive validation. Full path only.
+      # ---------------------------------------------------------------------
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        if: steps.scope.outputs.mode == 'full'
         with:
           node-version: 20
           package-manager-cache: false
+
       - name: Enable corepack (yarn 4)
+        if: steps.scope.outputs.mode == 'full'
         run: corepack enable
+
       - name: Install (immutable)
+        if: steps.scope.outputs.mode == 'full'
         run: yarn install --immutable
+
       - name: Verify lifecycle scripts did not change tracked source
+        if: steps.scope.outputs.mode == 'full'
         run: |
           set -euo pipefail
           if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
@@ -39,13 +166,22 @@ jobs:
             git diff --check
             exit 1
           fi
-      - name: Fork guard — telemetry stays removed
-        # Blocking on purpose: this is the class of regression an upstream sync
-        # re-introduces silently. See .ai/divergence.md.
-        run: bash scripts/fork-guard-telemetry.sh
+
       - name: Type check
+        if: steps.scope.outputs.mode == 'full'
         run: yarn type-check:ci --force
+
       - name: Lint (Biome)
         # Report-only until the inherited baseline is clean; then remove continue-on-error.
+        if: steps.scope.outputs.mode == 'full'
         run: yarn biome ci .
         continue-on-error: true
+
+      - name: Result
+        shell: bash
+        run: |
+          if [[ "${{ steps.scope.outputs.mode }}" == "fast" ]]; then
+            echo "Markdown-only change: fork guards and whitespace check passed; install, type-check and lint intentionally skipped. This run is not evidence that the tree type-checks." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Full validation completed." >> "$GITHUB_STEP_SUMMARY"
+          fi

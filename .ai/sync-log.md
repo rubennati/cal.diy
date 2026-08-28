@@ -295,6 +295,100 @@ source-identical promotion model. The shared fork README is now branch-neutral f
 
 ---
 
+## 2026-08-26 — Capability, authorization, licence and productization audit
+
+**Context:** Documentation-only forensic audit of `develop` at `41689d1d6e`. Three passes ran
+concurrently — a static capability audit, a manual live-deployment session, and an external-fork
+intake covering 11 repositories — and were then consolidated into one non-duplicative set of
+repository documents. **No application code, schema, workflow, or Docker behaviour changed.**
+
+**Method and confidence basis.** Every material claim was independently re-derived against
+`develop` by reviewers that had not seen the originating write-up (10 parallel verifications),
+and the three load-bearing claims were then attacked by adversarial reviewers instructed to
+refute them. That is why several conclusions below differ from what the source passes reported:
+**nine claims did not survive**, and they are listed in
+[../docs/SELF_HOST_CAPABILITY_AUDIT.md](../docs/SELF_HOST_CAPABILITY_AUDIT.md) §8 so they are not
+re-raised.
+
+**Documents produced** (all under `docs/`, fork-owned; see the master's header for why that
+location was chosen over the root or `.ai/`):
+
+| Document | Role |
+| --- | --- |
+| `SELF_HOST_CAPABILITY_AUDIT.md` | master — F-01…F-32 + D-01/D-02, the single ranked candidate registry, the proposed issue set |
+| `PBAC_PLACEHOLDER_AUDIT.md` | authorization placeholder call graph, per-endpoint verdicts, 14 reproducible tests |
+| `TEAM_CAPABILITY_EVALUATION.md` | team architecture, role model, 22 invariants, external-implementation audit |
+| `LICENSE_AND_PROVENANCE_REVIEW.md` | governing provenance policy, MIT scope, AGPL/Commercial history boundary |
+| `SELF_HOST_PRODUCTIZATION.md` | legal URLs, residual hosted-Cal upsells, hard-coded `cal.com` references |
+| `EXTERNAL_FORK_INTAKE.md` | external-fork evidence register — discovery only, deliberately kept out of the upstream ledger's vocabulary |
+
+**Findings that change the fork's posture:**
+
+- **F-01 — permission checks are `return true` stubs in 18 production files.** 11 fail open
+  (19 call sites), 6 fail closed, 1 is DI wiring. Only **two** are genuinely cross-tenant, and one
+  of them gates `viewer.eventTypes.delete`, whose handler runs
+  `prisma.eventType.delete({ where: { id } })` with no ownership re-check. Originates in upstream
+  `ab21c7f805`; inherited verbatim.
+- **F-01 reachability — corrected during this pass.** No shipped runtime path creates a `Team`, and
+  the published image never seeds one. But `scripts/seed.ts` is unconditional and creates **7 `Team`
+  rows** via the documented `yarn dx` → `db-setup` → `db-seed` chain. So: an architectural hazard on
+  the published image, a live destructive cross-tenant write on any seeded instance. It must be
+  reported as neither a demonstrated remote exploit nor as theoretical.
+- **F-05 — the API-keys tRPC route is missing and every key mutation is broken.**
+  `apps/web/pages/api/trpc/apiKeys/[trpc].ts` was deleted by `ab21c7f805` while the router, the
+  client endpoint entry and the whole UI stayed wired. Upstream fixed it in `07a288bbd8` (#29517,
+  4 lines) on 2026-06-08. A functional-availability defect, not a vulnerability — but a broken
+  `delete` leaves no UI path to revoke a leaked API key.
+- **F-07 — `ab21c7f805` reverted merged upstream fixes together with their regression tests.**
+  Confirmed for 4 of 5 spot-checked commits (one claim refuted). The reverts are hunk-level, not a
+  wholesale rollback, so each path needs an individual verdict. `UPSTREAM_REVIEW_LEDGER.md` has no
+  row for `ab21c7f805` — but that commit is 43 commits *before* the ledger's declared start
+  `46eb533dbd`, so this is a **gap in the review baseline**, not a missing row.
+- **F-13 / F-14 — the fork still ships two reachable hosted-Cal.com commercial prompts.** The
+  onboarding plan chooser shows `$15/user/mo` (German: `15 $/Benutzer/Monat`) and dead-ends at a
+  non-existent route; and every anonymous booker sees a `cal.com/signup` upsell whose form posts
+  their email address to a third party. Both upstream-inherited. This qualifies, without
+  contradicting, the existing "the paywall is already removed" claim — the *gating* is gone, the
+  *messaging* is not.
+- **F-22 — the fork documents two conflicting local-setup paths**, only one of which seeds. This is
+  what decides F-01's real-world reachability, which is why it is recorded as its own finding.
+
+**Ledger correction required — deliberately NOT applied.** `UPSTREAM_REVIEW_LEDGER.md:76` marks
+`07a288bbd8` `deferred` with the rationale *"Feature/API expansion not required by current fork
+scope."* Both halves are contradicted by F-05: it is a 4-line restoration of a deleted route, and
+the fork ships both the producer UI and an API-key consumer. The row **mischaracterises the
+change** — "fabricated" would be unfair, since upstream's own commit subject invites the
+misreading. Editing a disposition row is a review decision, not a typo fix, so it was left for a
+deliberate update following the `0d164da8dd` precedent of keeping reversals visible.
+
+**Intentionally NOT taken:** no commit to `develop` directly, no push, no cherry-pick, no GitHub
+issue, no ledger edit, no application-code change, no Teams activation, no authorization change, no
+licence notice removed.
+
+**Concurrency note.** A separate process was writing into the same `docs/` tree during this pass and,
+between 04:26 and 04:33 on 2026-08-26, **enabled GitHub issues and filed 29** under tracker
+[#12](https://github.com/rubennati/cal.diy/issues/12). This consolidation filed none of them. Two
+consequences worth carrying forward: the audit documents' original "issues are disabled" statements are
+superseded (corrected in place), and issue
+[#25](https://github.com/rubennati/cal.diy/issues/25) rests on a claim this pass refuted — the
+`Cal.com` literal appears in **47** files, not 3, and none of the three `.ts`/`.tsx` hits is a
+`package.json` author field.
+
+**Deployment-layer findings handed off (not this repository's):** D-01 mass 429 on static assets —
+application code excluded by four independent barriers, and upstream `8b17df4621` (#27674) states
+outright that IP rate limiting moved to Cloudflare. Target: `secure-docker-blueprint`.
+
+**Checks:** `git diff --check` clean · 158 relative links resolve · 34 finding IDs each defined
+once and fully cross-walked · only documentation modified. Biome has no markdown support in this
+repo, and there is no markdown linter — so formatting was not machine-verified.
+
+**Next step:** the ranked candidate registry is
+[../docs/SELF_HOST_CAPABILITY_AUDIT.md](../docs/SELF_HOST_CAPABILITY_AUDIT.md) §10. P1-A
+(deny-by-default permission service) is first because it is correct whether or not Teams is ever
+enabled, and P1-C is blocked on it.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>

@@ -1,6 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { stringify } from "node:querystring";
-
 import { renewSelectedCalendarCredentialId } from "@calcom/lib/connectedCalendar";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
@@ -9,19 +7,16 @@ import { defaultHandler } from "@calcom/lib/server/defaultHandler";
 import { defaultResponder } from "@calcom/lib/server/defaultResponder";
 import prisma from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
-
+import type { NextApiRequest, NextApiResponse } from "next";
 import getAppKeysFromSlug from "../../_utils/getAppKeysFromSlug";
 import getInstalledAppPath from "../../_utils/getInstalledAppPath";
 import { decodeOAuthState } from "../../_utils/oauth/decodeOAuthState";
 import config from "../config.json";
+import { getZohoCalendarApiBaseUrl, getZohoOAuthBaseUrl, resolveZohoRegion } from "../lib/zohoServerLocation";
 import type { ZohoAuthCredentials } from "../types/ZohoCalendar";
 import { appKeysSchema as zohoKeysSchema } from "../zod";
 
 const log = logger.getSubLogger({ prefix: [`[[zohocalendar/api/callback]`] });
-
-function getOAuthBaseUrl(domain: string): string {
-  return `https://accounts.zoho.${domain}/oauth/v2`;
-}
 
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const { code, location } = req.query;
@@ -35,6 +30,17 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
 
   if (location && typeof location !== "string") {
     res.status(400).json({ message: "`location` must be a string" });
+    return;
+  }
+
+  // Zoho omits `location` for accounts in the primary data centre, which is where the
+  // authorization request in `api/add.ts` is always sent.
+  const region = resolveZohoRegion(location ?? "us");
+
+  // Resolved before the app keys are read, so an unknown region cannot reach a request that
+  // would carry client_secret.
+  if (!region) {
+    res.status(400).json({ message: "`location` is not a supported Zoho region" });
     return;
   }
 
@@ -53,19 +59,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     code,
   };
 
-  let server_location;
-
-  if (location === "us") {
-    server_location = "com";
-  } else if (location === "au") {
-    server_location = "com.au";
-  } else {
-    server_location = location;
-  }
-
   const query = stringify(params);
 
-  const response = await fetch(`${getOAuthBaseUrl(server_location || "com")}/token?${query}`, {
+  const response = await fetch(`${getZohoOAuthBaseUrl(region)}/token?${query}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -83,14 +79,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     access_token: responseBody.access_token,
     refresh_token: responseBody.refresh_token,
     expires_in: Math.round(+new Date() / 1000 + responseBody.expires_in),
-    server_location: server_location || "com",
+    server_location: region,
   };
 
-  function getCalenderUri(domain: string): string {
-    return `https://calendar.zoho.${domain}/api/v1/calendars`;
-  }
-
-  const calendarResponse = await fetch(getCalenderUri(server_location || "com"), {
+  const calendarResponse = await fetch(`${getZohoCalendarApiBaseUrl(region)}/calendars`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${key.access_token}`,

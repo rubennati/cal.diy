@@ -1127,15 +1127,13 @@ export class EventTypeRepository implements IEventTypesRepository {
       });
     }
 
-    // Fallback to findFirst if neither is provided (shouldn't happen in practice)
-    return this.prismaClient.eventType.findFirst({
-      where: {
-        slug,
-      },
-      select: {
-        id: true,
-      },
-    });
+    // A slug is unique only within an owner, never globally, so with neither selector
+    // there is no resource identity to resolve — only an arbitrary match. The sole
+    // caller is the public, unauthenticated `slots.getSchedule`, where an unresolvable
+    // username previously fell through to here and served a different owner's event
+    // type under the requested one's name. Failing closed makes that caller answer
+    // NOT_FOUND, which it already does for a null result. See issue #14.
+    return null;
   }
 
   async findByIdIncludeHostsAndTeam({ id }: { id: number }) {

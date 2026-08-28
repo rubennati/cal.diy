@@ -1,0 +1,2090 @@
+# Fork Implementation Ledger
+
+The durable record of **what `cal.forte` actually changed** — every material fork-owned or
+intentionally divergent implementation that has landed, is planned, or has been withdrawn.
+
+This is the answer to *"why does this fork's code differ from Cal.diy here, who decided it, on
+what evidence, and what was verified?"* — asked years later, by someone who was not present.
+
+| Item | Value |
+| --- | --- |
+| Scope | implemented and planned **cal.forte** changes |
+| Granularity | one entry per **material change**, not per commit |
+| Authority | canonical for implementation provenance, licence status and security impact |
+| Companion registers | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) · [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) · [docs/EXTERNAL_FORK_INTAKE.md](docs/EXTERNAL_FORK_INTAKE.md) |
+| Completion rule | [FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done) |
+
+---
+
+## 1. What this ledger is, and what it is not
+
+The fork already documents **analysis**, **intake** and **release**. What it did not have is a
+record of **implementation**: the moment an evaluated candidate becomes code in this tree.
+
+| Question | Answered by |
+| --- | --- |
+| What did upstream do, and did we take it? | [UPSTREAM_REVIEW_LEDGER.md](UPSTREAM_REVIEW_LEDGER.md) |
+| What is the fork's current steady-state difference from upstream? | [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md) |
+| What did another fork reveal, and did it survive verification? | [docs/EXTERNAL_FORK_INTAKE.md](docs/EXTERNAL_FORK_INTAKE.md) |
+| What is wrong with the tree right now? | [docs/SELF_HOST_CAPABILITY_AUDIT.md](docs/SELF_HOST_CAPABILITY_AUDIT.md) |
+| **What did we implement, from what source, and what did we verify?** | **this document** |
+| What was published, when, from which commit and digest? | [FORK_STATUS.md](FORK_STATUS.md) · [RELEASE_PROCESS.md](RELEASE_PROCESS.md) |
+| What happened, chronologically? | [.ai/sync-log.md](.ai/sync-log.md) |
+
+### It is explicitly **not**
+
+- **Not a commit log.** Formatting, refactoring, dependency bumps and typo fixes get **no entry**
+  unless they change security posture, product behaviour, provenance, or a maintenance boundary.
+- **Not a replacement for `UPSTREAM_REVIEW_LEDGER.md`.** That ledger owns the disposition of
+  *upstream commits* — including the ones deliberately **not** taken. This ledger only ever
+  records things that were **implemented here**. An upstream commit reviewed and deferred appears
+  in the upstream ledger and **never** appears here.
+- **Not a replacement for `FORK_DIVERGENCE.md`.** That register answers *"what is different
+  today?"* in steady state, grouped by theme, and is the public-facing summary. This ledger
+  answers *"how did it get that way?"* per change, and retains superseded and reverted entries
+  that the divergence register correctly drops.
+- **Not an issue tracker.** GitHub issues carry the evaluation; this ledger carries the outcome.
+
+### The rule that keeps it from becoming a commit log
+
+> An entry is required when the change alters **security posture, privacy posture, attack
+> surface, product behaviour, provenance, licence obligations, or a maintenance boundary** —
+> or when a future maintainer would be misled by its absence.
+>
+> Everything else is git history, and git history is sufficient for it.
+
+If you are unsure, ask: *would a reviewer auditing this fork's trustworthiness need to know?*
+If yes, write the entry.
+
+---
+
+## 2. Change types
+
+A small, stable taxonomy. Do not extend it casually — a growing taxonomy is a sign the
+categories are wrong, not that the work is novel.
+
+| Type | Meaning |
+| --- | --- |
+| `UPSTREAM_FIX` | An official upstream commit taken into this fork, normally by `git cherry-pick -x`. Also requires an `UPSTREAM_REVIEW_LEDGER.md` row |
+| `FORK_FIX` | A defect fixed by fork-owned code, with no upstream equivalent taken |
+| `EXTERNAL_INSPIRED_FIX` | A defect **discovered** through an external fork or third-party report, then implemented natively here. Carries `Source usage: BEHAVIOURAL_REFERENCE` (or `DESIGN_REFERENCE`) with `Implementation relationship: CAL_FORTE_NATIVE` — see §6 |
+| `SECURITY_HARDENING` | Reduces exploitability or strengthens a control, without a specific known defect |
+| `PRIVACY_HARDENING` | Reduces data collection, outbound communication, or third-party exposure |
+| `ATTACK_SURFACE_REDUCTION` | Removes reachable code, routes, endpoints or dependencies |
+| `PRODUCTIZATION` | Makes the fork coherent as its own self-host distribution — identity, branding, legal URLs, operator-facing defaults |
+| `FEATURE` | Adds a capability that did not previously exist or was unreachable. Requires §5 |
+| `FEATURE_REMOVAL` | Deliberately removes an inherited capability. Requires §7 |
+| `DEPLOYMENT_HARDENING` | Container, image, build or release-pipeline security |
+| `UPSTREAM_DIVERGENCE` | A deliberate behavioural difference from upstream that is none of the above — recorded so a future sync does not "correct" it |
+
+A change may carry a **primary** type and at most one **secondary** type. More than two means it
+should probably be two entries.
+
+---
+
+## 3. Provenance: two independent axes
+
+Provenance is recorded on **two axes that must never be collapsed into one**:
+
+- **Implementation relationship** — what the resulting implementation *is*, relative to any
+  external source.
+- **Source usage** — how far an external source was actually *used*, from not at all through to
+  source incorporation.
+
+Recording only one of these is how a record ends up implying independence where material was in
+fact incorporated, or implying incorporation where only behaviour was observed. Both are
+required.
+
+### 3.1 Implementation relationship
+
+| Value | Meaning |
+| --- | --- |
+| `CAL_FORTE_NATIVE` | Implementation authored for cal.forte without incorporating an external implementation |
+| `OFFICIAL_UPSTREAM_CHERRY_PICK` | An official upstream commit incorporated through the approved cherry-pick process, with `-x` provenance preserved |
+| `OFFICIAL_UPSTREAM_ADAPTATION` | Implementation derived or adapted from an official upstream change, with local modifications |
+| `EXTERNAL_REFERENCE` | An external repository served as discovery, behavioural, design or implementation-reference evidence; the resulting implementation is cal.forte-owned |
+| `EXTERNAL_ADAPTATION` | External implementation material was incorporated or adapted. **Requires explicit licence and provenance clearance before merge** |
+| `THIRD_PARTY_INTEGRATION` | An external component, package or tool is deliberately integrated under its own licence and obligations |
+| `HISTORICAL_REFERENCE_ONLY` | A historical implementation was inspected as evidence or reference. It is **not** an approved implementation source |
+
+### 3.2 Source usage
+
+| Value | Meaning |
+| --- | --- |
+| `NONE` | No external source consulted |
+| `BEHAVIOURAL_REFERENCE` | Observed what the software *does* — symptoms, responses, reachability |
+| `DESIGN_REFERENCE` | Studied architecture, data model or control flow at the design level |
+| `IMPLEMENTATION_REFERENCE` | Read the external implementation itself to understand it, without incorporating it |
+| `SOURCE_INCORPORATED` | External source was incorporated substantially as-is |
+| `SOURCE_ADAPTED` | External source was incorporated and modified |
+
+### 3.3 How the axes combine
+
+| Situation | Source usage | Implementation relationship |
+| --- | --- | --- |
+| External fork identifies a defect; cal.forte implements independently | `BEHAVIOURAL_REFERENCE` | `CAL_FORTE_NATIVE` |
+| Official upstream commit cherry-picked | `SOURCE_INCORPORATED` | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Upstream change taken but modified for this tree | `SOURCE_ADAPTED` | `OFFICIAL_UPSTREAM_ADAPTATION` |
+| Restricted implementation inspected only to understand product behaviour | `BEHAVIOURAL_REFERENCE` or `DESIGN_REFERENCE` | `CAL_FORTE_NATIVE` or `HISTORICAL_REFERENCE_ONLY` |
+| A package is added as a dependency | `NONE` (its source is not incorporated into ours) | `THIRD_PARTY_INTEGRATION` |
+| Fork-owned work with no external input | `NONE` | `CAL_FORTE_NATIVE` |
+
+**The controlling rule:** an implementation is not described as native or independent when
+external implementation material was in fact incorporated or adapted. `SOURCE_INCORPORATED` and
+`SOURCE_ADAPTED` are incompatible with `CAL_FORTE_NATIVE`, and the combination must never appear
+in an entry.
+
+### 3.4 Permitted source usage by licence disposition
+
+`IMPLEMENTATION_REFERENCE` deserves particular care. Reading an implementation is a materially
+different act from observing behaviour, and it carries a higher risk of producing a derivative
+work. This repository therefore applies a conservative matrix rather than a general rule.
+
+For sources classified `RESTRICTED_REFERENCE_ONLY` or `UNKNOWN_BLOCKED`:
+
+| Source usage | Disposition |
+| --- | --- |
+| `BEHAVIOURAL_REFERENCE` | Potentially acceptable **where access and the applicable terms permit** |
+| `DESIGN_REFERENCE` | Potentially acceptable **where access and the applicable terms permit** |
+| `IMPLEMENTATION_REFERENCE` | **`REQUIRES_REVIEW`** — not proceeded with until reviewed and recorded |
+| `SOURCE_INCORPORATED` | **Not approved** without explicit licence and provenance clearance |
+| `SOURCE_ADAPTED` | **Not approved** without explicit licence and provenance clearance |
+
+"Potentially acceptable" is deliberate wording. This document records evidence and applies a
+repository policy; it does not make legal determinations, and nothing here should be read as a
+categorical statement that any particular use is lawful. Where the answer matters, it is a
+**[LEGAL]** question — see
+[docs/LICENSE_AND_PROVENANCE_REVIEW.md](docs/LICENSE_AND_PROVENANCE_REVIEW.md) §0.
+
+Four constraints hold regardless of disposition:
+
+- **Public visibility does not imply unrestricted source usage.**
+- **A repository-level licence declaration does not automatically establish provenance for every
+  file it contains**, including files it inherited, vendored or imported from elsewhere.
+- **Third-party dependencies retain their own licences and obligations.**
+- **cal.forte's intended MIT distribution model does not require every dependency to be MIT** —
+  it requires that each component's own terms permit the intended use, and that any resulting
+  obligation is recorded and discharged.
+
+---
+
+## 4. Licence and provenance classification
+
+`cal.forte` intends to remain MIT-distributable. **This does not mean every source must be MIT.**
+Third-party components keep their own licences and obligations; the question is always whether
+the intended *use* is permitted and what obligations follow.
+
+| Classification | Meaning | Consequence |
+| --- | --- | --- |
+| `PERMISSIVE_COMPATIBLE` | MIT/BSD/Apache-2.0-style, no practical friction | proceed; preserve notices |
+| `COMPATIBLE_WITH_OBLIGATIONS` | Permitted, but attribution / NOTICE / source-availability duties attach | proceed **and record the obligation and where it is discharged** |
+| `REQUIRES_REVIEW` | Copyleft, unusual terms, or an unclear boundary | do not merge until reviewed and recorded |
+| `RESTRICTED_REFERENCE_ONLY` | Commercial, source-available, or otherwise licence-incompatible with the intended distribution model | **Not approved for source incorporation or adaptation.** Permitted source usage is governed by the §3.4 matrix |
+| `UNKNOWN_BLOCKED` | The applicable licence could not be established | **The safe default.** Not approved for source incorporation until resolved; source usage is governed by the §3.4 matrix |
+
+### Assumptions that are explicitly forbidden
+
+- that publicly visible source may automatically be incorporated or adapted;
+- that "open source" implies compatibility with the intended distribution model;
+- that the absence of a licence file means unrestricted use;
+- that source in git history carries the working tree's *current* licence;
+- that an external fork's declared repository licence governs every file it contains, including
+  files it inherited or incorporated from elsewhere.
+
+The last two matter concretely here: `packages/features/ee/**` was **Cal.com Commercial** and
+`packages/features/pbac/**` was **AGPLv3** before the upstream strip, and both remain reachable
+in this clone's history. See
+[docs/LICENSE_AND_PROVENANCE_REVIEW.md](docs/LICENSE_AND_PROVENANCE_REVIEW.md) §0 and §3.4–§3.6.
+
+### The clean-provenance path
+
+For restricted, commercial, source-available, licence-incompatible or unclear sources — anything
+not `PERMISSIVE_COMPATIBLE` — the intended engineering workflow is:
+
+```
+external observation / reference
+        →  independent requirement
+        →  independent design
+        →  cal.forte-native implementation
+```
+
+…where legally and contractually permitted.
+
+Every entry taking this path records all five of:
+
+| Field | Expected value on this path |
+| --- | --- |
+| **Source usage** | `BEHAVIOURAL_REFERENCE` or `DESIGN_REFERENCE` |
+| **Implementation relationship** | `CAL_FORTE_NATIVE` |
+| **Licence disposition** | the §4 classification of the source that was observed |
+| **Independent verification** | what was reproduced or re-derived against this tree |
+| **Implementation provenance** | the permitted sources the implementation was actually written against |
+
+The external source is retained as **reference evidence** and is never described as the
+implementation source.
+
+**A material change is not Done until its implementation relationship, source usage and licence
+disposition are all recorded** — see
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done).
+
+**A material change is not Done until its licence/provenance status is recorded.**
+
+---
+
+## 5. Entry schema
+
+Every material change uses this shape. Fields that genuinely do not apply are written `n/a` —
+never left blank, because a blank field is indistinguishable from an unanswered one.
+
+```markdown
+### FIL-NNNN · <title>
+
+| Field | Value |
+| --- | --- |
+| Status | planned \| implemented \| released \| superseded \| reverted |
+| Type | <primary> (+ <secondary>) |
+| GitHub issue | #NN or n/a |
+| PR | #NN or n/a |
+| Local commit(s) | `<sha>` … |
+| Released in | `vX.Y.Z-N` or `unreleased` |
+| Implementation relationship | one of §3.1 |
+| Source usage | one of §3.2 |
+| Upstream source | repo + commit + PR + intake method + `-x` line, or n/a |
+| External source | repo + commit/PR **as reference evidence**, or n/a |
+| Licence disposition | one of §4 |
+| Licence obligations | attribution / NOTICE / source-availability, or none |
+| Independent verification | what was reproduced or re-derived against this tree, or n/a |
+
+**Problem / desired outcome** — what a user or operator gets, not what the code does.
+
+**Decision and rationale** — why this, why now, what was rejected.
+
+**Implementation summary** — what actually changed, at file granularity.
+
+**Intentional divergence from upstream** — what a future sync must not "correct", or `none`.
+
+**Impact assessment**
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | … |
+| Privacy impact | … |
+| Attack-surface impact | increased / reduced / unchanged + why |
+| New trust boundary | yes/no |
+| New public endpoint | yes/no |
+| New authenticated mutation | yes/no |
+| New persistent state or schema | yes/no |
+| New external communication | yes/no |
+| Compatibility impact | … |
+
+**Validation** — tests, gates, manual checks actually run. Not what should be run.
+
+**Guards / CI** — what prevents silent regression or upstream reintroduction.
+
+**Rollback / disable** — how to undo or switch off, or why that is not possible.
+
+**Related documentation** — the other registers updated.
+
+**Upstream re-evaluation trigger** — the condition under which this is revisited.
+```
+
+Any `yes` in the impact table is a **review trigger**, not merely a note. Five `yes` answers on
+one entry is a design review, not a pull request.
+
+---
+
+## 6. External forks are intelligence, never patch sources
+
+Formal policy, restating [docs/EXTERNAL_FORK_INTAKE.md](docs/EXTERNAL_FORK_INTAKE.md) §9 as a
+binding implementation rule:
+
+```
+external source
+      ↓  independent reproduction against this tree
+      ↓  official upstream comparison  (is there a real upstream fix to take instead?)
+      ↓  security and provenance review
+      ↓  cal.forte-owned implementation
+```
+
+— **unless** the actual implementation source is an independently verified official upstream
+commit, in which case the entry is `UPSTREAM_FIX` / `OFFICIAL_UPSTREAM_CHERRY_PICK` and the external fork is
+demoted to *symptom reporter*.
+
+An entry must never blur these two claims, and the two-axis model in §3 exists to keep them
+apart:
+
+| Claim | Recorded as | Clearance needed |
+| --- | --- | --- |
+| The defect was **identified from** `X`; the implementation is ours | `Source usage: BEHAVIOURAL_REFERENCE` · `Implementation relationship: CAL_FORTE_NATIVE` | none beyond the normal licence disposition of the observed source |
+| External implementation material was **incorporated or adapted** from `X` | `Source usage: SOURCE_INCORPORATED` or `SOURCE_ADAPTED` · `Implementation relationship: EXTERNAL_ADAPTATION` | **explicit licence and provenance clearance before merge** |
+
+Neither claim is more respectable than the other. What is not acceptable is recording the
+second as though it were the first.
+
+The register already carries the reason this rule exists: one evaluated fork had shipped
+hard-coded authentication backdoors it later removed; another hard-codes a third party's tenant
+GUID; a third weakens an email-verification guard this fork relies on. Of three testable
+"fixes" from one fork, one did not reproduce, one targeted a file this fork does not have, and
+one shipped tests without the fix.
+
+---
+
+## 7. Feature records are security records
+
+A `FEATURE` entry must additionally answer all of the following. **"Restored the existing UI" is
+not an acceptable description** when enabling it materially changes reachability or attack
+surface — the UI was the only thing missing precisely because everything behind it was reachable
+already.
+
+| Required for every `FEATURE` | Why |
+| --- | --- |
+| What capability is enabled | the user-visible claim |
+| What previously did not exist **or was unreachable** | reachability is the security-relevant half |
+| Authorization model | who may do it, enforced where |
+| New reachable routes | the actual new surface |
+| New data exposure | fields, not endpoints |
+| New mutations | especially unauthenticated or cross-tenant ones |
+| Trust boundaries crossed | where attacker-controlled input meets privileged code |
+| Failure modes | what happens when the check is unavailable |
+| Abuse cases | how it is misused, not how it is used |
+| Required security regression tests | named, and passing |
+
+### 7.1 Worked example — how a Teams entry would look
+
+**Teams are not implemented, and nothing here proposes implementing them.** This is the
+canonical illustration of what a high-risk feature entry must contain, because Teams is the
+change most likely to be attempted and most likely to be under-documented.
+
+A future `FIL-nnnn · Team management` entry could not be accepted without:
+
+| Requirement | Where the prerequisite is recorded |
+| --- | --- |
+| **PBAC resolution first** — the 18 `return true` permission stubs replaced by a real or deny-by-default service | [docs/PBAC_PLACEHOLDER_AUDIT.md](docs/PBAC_PLACEHOLDER_AUDIT.md) · GitHub [#13](https://github.com/rubennati/cal.diy/issues/13) |
+| **Role and ownership invariants decided** — all 22, explicitly including ADMIN→OWNER escalation via the *invite* path, not only via role change | [docs/TEAM_CAPABILITY_EVALUATION.md](docs/TEAM_CAPABILITY_EVALUATION.md) §6 · GitHub [#33](https://github.com/rubennati/cal.diy/issues/33) |
+| **Invite lifecycle** — issuance, expiry, single-use, revocation, and a genuine pending state (token signup currently auto-accepts) | TEAM_CAPABILITY_EVALUATION §5 |
+| **Cross-team IDOR controls** — arbitrary `teamId` / `eventTypeId` must not resolve | PBAC_PLACEHOLDER_AUDIT §3.2, §3.3 |
+| **Public team exposure** — what a `/team/[slug]` page discloses, and whether private and non-existent teams are indistinguishable | TEAM_CAPABILITY_EVALUATION §10.2 |
+| **Slug namespace decision** — user and team slugs share one public namespace; this must be settled **before the first slug is issued**, because changing it later breaks public links | TEAM_CAPABILITY_EVALUATION §6 invariant 18 |
+| **Licence/provenance** — `packages/features/ee/teams` was **Cal.com Commercial**; `packages/features/pbac` was **AGPLv3**. Implemented natively: `Source usage: DESIGN_REFERENCE` · `Implementation relationship: CAL_FORTE_NATIVE` | [docs/LICENSE_AND_PROVENANCE_REVIEW.md](docs/LICENSE_AND_PROVENANCE_REVIEW.md) §3.4–§3.6 |
+| **Tests** — the T-01…T-14 authorization suite rejecting, and C-01…C-04 (control) still passing | PBAC_PLACEHOLDER_AUDIT §5 |
+
+The impact table for such an entry would read `yes` on **new public endpoint**, **new
+authenticated mutation**, **new persistent state**, and **new trust boundary** — four triggers,
+which is why it is a design review rather than a pull request.
+
+---
+
+## 8. Removals are first-class changes
+
+Deleting inherited code is a change to the product and gets a full entry. A removal entry adds:
+
+| Field | Why it matters |
+| --- | --- |
+| **What was removed** | precise paths, flags, endpoints, dependencies |
+| **Disabled or deleted?** | a disabled feature still has to be re-audited by every reviewer; a deleted one does not |
+| **Why removal was preferred** | over configuration, over leaving it inert |
+| **Security / privacy value** | the actual gain |
+| **Compatibility impact** | who notices, and how |
+| **Guard against upstream reintroduction** | the check that fails CI if a sync brings it back |
+
+The last field is the one that makes removals durable. An unguarded removal is a temporary
+removal: the next upstream merge re-arms it silently, and the divergence register still claims
+it is gone.
+
+---
+
+## 9. Where each record belongs
+
+Avoid duplicate full descriptions. Link instead.
+
+| Event | Record in |
+| --- | --- |
+| Upstream commit reviewed (taken, deferred, rejected, partial) | `UPSTREAM_REVIEW_LEDGER.md` |
+| …and it was **implemented** here | **+ this ledger** (`UPSTREAM_FIX` / `OFFICIAL_UPSTREAM_CHERRY_PICK` or `OFFICIAL_UPSTREAM_ADAPTATION`) |
+| Fork-owned change implemented | **this ledger** |
+| …and it changes steady-state behaviour a user or auditor would notice | **+ `FORK_DIVERGENCE.md`** |
+| External-fork finding evaluated | `docs/EXTERNAL_FORK_INTAKE.md` |
+| …and it was eventually implemented | **+ this ledger** (`EXTERNAL_INSPIRED_FIX` / `EXTERNAL_REFERENCE`) |
+| Audit finding about the current tree | `docs/SELF_HOST_CAPABILITY_AUDIT.md` (§10.1 coverage table) |
+| Release published — tag, commit, digests, evidence | `FORK_STATUS.md`, `RELEASE_PROCESS.md` |
+| Chronological narrative of a round | `.ai/sync-log.md` |
+
+**Rule of thumb:** the upstream ledger is about *upstream's* commits; this ledger is about
+*ours*. A change can legitimately appear in both — an upstream fix we took has an upstream
+disposition **and** an implementation record — but the two entries answer different questions
+and must not be copies of each other.
+
+---
+
+## 10. Status vocabulary
+
+| Status | Meaning | Relation to `FORK_STATUS.md` |
+| --- | --- | --- |
+| `planned` | Decided and scoped, not yet implemented. Has an issue; has no commit | ≈ `Accepted` |
+| `implemented` | Present on `develop`; not yet in a published release | = `Integrated` |
+| `released` | Present in a published release tag | = `Released` |
+| `superseded` | Replaced by a later entry, which must be named | — |
+| `reverted` | Removed from the tree. The entry **stays**, with the reason | — |
+
+**This is an implementation lifecycle, not a second review lifecycle.**
+[FORK_STATUS.md](FORK_STATUS.md) → *Status Terms* remains the single source for the review
+vocabulary (`Observed` · `Reviewed` · `Accepted` · `Integrated` · `Released` · `Deferred`), and
+those terms are deliberately separate from one another there. The mapping column above exists so
+the two are never confused. `Observed`, `Reviewed` and `Deferred` have **no** counterpart here,
+because nothing reaches this ledger until it is implemented.
+
+`superseded` and `reverted` entries are never deleted. A ledger that only records successes is
+not a provenance record.
+
+---
+
+## 10b. Worked examples of the provenance model
+
+Six short examples showing how the two axes combine. **Examples A and F are real** and point at
+the entries below. **B, C, D and E are illustrative** — they are marked as such and describe no
+historical event.
+
+### A · Official upstream cherry-pick *(real — see `FIL-0007`)*
+
+| Field | Value |
+| --- | --- |
+| Type | `UPSTREAM_FIX` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` (MIT, same project) |
+
+Upstream `038381aeca` incorporated with `git cherry-pick -x`, provenance line preserved, fork
+adaptation kept in a separate follow-up commit. Requires a row in `UPSTREAM_REVIEW_LEDGER.md`
+as well as here.
+
+### B · Official upstream adaptation *(illustrative)*
+
+| Field | Value |
+| --- | --- |
+| Type | `UPSTREAM_FIX` |
+| Source usage | `SOURCE_ADAPTED` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_ADAPTATION` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+An upstream fix whose patch does not apply cleanly because this fork removed an adjacent
+subsystem. The upstream logic is retained and modified for the local tree. This is **not** a
+cherry-pick and must not claim `-x` provenance: `UPSTREAM_SYNC.md` requires such intake to be
+recorded as `partial`, naming the retained and omitted scope.
+
+### C · External fork as behavioural reference, native implementation *(illustrative)*
+
+| Field | Value |
+| --- | --- |
+| Type | `EXTERNAL_INSPIRED_FIX` |
+| Source usage | `BEHAVIOURAL_REFERENCE` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| External source | the fork and commit, **as reference evidence** |
+| Independent verification | the defect reproduced against this tree before any code was written |
+| Licence disposition | that of the observed source; irrelevant to the output, since nothing was incorporated |
+
+An external fork's commit message describes a defect. The defect is reproduced here, upstream is
+checked for an existing fix, and an implementation is written against this tree. The external
+repository is named as reference evidence and is never described as the implementation source.
+
+### D · Restricted historical implementation, reference only *(illustrative)*
+
+| Field | Value |
+| --- | --- |
+| Type | `FEATURE` or `FORK_FIX` |
+| Source usage | `BEHAVIOURAL_REFERENCE` or `DESIGN_REFERENCE` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Licence disposition | `RESTRICTED_REFERENCE_ONLY` |
+
+Pre-strip `packages/features/ee/**` was distributed under the Cal.com Commercial License and
+`packages/features/pbac/**` under AGPLv3; both remain reachable in this clone's history. Either
+may be inspected to understand *what a feature did*. Neither is an approved implementation
+source, and `IMPLEMENTATION_REFERENCE` against them is `REQUIRES_REVIEW` under §3.4. The
+implementation is written against current-tree MIT interfaces.
+
+Where the historical material is inspected but the work does not proceed to an implementation,
+the relationship is `HISTORICAL_REFERENCE_ONLY`.
+
+### E · Third-party dependency or tool integration *(illustrative)*
+
+| Field | Value |
+| --- | --- |
+| Type | `SECURITY_HARDENING` (or as applicable) |
+| Source usage | `NONE` — the component is consumed, not incorporated into our source |
+| Implementation relationship | `THIRD_PARTY_INTEGRATION` |
+| Licence disposition | the component's own — `PERMISSIVE_COMPATIBLE` or `COMPATIBLE_WITH_OBLIGATIONS` |
+| Licence obligations | attribution / NOTICE / source-availability, **and where each is discharged** |
+
+Adding a package or CI tool. **The component keeps its own licence**; the question is whether the
+intended use is permitted and what obligations follow. `Source usage: NONE` is correct because
+our source does not contain theirs — this is dependency consumption, not incorporation. A
+component whose licence cannot be established is `UNKNOWN_BLOCKED`.
+
+### F · Feature removal / attack-surface reduction *(real — see `FIL-0001`)*
+
+| Field | Value |
+| --- | --- |
+| Type | `PRIVACY_HARDENING` + `FEATURE_REMOVAL` |
+| Source usage | `NONE` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` — removal of inherited MIT-licensed source |
+
+Removals carry the §8 fields as well: what was removed, whether it was disabled or deleted, why
+removal was preferred, the security or privacy value, compatibility impact, and **the guard that
+prevents silent upstream reintroduction**.
+
+---
+
+## 11. Entries
+
+Backfilled from evidence already documented in `FORK_DIVERGENCE.md`,
+`UPSTREAM_REVIEW_LEDGER.md`, `FORK_STATUS.md` and `.ai/sync-log.md`. **No history was
+reconstructed or inferred.** Where a field could not be established from existing documentation
+it is marked `BACKFILL_REQUIRED` rather than guessed.
+
+Backfilled entries are deliberately more concise than the §5 schema requires: they record what
+the existing registers actually establish. **New entries use the full schema.**
+
+**How `Released in` was established.** Every release attribution below was confirmed by
+`git tag --contains <sha>`, not taken on a register's word. Where a register row and tag
+containment disagree, the disagreement is recorded in §12 rather than resolved silently. Note
+that `.ai/sync-log.md` does not cover every round — several 2026-08-10 commits have bare subject
+lines and no chronological entry — which is why `Validation` is `BACKFILL_REQUIRED` on those.
+
+---
+
+### FIL-0001 · Remove the inert Jitsu usage-telemetry module and its phantom opt-out
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `PRIVACY_HARDENING` (+ `FEATURE_REMOVAL`) |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `75a9df1812` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Upstream source | n/a — upstream retains the module |
+| External source | n/a |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` — deletion of MIT-licensed inherited code |
+| Licence obligations | none |
+
+**Problem / desired outcome.** Upstream shipped a usage-telemetry module (Jitsu,
+`t.calendso.com`) with a vendor write key in source, plus a `CALCOM_TELEMETRY_DISABLED` flag
+that **gated nothing** after upstream dropped `next-collect`. An operator setting that flag
+believed they had disabled a privacy control that did not exist.
+
+**Decision and rationale.** Delete rather than disable. A disabled-by-default vendor
+integration still has to be re-audited by every reviewer, and an upstream merge can silently
+re-arm it. Documenting a flag that controls nothing is worse than having no flag.
+
+**Implementation summary.** Removed `packages/lib/telemetry.ts` and related flags; removed the
+`next-collect` dependency; removed `CALCOM_TELEMETRY_DISABLED`.
+
+**Intentional divergence from upstream.** Yes, permanent. A sync must not restore the module,
+the endpoint, the write key, the flag or the dependency.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes a hard-coded third-party credential from source |
+| Privacy impact | **Primary gain** — eliminates dormant outbound telemetry |
+| Attack-surface impact | Reduced — one fewer dependency and outbound path |
+| New trust boundary | no |
+| New public endpoint | no |
+| New authenticated mutation | no |
+| New persistent state or schema | no |
+| New external communication | no — **removes** one |
+| Compatibility impact | None. The flag it removes was already inert |
+
+**Removal specifics** (per §8): code **deleted**, not disabled. Removal preferred because an
+inert integration imposes recurring audit cost and can be silently re-armed.
+
+**Validation.** `BACKFILL_REQUIRED` — the guard script is documented; the original validation
+run is not.
+
+**Guards / CI.** `scripts/fork-guard-telemetry.sh`, a **blocking** `forte-ci` step. Four
+independent checks: `next-collect` absent from manifests and `yarn.lock`; endpoint and write key
+absent from tracked source; `packages/lib/telemetry.ts` absent; `CALCOM_TELEMETRY_DISABLED`
+absent. Scans tracked files only, with four documented exclusions for files that must be able to
+name what was removed.
+
+**Rollback / disable.** Not applicable — reintroduction is the failure mode the guard prevents.
+
+**Related documentation.** `FORK_DIVERGENCE.md` → Security And Privacy Changes; `README.md` →
+Removed from upstream; `.ai/quality-gates.md`.
+
+**Upstream re-evaluation trigger.** Upstream removing the module itself, at which point the
+guard can retire.
+
+---
+
+### FIL-0002 · Disable advertising integrations by default in the image
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `PRIVACY_HARDENING` |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `d057ef3915` |
+| Released in | `v6.2.0-3` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** Upstream ad-click tracking (`gclid` / `li_fat_id`) is real and
+still present. A privacy-first self-host should not enable it silently.
+
+**Decision and rationale.** Set privacy-first runtime defaults in the published image
+(`GOOGLE_ADS_ENABLED=0`, `LINKEDIN_ADS_ENABLED=0`) rather than delete the code — unlike
+telemetry, this is a legitimate opt-in feature for some operators.
+
+**Implementation summary.** Root `Dockerfile` defaults.
+
+**Intentional divergence from upstream.** Yes — defaults only, not behaviour.
+
+| Dimension | Value |
+| --- | --- |
+| Privacy impact | **Primary gain** — no third-party ad tracking unless explicitly enabled |
+| Attack-surface impact | Unchanged — code remains present |
+| New external communication | no — suppresses existing ones by default |
+| Compatibility impact | Operators wanting ad tracking must opt in explicitly |
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** None. **This is a known weakness**: an upstream sync could change the default
+back without failing any check.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `README.md`.
+
+---
+
+### FIL-0003 · Run web and API v2 as non-root, with an API v2 health check
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `DEPLOYMENT_HARDENING` |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `6800e65e06` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** Application processes ran as root in the container.
+
+**Decision and rationale.** Drop to the built-in `node` user before `CMD`; keep writable only
+the Next.js/Turbo runtime paths that genuinely require it.
+
+**Implementation summary.** Root `Dockerfile` and `apps/api/v2/Dockerfile`; `USER node`; API v2
+gains a `HEALTHCHECK`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Container escape and in-container privilege abuse materially harder |
+| Attack-surface impact | Reduced |
+| Compatibility impact | Deployments mounting volumes must match ownership |
+
+**Scope note.** The **build** stage still runs as root. That delta was evaluated separately and
+**rejected** — the builder layer is discarded and not part of the published image, so the cost
+exceeded the benefit. Recorded in `docs/EXTERNAL_FORK_INTAKE.md` (candidate `C-11`).
+
+**Validation.** Runtime smoke test in `docker-build-and-test` boots the exact image and polls
+`/auth/login`.
+
+**Guards / CI.** The release pipeline's runtime test would fail if the image could not start as
+`node`.
+
+**Related documentation.** `FORK_DIVERGENCE.md` → Container And Deployment Changes;
+`IMAGE_BUILD.md`.
+
+---
+
+### FIL-0004 · Pin Docker base images and third-party Action SHAs; immutable installs
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `DEPLOYMENT_HARDENING` (+ `SECURITY_HARDENING`) |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `32aac7c9fa` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** Mutable base-image tags and floating Action refs mean the same
+source can produce a different artefact, and a compromised upstream tag silently enters the
+build.
+
+**Decision and rationale.** Pin base images by digest, third-party Actions by commit SHA, and
+use `yarn install --immutable`. Let Dependabot propose deliberate updates rather than accepting
+drift.
+
+**Implementation summary.** `Dockerfile`s, `.github/workflows/**`, `docker-compose.yml`
+(PostgreSQL and Redis digest-pinned; `CALDIY_IMAGE` override supported).
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes a supply-chain substitution path |
+| Attack-surface impact | Reduced |
+| Compatibility impact | Updates become explicit PRs rather than silent drift |
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** `forte-scorecard` reports on Pinned-Dependencies (**report-only**). Dependabot
+covers npm, Actions and base images weekly.
+
+**Known limitation.** Pinning is **not** enforced by a blocking check — a future workflow edit
+could unpin without failing CI. See the assurance model's licence/dependency gate design in
+[SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md).
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `IMAGE_BUILD.md`.
+
+---
+
+### FIL-0005 · Strict release identity, build-once, two-architecture finalisation, registry evidence
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `DEPLOYMENT_HARDENING` |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `74f8665e6a` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** A published image must be traceable to exactly one reviewed
+source state, and the artefact that was tested must be the artefact that ships.
+
+**Decision and rationale.** Four coupled changes: publication requires an annotated `vX.Y.Z-N`
+tag on `release` whose tree equals `develop`; the post-validation rebuild was removed so each
+architecture pushes the exact image that passed runtime and scan checks; AMD64 and ARM64 publish
+to staging references first and public tags are finalised only after both succeed; and the run
+captures digests, CycloneDX SBOMs, provenance attestations, workflow identity and
+`release-record.json`. Manual dispatch can validate but **cannot publish**.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Closes the "tested one image, shipped another" gap; makes release evidence durable |
+| Attack-surface impact | Unchanged |
+| Compatibility impact | Releases require the full pipeline to succeed; partial releases are treated as incomplete |
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** The release workflow itself is the guard — **blocking on identity and
+provenance**. Note that GHCR retagging is not transactional: a failed finalisation is an
+incomplete release requiring inspection before a new build number.
+
+**Related documentation.** `FORK_DIVERGENCE.md` → Release And Supply-Chain Changes;
+`RELEASE_PROCESS.md`; `CALDIY_RELEASE_CONTRACT.md`.
+
+---
+
+### FIL-0006 · Replace the upstream CI estate with fork-owned security CI
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `SECURITY_HARDENING` (+ `UPSTREAM_DIVERGENCE`) |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `68d13f4d28`; later hardening in `74f8665e6a`, `38e498f196` |
+| Released in | `v6.2.0-2`; latest hardening `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** Upstream's CI targets Cal.com's infrastructure, secrets, release
+process and test estate. Running it here is meaningless and leaks fork configuration into
+upstream-shaped jobs.
+
+**Decision and rationale.** Disable the upstream workflow set; run a small fork-owned estate
+instead — `forte-ci` (type-check + telemetry guard, blocking; Biome report-only), plus
+`forte-codeql`, `forte-trivy` and `forte-scorecard`.
+
+**Intentional divergence from upstream.** Yes. Removing these workflow files does **not** remove
+the corresponding application routes; production scheduling is a deployment responsibility.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Adds SAST, dependency/secret/misconfiguration and posture scanning on review branches |
+| Attack-surface impact | Reduced in CI — far fewer workflows with far narrower permissions |
+| Compatibility impact | Upstream E2E is not run here; E2E is a local tool |
+
+**Known limitation, stated plainly.** **Every vulnerability scanner in this fork is
+report-only.** The blocking gates are about *identity and regression* (type-check, telemetry
+guard, release identity), never about *findings*. `type-check` also covers only 8 of 113
+packages. A green CI run is therefore not evidence that the tree is free of known
+vulnerabilities. This is the central input to the tiered model in
+[SECURITY_ASSURANCE.md](SECURITY_ASSURANCE.md).
+
+**Granularity note.** The `FORK_DIVERGENCE.md` row for this is an **aggregate**: the telemetry
+guard arrived later in `75a9df1812` (`FIL-0001`) and the Dependabot / SHA-pinning half in
+`32aac7c9fa` (`FIL-0004`). This entry covers the CI estate itself, not those.
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `.ai/quality-gates.md`; `SECURITY_REVIEW.md`.
+
+---
+
+### FIL-0007 · Take upstream's forwarded-IP whitespace fix (banlist bypass)
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `UPSTREAM_FIX` (+ `SECURITY_HARDENING`) |
+| GitHub issue | n/a — predates the backlog |
+| PR | n/a |
+| Local commit(s) | `29d686fa67`; fork-only formatting follow-up `2ea6ff49b0` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Upstream source | `calcom/cal.diy` commit `038381aeca`; intake by `git cherry-pick -x` on 2026-08-10 |
+| External source | n/a |
+| Source usage | `SOURCE_INCORPORATED` — the upstream implementation itself, under MIT |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` (MIT, same project) |
+| Licence obligations | none beyond the existing MIT notice |
+
+**Problem / desired outcome.** Untrimmed whitespace in forwarded headers allowed an IP-banlist
+bypass.
+
+**Decision and rationale.** Security-relevant upstream commits are taken by default. Taken in
+full, as one cherry-pick, per the selective-intake rule.
+
+**Implementation summary.** Trims forwarded-header whitespace before banlist evaluation. Fork
+adaptation kept in a separate follow-up commit, as required.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Closes an IP-banlist bypass |
+| Attack-surface impact | Unchanged |
+| Compatibility impact | None observed |
+
+**Validation.** Targeted tests passed 23/23; filtered `@calcom/lib` type-check passed.
+
+**Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` → `038381aeca` = `integrated-full`;
+`FORK_STATUS.md` → Latest Upstream Review; `.ai/sync-log.md`.
+
+**Upstream re-evaluation trigger.** None — converged with upstream.
+
+**This is the canonical `UPSTREAM_FIX` example**: it appears in *both* ledgers, and the two
+entries answer different questions. The upstream ledger records the **disposition** of
+`038381aeca`; this entry records **what we implemented and verified**.
+
+---
+
+### FIL-0008 · Repair `packages/lib` type-check coverage and delete the rot it exposed
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `ATTACK_SURFACE_REDUCTION` (+ `FEATURE_REMOVAL`) |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `88e8f9e226` |
+| Released in | `v6.2.0-5` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** Files in `packages/lib` sat outside the TypeScript gate and had
+silently rotted. Bringing them into the gate surfaced orphaned code.
+
+**Decision and rationale.** Fix the gate, then delete what the gate proved was dead rather than
+repairing code with no importers.
+
+**Implementation summary.** Brought previously uncompiled `packages/lib` files into the
+type-check program. Removed `packages/lib/domainManager/` (orphaned, broken Vercel/Cloudflare
+organisation-domain automation, **no importers**) and the duplicate
+`packages/lib/formbricks.ts` (orphan of the live feedback path, incompatible with the installed
+API client — the active Formbricks integration remains).
+
+**Removal specifics** (per §8): code **deleted**, not disabled, because both had zero importers.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Less unreachable code that a future change could make reachable |
+| Attack-surface impact | Reduced |
+| Compatibility impact | None — no importers existed |
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** The repaired type-check program is itself the guard for `packages/lib`.
+**Coverage remains 8 of 113 packages overall** — `.ai/sync-log.md` records extending it to the
+other 105 as intentionally **not** taken, so this entry must not be read as fixing the gate
+generally.
+
+**Granularity note.** Commit `88e8f9e226` carries three `FORK_DIVERGENCE.md` rows (the gate
+repair and two removals). They are one entry here because the removals were a direct consequence
+of the repair and share its rationale.
+
+**Related documentation.** `FORK_DIVERGENCE.md` → Deliberately Removed Upstream Scope;
+`.ai/quality-gates.md`.
+
+---
+
+### FIL-0009 · Bake the `cal.forte` application name into the image
+
+| Field | Value |
+| --- | --- |
+| Status | released — **incomplete, see below** |
+| Type | `PRODUCTIZATION` |
+| GitHub issue | [#24](https://github.com/rubennati/cal.diy/issues/24) (completion) |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `4264193f84` |
+| Released in | `v6.2.0-3` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` — rebranding is permitted; the MIT notice is **not** touched |
+| Licence obligations | The `Copyright (c) 2020-present Cal.com, Inc.` line in `LICENSE` must remain. Rebranding the product surface is permitted; removing attribution is not |
+
+**Problem / desired outcome.** The image should present the fork's identity, not upstream's.
+
+**Decision and rationale.** Pass branding as explicit build arguments rather than patching
+constants, so the divergence stays in build configuration.
+
+**Implementation summary.** `NEXT_PUBLIC_APP_NAME=cal.forte` passed by the release action;
+`Dockerfile` declares the branding ARGs.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Minor but real — a support address pointing at a third party is a misdirection channel |
+| Attack-surface impact | Unchanged |
+| Compatibility impact | Build-time only; changing it requires a rebuild and a new tag |
+
+**Known incompleteness — recorded rather than hidden.** The `Dockerfile` declares **three**
+branding ARGs (`NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_COMPANY_NAME`,
+`NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS`, lines 22-24) plus **two** legal-URL ARGs
+(`NEXT_PUBLIC_WEBSITE_TERMS_URL`, `NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL`, lines 7-8). Of those
+five, the release action passes **one** — `NEXT_PUBLIC_APP_NAME`. The published image therefore
+still ships
+`COMPANY_NAME = "Cal.com, Inc."`, `SUPPORT_MAIL_ADDRESS = "help@cal.com"` and
+`cal.com/terms` · `cal.com/privacy`. `FORK_DIVERGENCE.md`'s claim that branding is baked
+"through explicit build arguments" is true for `NEXT_PUBLIC_APP_NAME` **only**. Tracked as
+GitHub [#24](https://github.com/rubennati/cal.diy/issues/24) (P3) and
+[#36](https://github.com/rubennati/cal.diy/issues/36) (P2, legal URLs).
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** None. A future entry should add a built-bundle assertion.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `docs/SELF_HOST_PRODUCTIZATION.md` §6.4;
+`docs/SELF_HOST_CAPABILITY_AUDIT.md` F-16.
+
+---
+
+### FIL-0010 · Redirect vulnerability reports to the fork owner
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `PRODUCTIZATION` (+ `SECURITY_HARDENING`) |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `d7747a32d9` |
+| Released in | `v6.2.0-2` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** A fork that diverges from upstream must receive its own
+vulnerability reports; sending reporters to upstream loses fork-specific findings.
+
+**Implementation summary.** `.well-known/security.txt` and `SECURITY.md` point at the fork
+owner. Same commit removed unused upstream scope (`.cursor/`, `.changeset/`, `.vscode/`,
+`SPEC-WORKFLOW.md`).
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Fork-specific reports reach someone who can act on them |
+| Attack-surface impact | Reduced (unused tooling scope removed) |
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Guards / CI.** `.gitattributes` marks identity and security-contact files `merge=ours`, so a
+reviewed sync does not silently restore upstream content. **Each clone must configure the merge
+driver** (`git config merge.ours.driver true`) — an unconfigured clone loses the guard.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `UPSTREAM_SYNC.md` → Preconditions.
+
+---
+
+### FIL-0011 · Slim the runtime image (stages 1 and 2)
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `ATTACK_SURFACE_REDUCTION` |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `b14e95dbea`, `78527ca3f5`, `08db6081bd` |
+| Released in | `v6.2.0-4` |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** The runtime image carried test assets and dev-only tooling.
+
+**Decision and rationale.** Exclude tests and E2E assets, remove dev-only tooling, but retain
+Turbo, Prisma migration tooling and `ts-node` app-store seeding because current image startup
+still requires them.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Fewer executables and less code in the running container |
+| Attack-surface impact | Reduced |
+| Compatibility impact | None for supported runtime paths |
+
+**Known consequence.** Retaining `ts-node` and `scripts/` means an operator with container exec
+can run `scripts/seed.ts` against production — which creates 7 `Team` rows and an
+`admin@example.com` account with a published password. This is the reachability qualifier on
+`docs/SELF_HOST_CAPABILITY_AUDIT.md` F-01 and F-22.
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `.ai/slimming-runtime-plan.md`.
+
+---
+
+### FIL-0012 · Publish to the fork's own GHCR namespace
+
+| Field | Value |
+| --- | --- |
+| Status | released |
+| Type | `UPSTREAM_DIVERGENCE` |
+| GitHub issue | n/a — predates the issue backlog |
+| PR | `BACKFILL_REQUIRED` |
+| Local commit(s) | `d9dd269ed8` |
+| Released in | fork tag `v6.2.0` (not the upstream release tag) |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** A reviewed fork image must never be confused with an upstream
+artefact.
+
+**Implementation summary.** Publishes to `ghcr.io/rubennati/cal.diy` instead of upstream Docker
+Hub / Scarf endpoints.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Downstream can pin a digest this fork controls |
+| Attack-surface impact | Unchanged |
+| Compatibility impact | Downstream must use the fork reference; `latest` is not a trust anchor |
+
+**Naming caveat.** The repository and GHCR path are `cal.diy` while the product identity is
+`cal.forte` — a deliberate historical artefact, flagged for trademark review in
+`docs/LICENSE_AND_PROVENANCE_REVIEW.md` §3.8.
+
+**Validation.** `BACKFILL_REQUIRED` — no per-change validation record survives for this
+commit. See §11's note on the 2026-08-10 round.
+
+**Related documentation.** `FORK_DIVERGENCE.md`; `CALDIY_RELEASE_CONTRACT.md`.
+
+---
+
+### FIL-0013 · Scope the telemetry guard to executable surfaces
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `MAINTENANCE` / `SECURITY_GUARD_CORRECTION` |
+| GitHub issue | n/a |
+| PR | [#42](https://github.com/rubennati/cal.diy/pull/42) |
+| Local commit(s) | `c62c42d068` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem / desired outcome.** The guard added with the telemetry removal (`75a9df1812`) searched
+every tracked file except `.ai/`, `README.md`, the workflow and itself. Once the governance and
+audit records landed on `develop`, the guard began failing on documentation that merely *named*
+the removed indicators — `FORK_IMPLEMENTATION_LEDGER.md`, `docs/EXTERNAL_FORK_INTAKE.md` and
+`docs/EXTERNAL_FORK_INTAKE_EVIDENCE.md`. This is a false-positive scope defect, not a
+vulnerability: the protected invariant was never breached, and no telemetry behaviour returned.
+
+**Implementation summary.** Exclusions are now by file semantics rather than by directory:
+`*.md` and `*.mdx` are out of scope, everything else is in. The blanket `.ai/` and
+`forte-ci.yml` exemptions are removed, so a non-Markdown file in either location is now scanned
+for the first time. The guard itself remains the one unavoidable exception. The protected
+indicators, the blocking CI step and the deletion of `packages/lib/telemetry.ts` are unchanged.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Invariant preserved; scan scope is net wider on executable surfaces |
+| Attack-surface impact | Unchanged — no product code touched |
+| Compatibility impact | None |
+
+**Scope deliberately given up.** The guard previously failed if a hardening document
+re-advertised `CALCOM_TELEMETRY_DISABLED` as a live control. A fixed-string search cannot tell
+that apart from a record that the flag was removed, which is precisely why it fired on the audit
+set. Documentation accuracy remains a review obligation under `SECURITY_ASSURANCE.md`; it is no
+longer claimed to be machine-enforced.
+
+**Validation.** `scripts/fork-guard-telemetry.test.sh` — 18 assertions covering both directions,
+including that an executable placed under `docs/` is still scanned, and that removing the `*.md`
+exclusion reproduces the original failure. Guard passes on the real tree; harness verified to
+report a failure when an expectation is inverted.
+
+**Related documentation.** `FORK_DIVERGENCE.md` (telemetry removal row); `.ai/divergence.md`;
+`.ai/quality-gates.md`.
+
+---
+
+### FIL-0014 · Zoho server-location trust-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#43](https://github.com/rubennati/cal.diy/issues/43) |
+| PR | [#48](https://github.com/rubennati/cal.diy/pull/48) |
+| Local commit(s) | `91b3f60e8f` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired, and the
+sibling in-tree `zohocrm` and `zoho-bigin` callbacks supplied the allowlist convention this fork
+now follows for the same vendor. Region domains come from Zoho's own multi-DC documentation. No
+external fork was consulted, and no third-party implementation text was incorporated. All source
+material is either this MIT tree or official vendor documentation.
+
+**Problem / desired outcome.** `packages/app-store/zohocalendar` accepted the OAuth `location`
+query parameter, type-checked it as a string, mapped `us` and `au` to domain fragments and passed
+every other value through unchanged into `https://accounts.zoho.${value}` and
+`https://calendar.zoho.${value}`. The token request carries the app's `client_id` and
+`client_secret` in its query string, so a `location` of `attacker.example` or
+`com@attacker.example` directed those credentials at an attacker-chosen host.
+
+The value was then **persisted** into `ZohoAuthCredentials.server_location` and re-read by
+`lib/CalendarService.ts` for token refresh, calendar requests and user-info requests. Because the
+attacker's host also supplies `expires_in`, a past value forces a refresh on every subsequent
+call — turning a single callback into a durable exfiltration channel for the instance-wide
+`client_secret` that required no further attacker action. That persistence path is the part no
+scanner flagged.
+
+**Implementation summary.** A canonical region model in `lib/zohoServerLocation.ts` maps the nine
+data centres Zoho documents to hosts fixed at build time. `resolveZohoRegion` accepts only a
+known region identifier or one of the four domain fragments earlier revisions persisted, and
+returns `null` for everything else; `requireZohoRegion` throws on `null`. Both the callback and
+every `CalendarService` request path resolve before any credential is read or sent. No hostname
+is built by concatenating caller-supplied text anywhere in the app.
+
+Two regions were also **functionally broken** and are repaired by the same change: `ca` produced
+`zoho.ca` and `cn` produced `zoho.cn`, where Zoho documents `zohocloud.ca` and `zoho.com.cn`.
+Neither could ever have worked.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Reduces credential-exfiltration / SSRF-style trust-boundary risk; a Zoho URL host can no longer inherit caller-supplied text |
+| New trust boundary | **NO** — hardens an existing one |
+| Public endpoint | **NO** — the callback already required an authenticated session (`callback.ts`), and that check is unchanged |
+| Authenticated mutation | **YES** — the callback creates a `Credential` and `SelectedCalendar` row; unchanged except that the persisted region is now validated |
+| Persistent state | **YES** — `server_location` is now written as a canonical region and revalidated on every read |
+| External communication | **NO NEW** communication; the existing Zoho calls are constrained to documented Zoho hosts |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Existing credentials keep working via the legacy aliases; `ca` and `cn` connections start working for the first time |
+
+**Legacy credential behaviour.** A stored value that resolves — a region identifier, or `com`,
+`com.au`, `com.cn`, `zohocloud.ca` — continues to work and is rewritten to its canonical region on
+the next refresh. Anything else fails closed **before** any request is made, with an error naming
+neither the stored value nor any credential material, and directing the operator to reconnect the
+app. Nothing is silently normalised into a usable host.
+
+**Validation.** `packages/app-store/zohocalendar/lib/zohoServerLocation.test.ts` (mapping
+primitive, 35 rejected input classes) and
+`packages/app-store/zohocalendar/lib/CalendarService.serverLocation.test.ts` (behavioural: a
+poisoned persisted value reaches no `fetch` on either the valid-token or expired-token path).
+Plus `yarn type-check:ci --force`, `yarn biome check`, and the telemetry fork guard and its
+self-test.
+
+**Guard.** Security regression tests, not a source-text check. The invariant asserted is
+behavioural — every Zoho URL resolves to one of a fixed host set regardless of input — which
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so an upstream sync that restores it fails these tests.
+
+**Rollback.** Reverting reintroduces the security defect and must not be done to resolve a merge
+conflict. One asymmetry matters: this change persists a canonical region (`us`, `au`) where the
+previous code persisted a domain fragment (`com`, `com.au`). Older code reading a
+newly-written credential would build `accounts.zoho.us`, which is not a Zoho host, so a revert
+also degrades US and Australian connections until those credentials are recreated. Prefer fixing
+forward.
+
+**Upstream reevaluation trigger.** Official upstream changes Zoho region or host handling, adds
+its own validation, or publishes a security fix for `packages/app-store/zohocalendar`. At
+implementation time `calcom/cal.diy` carried the same affected behaviour with no fix available.
+
+**Related documentation.** Issue #43; `SECURITY_ASSURANCE.md` §2 (the finding is
+`CONFIRMED_SECURITY_DEFECT`, not a confirmed exploited vulnerability — no exploitation was
+observed).
+
+---
+
+### FIL-0015 · Intercom configuration request-boundary hardening
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `FORK_FIX` |
+| GitHub issue | [#44](https://github.com/rubennati/cal.diy/issues/44) |
+| PR | [#49](https://github.com/rubennati/cal.diy/pull/49) |
+| Local commit(s) | `1d105892c3` (request-boundary fix), `60690619bd`, `e07f938682`, `4f647c365e` (regression tests) |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `IMPLEMENTATION_REFERENCE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Source usage detail.** The inherited in-tree implementation was read and repaired. The raw-body
+webhook route shape follows the existing in-repo convention used by the `alby`, `paypal`,
+`btcpayserver` and `stripepayment` webhooks. The signature scheme is Intercom's own documented
+Canvas Kit mechanism. No external fork was consulted and no third-party implementation text was
+incorporated.
+
+**Problem / desired outcome.** `POST /api/integrations/intercom/configure` was reachable with no
+authentication and no Intercom signature verification, on every deployment, whether or not the
+Intercom app was installed — the app-store dispatcher
+(`apps/web/pages/api/integrations/[...args].ts`) requires a session only for the `add` endpoint, and
+the `intercom` handler map entry is unconditional. From that entry point,
+`lib/isValidCalURL.ts` built its host check as a regex interpolated from `CAL_URL` without escaping,
+so every `.` in the host became a wildcard and single-label names such as `cal-example-com` — which
+resolve inside a container network — passed a gate meant to admit only `cal.example.com`. `fetch`
+then followed redirects, so any open redirect on the instance origin would have handed the
+destination decision back to the response. The same unauthenticated entry point also performed
+database reads keyed by a caller-supplied `admin.id`, and wrote the unauthenticated request body to
+the server log via `console.dir`.
+
+The legitimate flow had to keep working: Intercom's servers call this endpoint during Canvas Kit
+configuration, and an operator must still be able to submit a booking link on their own instance and
+have it checked.
+
+**Implementation summary.** Two controls, matching the two halves of the defect.
+
+*Caller authenticity.* `configure` now verifies Intercom's documented `X-Body-Signature` — hex
+HMAC-SHA256 over the raw request body, keyed with the app's OAuth `client_secret` — using a
+timing-safe comparison. Because the signature covers the raw bytes, body parsing is disabled and the
+handler reads the stream itself under a 64 KiB cap; a dedicated route at
+`apps/web/pages/api/integrations/intercom/configure.ts` re-declares that config, following the
+existing webhook convention and taking Next.js routing precedence over the catch-all dispatcher. If
+no client secret is configured the request is refused rather than served, so an uninstalled app is no
+longer an open endpoint. `console.dir` of the request body is removed.
+
+*Outbound destination.* `lib/resolveCalBookingUrl.ts` replaces the regex with parsed-URL component
+comparison — scheme, port, and host equal to `CAL_URL`'s or an explicit single-dot-boundary
+subdomain of it — and rebuilds the request target from those validated components, so caller text
+never decides scheme, host or port. Userinfo is rejected rather than stripped. Redirects are no
+longer followed (`redirect: "manual"`); a redirect is treated as "not a booking link".
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes an unauthenticated server-side request primitive and the unauthenticated database read reachable from it |
+| New trust boundary | **NO** — constrains an existing one; Intercom was already a caller and this instance was already the fetch target |
+| Public endpoint | **WAS YES, NOW NO** — the endpoint is still publicly routable but now serves only signature-verified Intercom requests |
+| Authenticated mutation | **NO** — no persistent write; the handler returns canvas JSON |
+| Persistent state | **NO** change |
+| External communication | **NO NEW** communication; the existing liveness check is constrained to this instance and no longer follows redirects |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Legitimate Intercom configuration is unchanged. A submitted link that only resolves via a redirect is now rejected — deliberate, and documented in the code |
+
+**Rate limiting.** Not added, and the reasoning is recorded rather than left implicit: after
+signature verification an unauthenticated caller cannot reach any work at all, and a caller holding
+the client secret is Intercom. The one remaining pre-authentication cost is reading and hashing a
+body, which the 64 KiB cap bounds. Application-level rate limiting would add a control without a
+corresponding residual risk.
+
+**Validation.** `resolveCalBookingUrl.test.ts` (URL model, including the `cal-example-com` and
+`calxexamplexcom` shapes named in issue #44, plus userinfo, ports, schemes, IPv4/IPv6 literals,
+loopback, RFC1918 and link-local metadata), `verifyCanvasSignature.test.ts` (HMAC accept/reject,
+tampered body, wrong secret, malformed and absent signatures, unconfigured secret), and
+`isValidCalURL.test.ts` (no request before validation, request target is this instance,
+`redirect: "manual"`, redirect treated as invalid, no credentials attached). Plus
+`yarn type-check`, Biome, and the telemetry guard and its self-test.
+
+**Guard.** Behavioural regression tests, not a source-text check. The asserted invariant — every
+resolved request target is this instance, and no unsigned request reaches the step handlers —
+survives refactoring, where grepping for a template literal would not. Upstream still carries the
+unsafe construction, so a sync that restores it fails these tests.
+
+**Rollback.** Reverting restores an unauthenticated server-side request primitive on every
+deployment and must not be done to resolve a merge conflict. Note one asymmetry: the dedicated
+route file must be removed together with the handler change, or Next.js will route `configure` to a
+handler whose body parsing assumptions no longer match.
+
+**Upstream reevaluation trigger.** Official upstream adds Canvas Kit signature verification, changes
+the Intercom configuration flow, or publishes a security fix for
+`packages/app-store/intercom`. At implementation time `calcom/cal.diy` carried the same affected
+behaviour in every touched file with no fix available.
+
+**Related documentation.** Issue #44; `SECURITY_ASSURANCE.md` §2 — the finding is
+`CONFIRMED_SECURITY_DEFECT`; no exploitation was observed or attempted.
+
+---
+
+### FIL-0016 · Vitest security dependency update
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | [#45](https://github.com/rubennati/cal.diy/issues/45) |
+| Code-scanning alert | Trivy #380 |
+| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
+| Local commit(s) | `943f646850` |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** This is **not** a fork-authored change. Official upstream
+`calcom/cal.diy` had already published the exact fix as `717fed8f86`
+("fix(vitest): update to patched version (#29496)", 2026-06-02), and
+`UPSTREAM_REVIEW_LEDGER.md` already carried that commit as a `candidate` with the note
+*"Re-check advisory applicability before the next dependency round."* That re-check was
+performed for this issue, the advisory still applied, and the commit was taken with
+`git cherry-pick -x` — one upstream commit, one local commit, upstream authorship and the
+`(cherry picked from commit 717fed8f86…)` line preserved. The upstream ledger row moved from
+`candidate` to `integrated-full`.
+
+**Advisory.** `GHSA-5xrq-8626-4rwp` / `CVE-2026-47429` — *"When Vitest UI server is listening,
+arbitrary file can be read and executed."* Severity CRITICAL. Vulnerable range for the 4.x line
+is `>= 4.0.0, < 4.1.0`; first patched `4.1.0`. Verified live against the GitHub advisory
+database rather than carried forward from the earlier triage.
+
+**Problem / desired outcome.** `vitest`, `@vitest/ui` and `@vitest/coverage-v8` were all pinned
+at `4.0.16`, inside the vulnerable range. The three are exact-version peers of one another —
+`vitest@4.0.16` declares `"@vitest/ui": 4.0.16` and `@vitest/coverage-v8@4.0.16` declares
+`vitest: 4.0.16` — so they had to move together or the package family would have become
+inconsistent.
+
+**Implementation summary.** All three, plus `packages/testing`'s own `vitest` devDependency,
+move `4.0.16` → `4.1.8`, the version official upstream selected. `4.1.8` is well past the
+`4.1.0` minimum fix and stays within the same minor line, so this is not a speculative jump; it
+also leaves the fork byte-aligned with upstream on these declarations rather than creating a
+new divergence to maintain. No application source changed.
+
+| Dimension | Value |
+| --- | --- |
+| Production runtime | **NOT_AFFECTED** — `Dockerfile` lines 91-97 delete `node_modules/vitest` and `node_modules/@vitest` in the `builder-two` stage, and the runner stage copies from `builder-two` at line 105, after the removal. `nodeLinker: node-modules` with a single hoisted resolution means there is no nested workspace copy to survive the delete. |
+| Developer/test surface | **AFFECTED before this change** — the root `test:ui` script runs `vitest --ui`, which starts exactly the server the advisory concerns. `tdd` (`vitest watch`) does not expose the HTTP server by default. |
+| CI surface | **NOT_AFFECTED** — no workflow under `.github/workflows/` invokes vitest at all; `forte-ci` runs install, a lifecycle-integrity check, the telemetry guard and its self-test, `type-check:ci` and Biome. |
+| Security impact | Removes a vulnerable developer-surface dependency; no production runtime change |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed on the developer surface; production unchanged |
+| Compatibility impact | Patch-level move within the 4.1 line; no application or test source change required |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` on the developer/test surface →
+`REMEDIATED_BY_IMPLEMENTATION`. Scanner severity is CRITICAL; the project assessment stays
+**P2**, because the vulnerable component never reached the published artefact or CI. This is
+**not** evidence of production compromise, and none is claimed.
+
+**Validation.** `yarn install --immutable` accepted the lockfile unchanged; no `4.0.16`
+occurrence remains anywhere in `yarn.lock` or any `package.json`; `vite` stays at `6.4.2`;
+lockfile churn is confined to the Vitest family and its direct transitives. Test suites,
+`@calcom/app-store` type-check, Biome, the telemetry guard and its self-test all run as part of
+this change's validation.
+
+**Scanner expectation.** Trivy should stop matching `CVE-2026-47429` once the PR is scanned.
+Alert #380 was **not** dismissed manually — it is expected to close on merge, the same way
+alerts #37/#38 and #36 did.
+
+**Rollback.** Reverting reinstates a vulnerable Vitest on the developer surface. It does not
+reintroduce a production exposure, because the image never shipped the package — but the
+`Dockerfile` removal step must not be treated as a substitute for keeping the dependency
+patched.
+
+**Upstream reevaluation trigger.** Upstream moves the Vitest family again, a new advisory
+affects the 4.1 line, or the `Dockerfile` slim step stops removing `node_modules/@vitest`.
+
+**Related documentation.** Issue #45; `UPSTREAM_REVIEW_LEDGER.md` (`717fed8f86`,
+`integrated-full`); `SECURITY_ASSURANCE.md` §5b on scanner disposition.
+
+---
+
+### FIL-0017 · API-keys tRPC adapter restoration
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `BUGFIX` / `FUNCTIONAL_AVAILABILITY` |
+| GitHub issue | [#32](https://github.com/rubennati/cal.diy/issues/32) |
+| Code-scanning alert | n/a — no scanner detects this class; that is the point of the guard below |
+| PR | [#53](https://github.com/rubennati/cal.diy/pull/53) |
+| Local commit(s) | `da40b51567` (upstream cherry-pick), `97b74f8c46` (formatting), `0af5714714` (parity guard) |
+| Released in | not yet released |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
+| Source usage | `SOURCE_INCORPORATED` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Provenance detail.** Not a fork-authored fix. Official upstream `calcom/cal.diy` published it
+as `07a288bbd8` ("fix(api):missing trpc route added for the api keys (#29517)", KATHIR ESWARAN,
+2026-06-08) — one new file, `+4/−0`. Taken with `git cherry-pick -x`: one upstream commit, one
+local commit, upstream authorship and the `(cherry picked from commit 07a288bbd8…)` line
+preserved, applied without conflict. The resulting blob is byte-identical to upstream
+(`sha256:d03399c1d70ca5e9e4c8506421e353a755152a921a1f99f031fb4a95888fe760`). No external-fork
+material was consulted.
+
+The upstream file omits its final newline, which `biome check` reports as an error and which
+every sibling adapter has. That one byte is corrected in a **separate** commit (`97b74f8c46`) so
+the upstream-derived commit stays byte-identical and its provenance remains verifiable.
+
+**Problem / desired outcome.** The tRPC surface is a three-leg contract — client endpoint
+registry, `viewerRouter` key, Next pages-API adapter. Upstream `ab21c7f805` (#28903) deleted
+`apps/web/pages/api/trpc/apiKeys/[trpc].ts` and left the other two legs wired. This fork
+inherited the deletion but not upstream's later restoration.
+
+Consequences on `develop` before this change, each verified against the tree:
+
+- `apiKeys` was the **only** `viewerRouter` key of 27 with no adapter.
+- `resolveEndpoint` maps a 3-segment path to `parts[1]`, pinning `viewer.apiKeys.*` to the
+  `apiKeys` batch link — a path no handler served. No catch-all, no App-Router route, no
+  `next.config.ts` rewrite covered it.
+- `create`, `edit` and `delete` therefore returned an HTML 404 and never reached tRPC.
+- `list` was unaffected: `page.tsx` reads through `PrismaApiKeyRepository` server-side, so the
+  page rendered populated and presented as working.
+- The page is gated on session alone — no role, flag or environment condition — so every
+  authenticated user could reach it.
+
+**Security relevance, stated precisely.** This is a `FUNCTIONAL_AVAILABILITY_DEFECT`, not an
+authentication bypass, not a credential leak, and no confirmed vulnerability. Its
+security-relevant consequence is narrow and real: **the product offered no way to revoke an API
+key.** `delete` was the broken mutation, and API v2 accepts these keys as bearer credentials
+(`api-auth.strategy.ts` → `sha256Hash` lookup) while exposing only `POST /refresh` — no delete.
+Keys present from a restored database, a migrated instance or the shipped seed scripts could not
+be revoked through the product at all. Since `create` was equally broken, a fresh install had no
+key to revoke; the exposure is bounded to instances that already hold keys.
+
+**Implementation summary.** One 4-line adapter file, matching the 27 sibling adapters. No
+application logic, schema, router or client change. `apiKeysRouter` already exposes `list`,
+`findKeyOfType`, `create`, `edit` and `delete`, all `authedProcedure`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Restores credential revocation through the product; no new privilege |
+| New trust boundary | **NO** — the router, its `authedProcedure` gating and its schemas already existed |
+| Public endpoint | **NO** — all five procedures are `authedProcedure` |
+| Persistent state | **NO** new state; existing `ApiKey` rows become manageable again |
+| External communication | **NO** |
+| Attack-surface impact | A registered authenticated router becomes reachable as designed. Not a widening: the UI, router and client already advertised it |
+| Compatibility impact | None. Adds a route the router and client already expected |
+
+**Finding classification.** `CONFIRMED_DEFECT` (functional availability, with a credential-
+lifecycle consequence) → `REMEDIATED_BY_IMPLEMENTATION`.
+
+**Guard.** `scripts/fork-guard-trpc-adapter-parity.sh`, wired as a blocking `forte-ci` step,
+asserts that every `viewerRouter` key has an adapter. This satisfies Definition-of-Done
+requirement 10: without it the next upstream sync can delete the leg again in silence, exactly as
+`ab21c7f805` did. `forte-ci` runs no test suite, so a vitest assertion would not have been
+enforced by the required check. The guard fails when it parses fewer keys than expected rather
+than reporting success, so a refactor that moves the router cannot turn it into a no-op.
+
+Scope is one direction only. The reverse direction — seven orphan client endpoints, the stale
+`appsRouter` duplicate adapter, the intentional `viewer` alias — needs an allow-list this guard
+should not own and remains **issue #34, still open**.
+
+**Validation.** Guard failed pre-fix naming `apiKeys` (exit 1) and passes post-fix across all 27
+keys. Adapter blob byte-identical to upstream; semantically identical to the `bookings` sibling
+after the newline commit. Biome clean on the changed file. Telemetry guard and its 18-assertion
+self-test still pass. `git diff --check` clean.
+
+**Rollback.** Reverting re-breaks API-key create, edit and revoke while leaving the page visibly
+reachable. The parity guard would fail, which is the intended behaviour.
+
+**Upstream reevaluation trigger.** Upstream restructures `apps/web/pages/api/trpc/`, moves to an
+App-Router tRPC handler, or introduces a catch-all — any of which changes what the guard should
+assert.
+
+**Related documentation.** Issue #32; issue #34 (parity in both directions, open);
+`UPSTREAM_REVIEW_LEDGER.md` (`07a288bbd8`, `integrated-full`); `docs/SELF_HOST_CAPABILITY_AUDIT.md`
+F-05.
+
+---
+
+### FIL-0018 · Slots owner-resolution fail-closed containment
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `BUGFIX` / `RESOURCE_RESOLUTION` / `SECURITY_HARDENING` |
+| GitHub issue | [#14](https://github.com/rubennati/cal.diy/issues/14) — **remains open** |
+| Code-scanning alert | n/a — no scanner reported this; CodeQL has no notion of owner-scoped resource identity |
+| PR | [#54](https://github.com/rubennati/cal.diy/pull/54) |
+| Local commit(s) | `819144124e` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — this is containment, not full remediation of #14.** Issue #14's acceptance criteria
+also require correct Team/private-link resolution, restoration of the dropped `isTeamEvent`
+branch, four regression tests and a Playwright booking-flow pass. This entry records only the
+release-blocking half. `TEAM_PRIVATE_LINK_CORRECTNESS_REMAINS_OUT_OF_SCOPE_FOR_V6.2.0-6`, and
+#14 stays open for it. The PR does **not** use `Closes #14`.
+
+**Provenance detail.** Fork-authored. Official upstream `calcom/cal.diy@main` carries the
+byte-identical fallback at `eventTypeRepository.ts`, so there is no upstream fix to cherry-pick —
+verified against `origin/main` rather than assumed. The external `Mitch515/cal.diy` commit
+`ab5d8542d3` reported the symptom against a different endpoint; it is `BEHAVIOURAL_REFERENCE`
+evidence only. Its code was not read for implementation, not copied, and its SHA is not
+provenance for this change.
+
+**Problem.** `findFirstEventTypeId` ended in
+`findFirst({ where: { slug } })` — unordered, with no owner, team or `hidden` predicate. A slug
+is unique only within an owner, never globally, so that query returns an arbitrary event type.
+
+Its **sole** caller (verified live: exactly one, `slots/util.ts:372`) is `getEventTypeId` on
+`slots.getSchedule`, a `publicProcedure` whose middleware chain is `perfMiddleware` +
+`errorConversionMiddleware` — no auth, no rate limit — and whose Next adapter ships. An
+unresolvable username leaves `userId` undefined, so a non-existent username plus a common slug
+such as `30min` reached the fallback. `findForSlots` then keys purely on `id` and never
+re-checks ownership, so the caller received another owner's event type and its availability
+under the requested one's name.
+
+**Implementation.** Return `null` when neither selector is present. The caller already throws
+`NOT_FOUND` on a null result, so a wrong resource becomes no resource. Legitimate lookups are
+unaffected — they resolve a username to a `userId` first and take the compound-key branch.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes a public wrong-resource resolution primitive |
+| New trust boundary | **NO** |
+| Public endpoint | Behaviour changed on an existing public endpoint; no endpoint added |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Unresolvable-owner requests now answer `NOT_FOUND` instead of arbitrary data |
+
+**Finding classification.** `CONFIRMED_SECURITY_DEFECT` → `REMEDIATED_BY_IMPLEMENTATION`.
+Deliberately **not** `CONFIRMED_VULNERABILITY`: the defect is reproduced by unit test and the
+path is traced end-to-end in source (`E2`), but no live request was fired against a running
+instance, and `SECURITY_ASSURANCE.md` §2.1 makes demonstrated reachability load-bearing. That
+conservatism should not be read as minimising it — unlike the PBAC placeholders, whose
+reachability genuinely fails for want of team rows, nothing here blocks the path: the endpoint
+is unauthenticated, unthrottled and shipped.
+
+Stated precisely, and no wider: **no authentication bypass, no privilege escalation, no write
+primitive, no code execution.** What it yielded was a slug-existence oracle and another owner's
+availability — a modest unauthenticated disclosure, plus functional corruption of the addressed
+resource.
+
+**Security property established.** On the username/slug resolution path, an event type is
+selected only through an owner-scoped compound key (`userId_slug` or `teamId_slug`); a slug
+alone can never select one. This is deliberately narrower than "public slot resolution always
+binds resource identity" — see the raw-ID analysis below for why the broader phrasing would
+misdescribe the code.
+
+**Adjacent path examined and deliberately excluded — raw `eventTypeId`.**
+`_getEventType` short-circuits on `input.eventTypeId` before owner resolution, and
+`findForSlots({ id })` performs no owner, team or `hidden` check. This was analysed before
+implementing, because if it preserved the same primitive the containment would have been
+incomplete. It does not, and the reasons are structural rather than incidental:
+
+- `eventTypeId` is an **intended, documented** selector. `getScheduleSchema`'s own refine reads
+  `!!data.eventTypeId || (!!data.usernameList && !!data.eventTypeSlug)`, and `useSchedule.ts`
+  sends `eventTypeId` whenever the slug is not yet known.
+- It binds resource identity **exactly**, by primary key. The caller receives precisely the
+  resource named — no substitution. The slug fallback was the opposite: identity was absent, so
+  a *different* owner's resource was served under the requested one's name.
+- A mismatched `usernameList` cannot cross-contaminate: on the regular path hosts derive from
+  the event type's own record, not from `usernameList`.
+- `hidden` means unlisted, not unreachable — `getPublicEvent` selects `hidden` but never filters
+  on it, so hidden event types are intentionally link-reachable and their slots are needed to
+  book them.
+
+Classification: `SEPARATE_SECURITY_CANDIDATE_BUT_NOT_SAME_PROPERTY`. The residue worth tracking
+is that sequential integer ids make availability enumerable across event types — availability
+only, no PII and no booking capability. Recorded here rather than fixed, and it does not weaken
+this containment.
+
+**`_enableTroubleshooter`.** Read after the event type is already resolved, so it discloses host
+user ids for any correctly addressed event type and is independent of this defect.
+`SEPARATE_SECURITY_CANDIDATE`; not touched here, since the containment does not depend on it.
+
+**Validation.** New repository test fails pre-fix with `expected { id: 999 } to be null` — a
+foreign event type returned from a slug alone — and passes after. Two service-level tests cover
+the `NOT_FOUND` conversion and the personal happy path. Full targeted run 11/11; `slots` +
+`eventtypes` sweep 92/92; the six real `getSchedule` consumer suites 68 passed / 3 skipped,
+confirming no supported flow relied on the fallback. Biome warning counts on the changed
+repository file are byte-identical to baseline (4 warnings, 63 infos — all pre-existing).
+
+**Rollback.** Reverting restores the public wrong-resource primitive. The repository test is the
+guard; there is no CI script guard, because the invariant is a return value rather than the
+presence or absence of a file.
+
+**Upstream reevaluation trigger.** Upstream fixes the fallback itself, restores the
+`isTeamEvent` branch, or changes `findForSlots` to take owner context — any of which should be
+reconciled against this divergence rather than merged blindly.
+
+**Related documentation.** Issue #14 (open); issues #13 and #33 (team authorization invariants);
+`FORK_DIVERGENCE.md` → Security And Privacy Changes; `SECURITY_ASSURANCE.md` §2.
+
+---
+
+### FIL-0019 · PBAC placeholders fail closed
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **release containment only**, see scope note |
+| Type | `SECURITY_HARDENING` / `AUTHORIZATION_CONTAINMENT` |
+| GitHub issue | [#13](https://github.com/rubennati/cal.diy/issues/13) — **remains open** |
+| Code-scanning alert | n/a — no scanner models owner-scoped permissions; CodeQL cannot see that a function named `checkPermission` returns an unconditional `true` |
+| PR | [#56](https://github.com/rubennati/cal.diy/pull/56) |
+| Local commit(s) | `1bd84ef167` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — containment, not implementation.** `PBAC_NOT_IMPLEMENTED` but `PBAC_FAILS_CLOSED`.
+No role semantics were written, no custom roles activated, no schema or migration touched, no
+Team surface enabled. Issue #13's own acceptance criteria are **not** met — see *Issue state*
+below — so #13 stays open and the PR carries no auto-closing keyword.
+
+**Provenance.** Fork-authored, derived from the current interfaces and the fail-closed
+requirement alone. Upstream `ab21c7f805` (#28903) deleted `packages/features/pbac/` and pasted a
+permissive placeholder into each former consumer; `calcom/cal.diy@main` still carries all 18 with
+`return true` (verified against `origin/main`, not assumed), so there is no upstream fix to take.
+The deleted implementation was **AGPLv3** and `packages/features/ee/**` is Cal.com Commercial —
+both prohibited as sources by `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0/§3.4. Neither was read,
+restored or adapted. No external-fork code was consulted.
+
+**Inventory, rederived rather than trusted.**
+
+| Measure | Issue #13 states | Measured on `ebc2f36251` |
+| --- | --- | --- |
+| Files declaring a placeholder | 18 | **18** ✓ |
+| Files invoking `checkPermission` (fail-open) | 11 | **11** ✓ |
+| Files invoking only `getTeamIdsWithPermission` (already fail-closed) | 6 | **6** ✓ |
+| Declaration-only | 1 | **1** ✓ |
+| `checkPermission` call sites | 19 | **23** ✗ |
+| `hasPermission` invocations | 0 | **0** ✓ |
+
+Two corrections to the issue's figures. The call-site count is **23**, not 19 — enumerated with
+`file:line`. And the placeholder exists in **two formatting variants**, 15 single-line and 3
+multi-line, semantically identical; a single-pattern edit would have silently missed three files.
+
+**Change.** In all 18 files, `checkPermission` and `hasPermission` return `false` instead of
+`true` (36 methods). All 18 `getTeamIdsWithPermission` keep `[]` — they already failed closed.
+Each placeholder gains a two-line comment so a bare `return false` in a function named
+`checkPermission` is not later read as a defect.
+
+**Call-site safety.** Every one of the 23 sites is structurally gated by a Team, Organization or
+Membership row, or sits in dead code (both watchlist services have zero container callers;
+`createOrgPbacProcedure` has zero call sites). One case deserves naming rather than burying:
+`heavy/create.handler.ts:131` gates **personal** event-type creation for users with
+`organizationId` set, when the organization has `lockEventTypeCreationForUsers = true`. The
+placeholder currently grants org-level permission to everyone, so that lock is entirely
+non-functional; denying makes it work as designed. It still requires an Organization — itself a
+`Team` row — so a stock deployment is unaffected, but an org admin in a locked org is now denied
+too. That is a deliberate over-denial, consistent with preferring false negatives on unsupported
+Team behaviour over cross-tenant false positives.
+
+**Tests asserted the defect.** Eleven pre-existing tests failed on this change, every one of them
+a team-event test, and two documented the fail-open behaviour outright — a test named
+*"should grant permissions for team members (stub always returns true)"* and a comment reading
+*"PermissionCheckService stub always returns true, so org admin access is always granted"*.
+Upstream's fail-open authorization was not merely present, it was **pinned by CI**: any attempt
+to implement PBAC would have produced a red build. Those blocks now assert denial and record what
+they previously claimed.
+
+**Scope proven by failure distribution.** All 6 `personal events` tests passed unchanged —
+including *"should deny team member from accessing another user's personal event"* — as did
+`event not found`, `input validation` and `ensureEmailOrPhoneNumberIsPresent`. Every failure was
+team-scoped. That is the "no supported non-Team path depends on `true`" requirement demonstrated,
+not merely argued.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Removes fail-open authorization; unimplemented permissions now deny |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** — `getPublicEvent`'s sole affected flag narrows disclosure for authenticated callers |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | Narrowed |
+| Compatibility impact | Team/Org-scoped operations now refuse; personal scheduling unchanged |
+
+**Finding classification.** Before: `CONFIRMED_SECURITY_DEFECT` / `FAIL_OPEN_AUTHORIZATION`.
+After: `REMEDIATED_BY_CONTAINMENT` / `FAIL_CLOSED_UNIMPLEMENTED_AUTHORIZATION`. Deliberately
+**not** `CONFIRMED_VULNERABILITY` — `SECURITY_ASSURANCE.md` §2.1 makes reachability load-bearing,
+and no shipped route creates a `Team`. Equally not dismissed: `scripts/seed.ts` creates seven
+`Team` rows unconditionally and ships in the image with `ts-node` retained, so restored or seeded
+data makes the precondition real. Nothing here claims `PBAC_IMPLEMENTED`, `TEAMS_SECURE` or
+`TEAM_AUTHORIZATION_COMPLETE`. Teams remain unsupported for v6.2.0-6.
+
+**Guard.** `scripts/fork-guard-pbac-fail-closed.sh`, blocking in `forte-ci`. It discovers
+placeholder files semantically, diffs them against a reviewed manifest so a placeholder added to
+a *new* file is caught, then inspects only each class body — an unrelated `return true` elsewhere
+in these files is out of scope. Verified four ways: fails on all 18 pre-fix; passes contained;
+fails naming the single file when one stub is rolled back to `true`; and fails loudly on manifest
+drift when a placeholder file is renamed. Explicitly temporary — retire it when a real permission
+implementation lands, replaced by that implementation's own tests.
+
+**Rollback.** Reverting restores fail-open authorization on any instance holding Team rows. The
+guard and the updated tests are the protection.
+
+**Upstream reevaluation trigger.** Upstream implements PBAC, restores `packages/features/pbac`
+under a compatible licence, or changes the placeholder shape — any of which must be reconciled
+against this divergence rather than merged blindly. Re-verify after every sync that no shipped
+route creates a `Team`.
+
+**Related documentation.** Issue #13 (open); #33 (team role invariants, design-only); #28 (team
+product decision); `docs/PBAC_PLACEHOLDER_AUDIT.md`; `SECURITY_ASSURANCE.md` §2;
+`docs/LICENSE_AND_PROVENANCE_REVIEW.md` §0, §3.4.
+
+---
+
+### FIL-0020 · MIT LICENSE notice in the runtime image
+
+| Field | Value |
+| --- | --- |
+| Status | implemented — **pending release**, see scope note |
+| Type | `DEPLOYMENT` / `RELEASE_ARTIFACT` |
+| GitHub issue | [#40](https://github.com/rubennati/cal.diy/issues/40) — **remains open** |
+| Code-scanning alert | n/a — not a security finding |
+| PR | [#57](https://github.com/rubennati/cal.diy/pull/57) |
+| Local commit(s) | `a2954c7388` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Scope — implemented, not yet released.** Issue #40's acceptance criteria require the change to
+ship through the normal release review with a new tag and a recorded digest. Neither exists yet.
+`ISSUE_STATE: IMPLEMENTED_PENDING_RELEASE`, not `FULLY_REMEDIATED`. The PR carries no auto-closing
+keyword for #40.
+
+**Artifact evidence, gathered before implementation as the issue requires.** Pulled and inspected
+the exact pinned digest named in the issue —
+`ghcr.io/rubennati/cal.diy@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
+(`v6.2.0-5`, AMD64). Confirmed the digest itself resolves correctly (`RepoDigests` and
+`docker buildx imagetools inspect` both echo the requested digest, not merely accepted uncritically).
+`docker run --entrypoint sh … -c 'ls -la /calcom/LICENSE'` exits 2, `No such file or directory` —
+**`LICENSE_ABSENT`**. A control check in the same run — `find /calcom/packages -name LICENSE`
+— located the 8 sub-package `LICENSE` files the issue predicted, proving the check itself is sound
+rather than a broken probe returning a false negative.
+
+**Root cause.** `runner` copies everything from `builder-two`
+(`COPY --from=builder-two /calcom ./`), and `builder-two`'s own root-metadata line
+(`COPY package.json .yarnrc.yml turbo.json i18n.json ./`) pulls directly from the build context —
+not from `builder` — so the file must be added at that line specifically. Adding it only to
+`builder` would not reach `runner`, because `builder-two` never copies `LICENSE` from `builder`.
+
+**Change.** `LICENSE` folded into `builder-two`'s existing root-metadata `COPY` line rather than
+added as a separate `COPY LICENSE ./` line — same effect, one fewer image layer, and consistent
+with how that line already bundles small root files. `LICENSE` content itself is untouched; the
+Cal.com copyright line is not modified, consistent with #24/#25/#26.
+
+**Regression guard.** `.github/actions/docker-build-and-test/action.yml` gains a new step,
+*"Verify MIT LICENSE notice in the exact built image"*, positioned after "Build image once" and
+before "Test exact runtime image" — before the runtime smoke test and well before the publish
+step. It reads the already-built image's filesystem via `docker create`/`docker cp` (no server
+startup dependency, no second build), then fails on absence, on an empty file, and — the strongest
+check — on any byte-level mismatch against the repository root `LICENSE` via `cmp`. The asserted
+property is `SOURCE LICENSE == LICENSE IN EXACT VALIDATED IMAGE`, not merely path existence.
+
+**`SECURITY_REVIEW.md` updated.** The per-release checklist gains: *"root MIT `LICENSE` present in
+the exact runtime image, and its content matches the repository root `LICENSE` byte for byte."*
+`IMAGE_BUILD.md` and `RELEASE_PROCESS.md` were checked and contain no LICENSE-adjacent factual gap
+to close — left untouched rather than adding overlapping documentation.
+
+**SBOM licence-metadata observation (issue #40's secondary question).** Attempted a CycloneDX scan
+of the locally built fixed image with the same tool the release workflow uses
+(`aquasecurity/trivy-action`, run here via its underlying `aquasec/trivy` image), across five
+attempts — increasing timeout, persisting the vulnerability DB across runs, and dropping
+vulnerability matching to isolate plain SBOM generation. Each attempt terminated silently partway
+through package enumeration with no error, while the Docker daemon remained healthy and unrelated
+containers kept running normally throughout — not attributed to the image or the fix.
+**`UNABLE_TO_VERIFY`.**
+
+One partial data point from before an earlier attempt terminated: Trivy logged `[python] Licenses
+acquired from one or more METADATA files may be subject to additional terms`, indicating its SBOM
+tooling captures licence metadata for at least some ecosystems — not sufficient to classify
+npm/Node coverage either way. This is observational only, per the issue's own scope limit — the
+root `LICENSE` requirement stands independently of whatever the SBOM does or does not capture for
+third-party dependencies.
+
+**No legal conclusion drawn, anywhere in this record.** The repository states only that the notice
+was absent and is now present in the build; whether that satisfies the MIT condition is explicitly
+left to a qualified person, per the issue's own `[LEGAL]` marker.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | None — licence-compliance artifact content, not a security control |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None |
+| Compatibility impact | None — adds one file to the image; no runtime behaviour change |
+
+**Finding classification.** `DEPLOYMENT_ARTIFACT_DEFECT` → remediated in source, pending release
+verification. Explicitly **not** `SECURITY_DEFECT` or `VULNERABILITY` — issue #40 itself classifies
+this as licence-compliance, not security, and this entry preserves that distinction.
+
+**Rollback.** Reverting drops the notice from the image again; the new guard step would then fail
+the next `docker-build-and-test` run, which is the intended protection.
+
+**Upstream reevaluation trigger.** Upstream changes its own Dockerfile stage graph in a way this
+fork's `builder-two` copy step depends on, or upstream begins shipping its own `LICENSE` into its
+image (not this fork's contract to track, but worth noting if the divergence narrows).
+
+**Related documentation.** Issue #40 (open); `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §6 item 2;
+`FORK_DIVERGENCE.md` → Container And Deployment Changes; issues #24, #25, #26 (copyright-line
+preservation, deliberately separate).
+
+---
+
+### FIL-0021 · Mechanically enforced branch protection on `develop` and `release`
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
+| GitHub issue | [#47](https://github.com/rubennati/cal.diy/issues/47) |
+| Code-scanning alert | n/a |
+| PR | [#52](https://github.com/rubennati/cal.diy/pull/52) |
+| Local commit(s) | `2482ce292b` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem.** Every gate described in `FORK_PROCESS.md` and `.ai/quality-gates.md` was
+convention only — nothing in GitHub prevented a merge with `forte-ci` failing. `develop` sat
+red for over an hour on 2026-08-26 as a direct consequence: PR #41 merged while the
+telemetry guard was failing, silently skipping the subsequent Type check and Lint steps for
+that entire window.
+
+**Implementation.** The change itself was a GitHub branch-protection configuration applied
+via the API — not a source-tree diff — so this entry's "implementation" is the settings
+change plus the documentation that records and explains it. `2482ce292b` is the recording
+commit (`.ai/quality-gates.md`, `FORK_PROCESS.md` → "Branch Contract and Required Checks",
+`SECURITY_ASSURANCE.md` cross-reference); the settings change it documents was applied and
+verified live, not merely described.
+
+Live-verified at time of this entry (`gh api repos/rubennati/cal.diy/branches/<branch>/protection`,
+re-read from the API rather than assumed from the commit):
+
+| Branch | Required status check | Approvals | Code-owner review | `enforce_admins` | Force-push / deletion |
+| --- | --- | --- | --- | --- | --- |
+| `develop` | `ci` (strict) | 0 | no | `true` | blocked |
+| `release` | `ci` (strict) | 0 | yes | `true` | blocked |
+
+The required context is `ci` — the GitHub **job id** from `forte-ci.yml`, not the workflow's
+display name. CodeQL, Trivy and Scorecard are **not** required status checks on either
+branch and remain report-only, per `SECURITY_ASSURANCE.md` §5b.3's argument against
+converting severity-only scanners into blocking gates. This entry does not claim otherwise
+and any future record must not either.
+
+`enforce_admins: true` closes the specific gap the incident exposed: without it, the sole
+maintainer merging their own PR is exactly the path that let `develop` go red silently,
+since admin merges bypass required checks by default. Recovery from an over-strict gate
+remains an explicit, attributable `PATCH` to branch protection — never an invisible bypass
+folded into a routine merge.
+
+**Fail-closed merge behaviour demonstrated, not merely configured.** [PR #51](https://github.com/rubennati/cal.diy/pull/51)
+pushed a deliberately failing `ci` on a temporary branch and showed `mergeable_state: blocked`
+(REST) and `mergeStateStatus: BLOCKED` (GraphQL) — both re-read from the API after the fact.
+The failing step was exactly the intended one (the telemetry guard), confirming the
+downstream Type-check/Lint steps skip on that failure the same way they did during the
+original incident. The PR was closed unmerged and the temporary branch deleted; it never
+reached `develop`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Converts a convention-only merge gate into a mechanically enforced one |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None — this governs the maintenance/merge path, not the shipped product |
+| Compatibility impact | None to the application; changes what GitHub will allow to merge |
+
+**Finding classification.** `PROCESS_GAP` (convention-only gate, demonstrated exploitable by
+the 2026-08-26 incident) → `REMEDIATED_BY_IMPLEMENTATION`. Not a security defect in the
+shipped product.
+
+**Rollback.** Reverting the documentation commit does not itself change the live GitHub
+settings; reversing this would require a separate, equally explicit `PATCH` to branch
+protection, which this entry's existence is meant to make visible if it ever happens.
+
+**Upstream reevaluation trigger.** N/A — fork-owned maintenance boundary, not upstream-derived.
+
+**Related documentation.** Issue #47 (closed); `FORK_PROCESS.md` → "Branch Contract and
+Required Checks"; `.ai/quality-gates.md` → "Mechanically enforced branch protection";
+`SECURITY_ASSURANCE.md` §5b.3.
+
+---
+
+## 12. Items requiring provenance research
+
+Recorded so they are neither forgotten nor invented. **Do not write entries for these until the
+evidence exists.**
+
+| Item | What is missing | Where to look |
+| --- | --- | --- |
+| Historical aggregate `75c8f5c18f` | Four upstream security patches (`743f988d30`, `4026669e68`, `ca03f007df`, `561cf889ab`) were squashed into one local commit whose message names none of them. File statistics match the sum, and no partial-hunk intake was found, but the provenance is weak by the fork's own standard | `UPSTREAM_REVIEW_LEDGER.md` → Integrated Upstream Commits |
+| Earlier upstream intakes | `fb0149453e`→`4d41b2c77d`, `9104545a18`→`b8fb288779`, `0d164da8dd`→`91356f1650`, `b97cd6203d`→`ec0dfcf9cc` have ledger rows but no recorded validation or first-release mapping | `UPSTREAM_REVIEW_LEDGER.md`; `.ai/sync-log.md` |
+| `0d164da8dd` decision reversal | Initially rejected over legacy weak-password deletion risk, later accepted in full. The reversal is visible but its rationale is not captured as an implementation record | `UPSTREAM_REVIEW_LEDGER.md` |
+| PR numbers for every backfilled entry | The fork's early work appears to predate a PR-based flow | GitHub PR list; `.ai/sync-log.md` |
+| Validation performed for `FIL-0001`–`FIL-0006`, `FIL-0008`–`FIL-0012` | Guards and outcomes are documented; the specific checks run at the time are not | `.ai/sync-log.md` |
+| Fork-owned `CODEOWNERS` (`a39c99f5e0`), Biome pre-commit handling (`778b4200f7`), URL-safe DB-password guidance (`aa4f4bff79`), Trivy image policy (`38e498f196`) | Each has evidence in `FORK_DIVERGENCE.md` but was judged below the materiality bar for a standalone entry. Re-evaluate if any becomes security-relevant | `FORK_DIVERGENCE.md` |
+
+---
+
+## 13. Maintaining this ledger
+
+1. Allocate the next `FIL-NNNN`. Numbers are never reused, even for withdrawn entries.
+2. Fill every schema field; `n/a` is an answer, blank is not.
+3. Classify **implementation relationship** (§3.1) and **source usage** (§3.2) — both, always,
+   as independent answers. Never record source incorporation or adaptation alongside a native
+   claim.
+4. Record the **licence disposition** (§4) and any obligation, with where it is discharged.
+   Steps 3 and 4 together are a **Definition-of-Done gate**.
+5. Link, do not duplicate: the upstream ledger, the divergence register and the audit documents
+   keep their own responsibilities.
+6. Update `Status` when the change reaches a release, is superseded, or is reverted. Never
+   delete an entry.
+7. If the change alters steady-state behaviour, add or update the corresponding
+   `FORK_DIVERGENCE.md` row and link it here.
+
+The completion rule these steps serve is
+[FORK_PROCESS.md → Definition of Done](FORK_PROCESS.md#definition-of-done).
+
+### FIL-0022 · Documentation-only fast path in `forte-ci`
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
+| GitHub issue | n/a — maintainer request, no tracking issue filed |
+| Code-scanning alert | n/a |
+| PR | [#62](https://github.com/rubennati/cal.diy/pull/62), [#63](https://github.com/rubennati/cal.diy/pull/63) |
+| Local commit(s) | `32584ba05b`, `00cb4797e0`, merged as `689bb82f96` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem.** Every pull request paid the same required-check cost regardless of what it
+changed. Measured from run 33151635129, the `ci` job spent 235s on `yarn install --immutable`,
+159s on `type-check:ci` and 101s on Biome, against 1s combined for all four fork guards —
+roughly 8.5 minutes wall clock. On a documentation-only change none of the three expensive
+steps produced enforced signal: `type-check:ci` never sees a markdown file, and Biome has no
+markdown support configured here (`biome check docs/` reports *"Checked 1 file"*, per
+`.ai/quality-gates.md` → "No markdown gate exists"). The cost was real; the coverage was not.
+
+**Implementation.** `.github/workflows/forte-ci.yml` gains a `Classify change scope` step that
+resolves a `mode` output, and the expensive steps become conditional on `mode == 'full'`. The
+four fork guards move ahead of dependency installation and lose their conditions, so they run
+on every event on both paths; a `git diff --check` against the first parent joins them so the
+fast path still inspects the change rather than only the tree's invariants.
+`.github/workflows/forte-codeql.yml` gains `paths-ignore` on its `pull_request` trigger only.
+
+**Why steps and not the job or the workflow.** `ci` is the required status context on both
+`develop` and `release`. A workflow-level `paths:` filter would prevent the job from running
+at all on a filtered PR, and GitHub does not synthesise a passing result for a required
+context that never reports — the PR would sit permanently pending and become *less*
+mergeable, which is the opposite of the goal. Skipped *steps* inside a job that always runs
+still produce a green `ci`.
+
+**Classification is an allowlist, deliberately.** A changed path is documentation only if its
+name ends in `.md`. Everything else takes the full path, and so does an unavailable or empty
+changed-file list. A denylist of known code paths would silently fast-path the next directory
+added to this repository; an allowlist fails safe by construction, at the cost of occasionally
+running full CI on something that did not need it.
+
+**Why extension and not directory.** The first draft allowlisted `docs/**` alongside
+`**/*.md`, and an adversarial pass over the classification logic caught that as wrong before
+it merged: `docs/` is not documentation-only. It tracks `docs/brand/build.py` and the
+generated `docs/api-reference/v2/openapi.json` — a build script and an API contract that a
+directory-shaped rule would have fast-pathed. Dropping the directory rule costs nothing,
+because `**/*.md` already covers all ten markdown files under `docs/`.
+
+Verified before relying on the allowlist: no build, lint or test configuration
+(`turbo.json`, `biome.json`, `vitest.workspace.ts`) reads any `*.md`; nothing in the tree
+imports a `.md`; and the `Dockerfile` copies none into any stage. The one `.md` occurrence
+inside TypeScript is the Moldova TLD (`"mail.md"`, `"neuro.md"`) in a free-email-domain list,
+which is a string literal, not a module reference.
+
+**What a green `ci` means, by event.**
+
+| Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
+| --- | --- | --- |
+| any `push` to `develop` / `release` | always | always |
+| PR touching any path that is not `*.md` | always | always |
+| PR touching *only* `*.md` files | always | skipped |
+
+This narrows what a green `ci` asserts on documentation-only pull requests, and that is
+stated plainly rather than papered over: it is evidence that the fork guards hold and that
+nothing outside the allowlist changed, **not** that the tree type-checks.
+
+**Why release evidence is unaffected.** `release-docker.yaml` requires successful
+**push**-event runs of `forte-ci.yml`, `forte-codeql.yml` and `forte-trivy.yml` for the exact
+SHA being published. Push events have no fast path, so publication evidence never depends on
+which paths a commit happened to touch. Skipping CodeQL on a pull request is safe for the
+separate reason that it is not a required status context on either branch — an absent run
+cannot leave a PR pending.
+
+**Guard reordering.** Each of `fork-guard-telemetry.sh`, `fork-guard-telemetry.test.sh`,
+`fork-guard-trpc-adapter-parity.sh` and `fork-guard-pbac-fail-closed.sh` needs only git and
+coreutils; their sole mentions of yarn are comments and a `grep` of `yarn.lock` treated as a
+text file. Confirmed empirically rather than by reading: all four were executed in a worktree
+with no `node_modules` present and all four passed. Running them first also means the full
+path now fails fast on a guard violation instead of after a four-minute install.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Narrows what `ci` asserts on documentation-only PRs; broadens fork-guard coverage to every event |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None — this governs the maintenance/merge path, not the shipped product |
+| Compatibility impact | None to the application |
+
+**Finding classification.** `MAINTENANCE_EFFICIENCY` — not a security finding in either
+direction. It removes no enforced signal (the skipped steps covered nothing about the
+allowlisted files) and adds two blocking checks that previously ran later or not at all.
+
+**Split across two PRs, and why.** PR #62 merged at `00cb4797e0` while a follow-up commit was
+still being prepared. That commit was pushed to the branch about ninety seconds later, and a
+push to the branch of an already-merged PR raises no `synchronize` event — so it neither
+entered #62 nor reached `develop`, and the CI run that would have confirmed it never started.
+It is recovered by PR #63 (`git cherry-pick -x`). This is the second occurrence of the pattern
+in this repository; the first was the FIL-0018 wording correction after PR #54. The general
+lesson is recorded rather than the incident: after pushing to a branch, confirm the PR is still
+open before waiting on a run, because a merged PR absorbs no further pushes.
+
+**Rollback.** Revert `32584ba05b` and `00cb4797e0`. Because the change is confined to workflow
+files and documentation, reverting restores the prior behaviour exactly, with no
+branch-protection or registry state to unwind.
+
+**Upstream reevaluation trigger.** N/A — `forte-*` workflows are fork-owned and additive;
+upstream has no equivalent file to diverge from. Revisit the allowlist if a future change ever
+makes a `*.md` file a build, test or image input — a docs-site generator reading them, or a
+markdown linter worth blocking on, would each qualify.
+
+**Related documentation.** `FORK_PROCESS.md` → "Branch Contract and Required Checks";
+`.ai/quality-gates.md` → "No markdown gate exists"; `SECURITY_ASSURANCE.md` §1;
+`agents/rules/ci-check-failures.md`; `FORK_DIVERGENCE.md` → Maintenance And Developer
+Workflow Changes.
