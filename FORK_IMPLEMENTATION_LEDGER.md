@@ -1102,11 +1102,11 @@ commit. See §11's note on the 2026-08-10 round.
 
 | Field | Value |
 | --- | --- |
-| Status | merged-not-released |
+| Status | implemented |
 | Type | `MAINTENANCE` / `SECURITY_GUARD_CORRECTION` |
 | GitHub issue | n/a |
-| PR | `BACKFILL_REQUIRED` — to be filled when this branch is opened as a PR |
-| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the same commit it describes |
+| PR | [#42](https://github.com/rubennati/cal.diy/pull/42) |
+| Local commit(s) | `c62c42d068` |
 | Released in | not yet released |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
@@ -1154,8 +1154,8 @@ report a failure when an expectation is inverted.
 | Status | implemented |
 | Type | `SECURITY_HARDENING` / `FORK_FIX` |
 | GitHub issue | [#43](https://github.com/rubennati/cal.diy/issues/43) |
-| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
-| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the commit it describes |
+| PR | [#48](https://github.com/rubennati/cal.diy/pull/48) |
+| Local commit(s) | `91b3f60e8f` |
 | Released in | not yet released |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `IMPLEMENTATION_REFERENCE` |
@@ -1245,8 +1245,8 @@ observed).
 | Status | implemented |
 | Type | `SECURITY_HARDENING` / `FORK_FIX` |
 | GitHub issue | [#44](https://github.com/rubennati/cal.diy/issues/44) |
-| PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
-| Local commit(s) | `BACKFILL_REQUIRED` — this entry ships in the commit it describes |
+| PR | [#49](https://github.com/rubennati/cal.diy/pull/49) |
+| Local commit(s) | `1d105892c3` (request-boundary fix), `60690619bd`, `e07f938682`, `4f647c365e` (regression tests) |
 | Released in | not yet released |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `IMPLEMENTATION_REFERENCE` |
@@ -1850,6 +1850,88 @@ image (not this fork's contract to track, but worth noting if the divergence nar
 **Related documentation.** Issue #40 (open); `docs/LICENSE_AND_PROVENANCE_REVIEW.md` §6 item 2;
 `FORK_DIVERGENCE.md` → Container And Deployment Changes; issues #24, #25, #26 (copyright-line
 preservation, deliberately separate).
+
+---
+
+### FIL-0021 · Mechanically enforced branch protection on `develop` and `release`
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `GOVERNANCE` / `MAINTENANCE_BOUNDARY` / `CI_ENFORCEMENT` |
+| GitHub issue | [#47](https://github.com/rubennati/cal.diy/issues/47) |
+| Code-scanning alert | n/a |
+| PR | [#52](https://github.com/rubennati/cal.diy/pull/52) |
+| Local commit(s) | `2482ce292b` |
+| Released in | not yet released |
+| Implementation relationship | `CAL_FORTE_NATIVE` |
+| Source usage | `NONE` |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+
+**Problem.** Every gate described in `FORK_PROCESS.md` and `.ai/quality-gates.md` was
+convention only — nothing in GitHub prevented a merge with `forte-ci` failing. `develop` sat
+red for over an hour on 2026-08-26 as a direct consequence: PR #41 merged while the
+telemetry guard was failing, silently skipping the subsequent Type check and Lint steps for
+that entire window.
+
+**Implementation.** The change itself was a GitHub branch-protection configuration applied
+via the API — not a source-tree diff — so this entry's "implementation" is the settings
+change plus the documentation that records and explains it. `2482ce292b` is the recording
+commit (`.ai/quality-gates.md`, `FORK_PROCESS.md` → "Branch Contract and Required Checks",
+`SECURITY_ASSURANCE.md` cross-reference); the settings change it documents was applied and
+verified live, not merely described.
+
+Live-verified at time of this entry (`gh api repos/rubennati/cal.diy/branches/<branch>/protection`,
+re-read from the API rather than assumed from the commit):
+
+| Branch | Required status check | Approvals | Code-owner review | `enforce_admins` | Force-push / deletion |
+| --- | --- | --- | --- | --- | --- |
+| `develop` | `ci` (strict) | 0 | no | `true` | blocked |
+| `release` | `ci` (strict) | 0 | yes | `true` | blocked |
+
+The required context is `ci` — the GitHub **job id** from `forte-ci.yml`, not the workflow's
+display name. CodeQL, Trivy and Scorecard are **not** required status checks on either
+branch and remain report-only, per `SECURITY_ASSURANCE.md` §5b.3's argument against
+converting severity-only scanners into blocking gates. This entry does not claim otherwise
+and any future record must not either.
+
+`enforce_admins: true` closes the specific gap the incident exposed: without it, the sole
+maintainer merging their own PR is exactly the path that let `develop` go red silently,
+since admin merges bypass required checks by default. Recovery from an over-strict gate
+remains an explicit, attributable `PATCH` to branch protection — never an invisible bypass
+folded into a routine merge.
+
+**Fail-closed merge behaviour demonstrated, not merely configured.** [PR #51](https://github.com/rubennati/cal.diy/pull/51)
+pushed a deliberately failing `ci` on a temporary branch and showed `mergeable_state: blocked`
+(REST) and `mergeStateStatus: BLOCKED` (GraphQL) — both re-read from the API after the fact.
+The failing step was exactly the intended one (the telemetry guard), confirming the
+downstream Type-check/Lint steps skip on that failure the same way they did during the
+original incident. The PR was closed unmerged and the temporary branch deleted; it never
+reached `develop`.
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Converts a convention-only merge gate into a mechanically enforced one |
+| New trust boundary | **NO** |
+| Public endpoint | **NO** |
+| Persistent state | **NO** |
+| External communication | **NO** |
+| Attack-surface impact | None — this governs the maintenance/merge path, not the shipped product |
+| Compatibility impact | None to the application; changes what GitHub will allow to merge |
+
+**Finding classification.** `PROCESS_GAP` (convention-only gate, demonstrated exploitable by
+the 2026-08-26 incident) → `REMEDIATED_BY_IMPLEMENTATION`. Not a security defect in the
+shipped product.
+
+**Rollback.** Reverting the documentation commit does not itself change the live GitHub
+settings; reversing this would require a separate, equally explicit `PATCH` to branch
+protection, which this entry's existence is meant to make visible if it ever happens.
+
+**Upstream reevaluation trigger.** N/A — fork-owned maintenance boundary, not upstream-derived.
+
+**Related documentation.** Issue #47 (closed); `FORK_PROCESS.md` → "Branch Contract and
+Required Checks"; `.ai/quality-gates.md` → "Mechanically enforced branch protection";
+`SECURITY_ASSURANCE.md` §5b.3.
 
 ---
 
