@@ -389,6 +389,38 @@ enabled, and P1-C is blocked on it.
 
 ---
 
+## 2026-08-28 — v6.2.0-6 released
+
+**Context:** first release since `v6.2.0-5`. Carries the Zoho and Intercom trust-boundary
+fixes, the slots and PBAC fail-closed containments, the restored apiKeys tRPC adapter, the
+MIT `LICENSE` image fix, enforced branch protection, and the markdown CI fast path.
+
+**Release identity:** tag `v6.2.0-6` (annotated) on `release` `9b9df424e3`, tree
+`8db16d911d`, promoted from `develop` candidate `889b7cc6ce`. Trees identical; the
+promotion introduced no content.
+
+**Artifacts:** AMD64 `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a…dbe0f1`,
+ARM64 `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7…a2250`, `latest` → AMD64
+digest. Release Docker run `33159543959`. Both CycloneDX 1.6 SBOMs, `release-record.json`
+and verified SLSA v1 provenance for both digests.
+
+**Intentionally NOT taken (+ reason):** PBAC remains unimplemented — the placeholders only
+fail closed (#13 stays open). Issue #14 is contained, not fully remediated; team and
+private-link resolution stays out of scope while Teams are inactive. Issue #46 ships as an
+accepted P3 defect. Two CRITICAL fixable library findings ship under the report-only
+scanner policy (`stdlib` CVE-2025-68121, `tar` CVE-2026-59873).
+
+**Checks:** all three exact-SHA push gates green on both the candidate and the release
+commit, both on the full path. Release Docker validated AMD64 and ARM64 before promotion
+and again at publication, each with a runtime test and a byte-equality assertion on
+`/calcom/LICENSE`. Issue #40 closed as `SHIPPED_AND_ARTIFACT_VERIFIED`.
+
+**Next step:** `v6.2.0-6` is the first tag here with a GitHub Release object, created
+manually — `release-docker.yaml` does not produce one and the release contracts do not
+describe the step. Decide whether to automate it or document it as deliberately manual.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>

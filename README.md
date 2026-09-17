@@ -31,8 +31,8 @@ compromise; every change here is deliberate and documented.
 **Fork changes:** Security defaults, telemetry, CI, container runtime, and release handling
 intentionally differ from Cal.diy. [See the public divergence register →](FORK_DIVERGENCE.md)
 
-**Latest release:** [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5)
-from [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc).
+**Latest release:** [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6)
+from [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65).
 [Full release evidence →](FORK_STATUS.md#latest-release-evidence)
 
 ## Branch model
@@ -52,11 +52,11 @@ from [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe1338
 ## Releases
 
 The latest published image was built from `release` at
-[`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc):
+[`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65):
 
-- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
-- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
-- Evidence: [Release Docker run 31435807941](https://github.com/rubennati/cal.diy/actions/runs/31435807941)
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
+- Evidence: [Release Docker run 33159543959](https://github.com/rubennati/cal.diy/actions/runs/33159543959)
 - Downstream handoff: [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30)
 
 Tags are architecture-specific; there is currently no combined multi-architecture manifest.
@@ -103,6 +103,12 @@ prompts remain reachable in a fresh install, one of them on the public booking p
 tracked as open issues; see [docs/SELF_HOST_PRODUCTIZATION.md](docs/SELF_HOST_PRODUCTIZATION.md).
 
 ## 📚 Documentation & knowledge base
+
+**Using or operating cal.forte? Start at [docs/README.md](docs/README.md)** — overview,
+capabilities, getting started, configuration, security model, operations and roadmap.
+
+The records below are the fork's engineering memory. You should not need them to run the
+product.
 
 Everything we know about this fork, grouped. Entry point for tooling: [.ai/index.md](.ai/index.md).
 
@@ -188,14 +194,35 @@ Full list with rationale: [FORK_DIVERGENCE.md](FORK_DIVERGENCE.md). One caveat w
 before you audit: `type-check` runs for only 8 of 113 packages, so a green CI run is not
 proof that the whole tree compiles — [.ai/quality-gates.md](.ai/quality-gates.md).
 
-## Edition & state at a glance
+## Capabilities at a glance
 
-- **Community Edition (MIT)** — Enterprise Edition is absent. **Present:** event types,
-  availability, bookings, calendar/video integrations, payments, webhooks, API v2, embed.
-  **Absent:** Workflows, Insights, SAML/SSO, audit logs, team management (details:
-  [.ai/branding.md](.ai/branding.md)).
-- The old cal.com "buy Enterprise" **paywall is already removed**.
-- App-store apps are **disabled by default** — active only with credentials
-  ([.ai/architecture.md](.ai/architecture.md) §3).
+Community Edition (MIT); Enterprise Edition is absent. The old "buy Enterprise" paywall is
+already removed.
+
+| | |
+| --- | --- |
+| **Supported** | booking pages and event types · availability · calendar and conferencing integrations · sign-in incl. OAuth · **API-key management** · Zapier and Make · personal webhooks · automatic database migrations · AMD64 and ARM64 images with provenance and SBOMs |
+| **Limited** | **scheduled/background jobs** — the container ships no scheduler, so reminders and calendar refresh need an external trigger · Microsoft/Entra tenant restriction |
+| **Planned** | **REST API v2** — an explicit roadmap decision; not in the current release |
+| **Evaluating** | Teams · Organizations · PBAC · team webhooks · Platform/OAuth clients — present in code, **direction not decided** |
+| **Not included** | Workflows · Insights · SAML/SSO · video recordings · API v1 · usage telemetry (removed) |
+
+**The current release ships the web runtime only.** There is no API service in the
+published image, so there is no cal.forte REST API endpoint to call today.
+
+**API keys work; the REST API is not shipped.** Keys are created in the UI and consumed
+today by the web integrations (Zapier, Make). They are not yet credentials for a public
+REST API — see [the API v2 roadmap](docs/guide/roadmap/api-v2.md).
+
+**Evaluating is not a promise.** Teams, Organizations and PBAC have substantial code and
+schema, but no recorded product decision to ship them — see
+[#28](https://github.com/rubennati/cal.diy/issues/28). Code presence is not a commitment.
+
+This is a summary. The canonical registry — with what Cal.com offers, what upstream
+Cal.diy claims, what cal.forte supports, and how deeply each has been verified — is
+**[docs/guide/capabilities.md](docs/guide/capabilities.md)**. Where the two disagree, the
+capability matrix is the product answer and this summary needs fixing.
+
+📖 **[Full documentation →](docs/README.md)**
 
 For the full upstream README (install reference), see the [`main` branch](https://github.com/rubennati/cal.diy/blob/main/README.md).

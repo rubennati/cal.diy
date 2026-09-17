@@ -21,11 +21,12 @@ Upstream intake is selective and recorded commit-by-commit in
 [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 
 **Branches:** `main` = untouched upstream mirror · `develop` = integration/review ·
-`release` = reviewed source for GHCR images. The latest published source is `201b016984`.
+`release` = reviewed source for GHCR images. The latest published source is `9b9df424e3`.
 
-**Latest release:** `v6.2.0-5` from `201b016984`:
-- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-5@sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`
-- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm@sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
+**Latest release:** `v6.2.0-6` from `9b9df424e3` (published 2026-08-28):
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
+- rollback target: `v6.2.0-5` from `201b016984` — AMD64 `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`, ARM64 `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
 
 It contains the telemetry removal and guard, repaired `packages/lib` type-check coverage,
 the IP-banlist whitespace fix, non-root runtimes, immutable build inputs, and the hardened

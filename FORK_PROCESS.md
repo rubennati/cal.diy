@@ -68,9 +68,10 @@ every event:
 
 | Event | Fork guards + whitespace check | Install · lifecycle · `type-check:ci` · Biome |
 | --- | --- | --- |
-| any `push` to `develop` / `release` | always | always |
+| any `push` to `develop` | always | always |
 | PR touching any path that is not `*.md` | always | always |
 | PR touching *only* `*.md` files | always | skipped |
+| promotion into / push onto `release`, tree already validated | always | skipped |
 
 The classification is an **allowlist** with exactly one rule: a changed path is documentation
 only if its name ends in `.md`. Everything else — including any directory added to this
@@ -80,13 +81,18 @@ extension and not on a directory because `docs/` is **not** documentation-only: 
 `docs/brand/build.py` and the generated `docs/api-reference/v2/openapi.json`, both of which a
 `docs/**` rule would have fast-pathed.
 
-Two consequences worth stating plainly. First, a green `ci` on a documentation-only PR is
-**not** evidence that the tree type-checks — it is evidence that the fork guards hold and that
-nothing outside the allowlist changed. Second, that distinction never reaches a release,
-because `release-docker.yaml` validates successful **push**-event runs for an exact SHA, and
-push events have no fast path. Release evidence therefore never depends on which paths a
-commit happened to touch. The same reasoning governs `forte-codeql.yml`, whose `paths-ignore`
-is scoped to its `pull_request` trigger only.
+A green `ci` on a documentation-only PR is **not** evidence that the tree type-checks — it is
+evidence that the fork guards hold and that nothing outside the allowlist changed.
+
+The `release` row is a different claim and rests on a different argument. Promotion re-creates
+an already-approved `develop` tree under a new commit SHA; re-running `type-check:ci` on it
+would recompute a known answer. That row is only taken after the workflow has **proved** a
+successful full-path `forte-ci` push run exists on `develop` for this exact tree — matched by
+tree SHA, and accepted only if that run's `Type check` step actually executed rather than
+being skipped by one of these fast paths. If no such evidence is found, the run falls through
+to full validation; the branch name alone never buys the skip. `forte-codeql.yml`'s
+`paths-ignore` is scoped to its `pull_request` trigger only, so release publication still
+requires a real CodeQL push run for the exact release SHA.
 
 The four fork guards run before dependency installation because each is a plain shell script
 needing only git and coreutils. That is what makes them affordable on every event, and it also

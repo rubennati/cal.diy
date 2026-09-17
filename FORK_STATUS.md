@@ -9,7 +9,7 @@ deferred, and rejected decisions are recorded in
 
 ## Current Snapshot
 
-Last verified: **2026-08-11**
+Last verified: **2026-08-28**
 
 | Item | Current state |
 | --- | --- |
@@ -17,12 +17,13 @@ Last verified: **2026-08-11**
 | Upstream reviewed through | `176037d0af` on 2026-08-10 |
 | Latest review range | [`3894f37e14...176037d0af`](https://github.com/rubennati/cal.diy/compare/3894f37e14...176037d0af) (6 commits) |
 | Integrated upstream base | [`46eb533dbd`](https://github.com/rubennati/cal.diy/commit/46eb533dbd20b74686efa520684e662c0f21051c) (Cal.com 6.2.0 base) |
-| Latest published source baseline | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
+| Latest published source baseline | [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65) |
 | Reviewed publication branch | [`release`](https://github.com/rubennati/cal.diy/tree/release) |
-| Latest published release | [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5) |
-| Published AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5` |
-| AMD64 digest | `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e` |
-| ARM64 digest | `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae` |
+| Latest published release | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
+| Published AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-6` |
+| Published ARM64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm` |
+| AMD64 digest | `sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1` |
+| ARM64 digest | `sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250` |
 
 The repository is selectively maintained. **Reviewed through** means that upstream commits
 through the stated point were assessed; it does not mean that every upstream commit was
@@ -80,15 +81,22 @@ The exact current source difference can be inspected with the
 
 | Evidence | Value |
 | --- | --- |
-| Release tag | [`v6.2.0-5`](https://github.com/rubennati/cal.diy/tree/v6.2.0-5) |
+| Release tag | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) (annotated; tag object `02d429dad2`) |
 | Source branch | `release` |
-| Source commit | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
-| Promoted `develop` commit | [`201b016984`](https://github.com/rubennati/cal.diy/commit/201b016984fe13388ccdc6a82f2669e9719d3bcc) |
-| AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5` |
-| ARM64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-5-arm` |
-| AMD64 digest | `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e` |
-| ARM64 digest | `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae` |
-| Release workflow run | [`31435807941`](https://github.com/rubennati/cal.diy/actions/runs/31435807941) |
+| Source commit | [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65) |
+| Source tree | `8db16d911d822c19331aaabb406eb846cacec673` |
+| Promoted `develop` commit | [`889b7cc6ce`](https://github.com/rubennati/cal.diy/commit/889b7cc6ceabebb6b8d4465ebc9181189d96c071) |
+| AMD64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-6` |
+| ARM64 image | `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm` |
+| AMD64 digest | `sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1` |
+| ARM64 digest | `sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250` |
+| Release workflow run | [`33159543959`](https://github.com/rubennati/cal.diy/actions/runs/33159543959) |
+| `latest` digest | `sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1` (= AMD64; convenience pointer, not the release identity) |
+| SBOM artifacts | `release-sbom-amd64-v6.2.0-6`, `release-sbom-arm64-v6.2.0-6` (CycloneDX 1.6, 5,499 components each; also attached to the GitHub Release) |
+| Provenance | SLSA v1 attestations verified against both final digests; `sourceRepositoryDigest` = release commit at `refs/tags/v6.2.0-6` |
+| Release record | `release-record.json` (workflow artifact and GitHub Release asset) |
+| GitHub Release | [v6.2.0-6](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6), published 2026-08-28 |
+| Rollback target | `v6.2.0-5` at `201b016984` — AMD64 `sha256:c2facc284b…d18b17e`, ARM64 `sha256:dffa387024…932faeae` |
 | Downstream handoff | [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30) |
 
 Downstream deployments must use a reviewed version tag or, preferably, a recorded digest.

@@ -16,6 +16,13 @@ inputs:
     description: "Public source version stored in OCI labels"
     required: false
     default: ""
+  image-revision:
+    description: >-
+      Commit recorded in org.opencontainers.image.revision. Defaults to github.sha,
+      which for a workflow_dispatch is the branch head at dispatch time — pass the
+      pinned candidate SHA so the label describes the commit actually built.
+    required: false
+    default: ""
   github-token:
     description: "GitHub token used only when push-image is true"
     required: false
@@ -34,6 +41,13 @@ inputs:
     required: true
   push-image:
     description: "Push the exact locally validated image"
+    required: false
+    default: "false"
+  allow-existing-tag:
+    description: >-
+      Permit pushing over an existing tag. True only for candidate tags, which are
+      keyed by source tree and may legitimately be re-validated. Final vX.Y.Z-N
+      tags must never set this — they are immutable release identities.
     required: false
     default: "false"
 
@@ -119,7 +133,7 @@ runs:
         tags: ${{ steps.image.outputs.image_ref }}
         labels: |
           org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.revision=${{ inputs.image-revision || github.sha }}
           org.opencontainers.image.version=${{ inputs.image-version || inputs.image-tag }}
         build-args: |
           NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
@@ -241,7 +255,7 @@ runs:
         password: ${{ inputs.github-token }}
 
     - name: Refuse to overwrite an existing release tag
-      if: ${{ inputs.push-image == 'true' }}
+      if: ${{ inputs.push-image == 'true' && inputs.allow-existing-tag != 'true' }}
       shell: bash
       env:
         IMAGE_REF: ${{ steps.image.outputs.image_ref }}

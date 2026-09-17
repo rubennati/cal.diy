@@ -1107,7 +1107,7 @@ commit. See §11's note on the 2026-08-10 round.
 | GitHub issue | n/a |
 | PR | [#42](https://github.com/rubennati/cal.diy/pull/42) |
 | Local commit(s) | `c62c42d068` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1156,7 +1156,7 @@ report a failure when an expectation is inverted.
 | GitHub issue | [#43](https://github.com/rubennati/cal.diy/issues/43) |
 | PR | [#48](https://github.com/rubennati/cal.diy/pull/48) |
 | Local commit(s) | `91b3f60e8f` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `IMPLEMENTATION_REFERENCE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1247,7 +1247,7 @@ observed).
 | GitHub issue | [#44](https://github.com/rubennati/cal.diy/issues/44) |
 | PR | [#49](https://github.com/rubennati/cal.diy/pull/49) |
 | Local commit(s) | `1d105892c3` (request-boundary fix), `60690619bd`, `e07f938682`, `4f647c365e` (regression tests) |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `IMPLEMENTATION_REFERENCE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1347,7 +1347,7 @@ behaviour in every touched file with no fix available.
 | Code-scanning alert | Trivy #380 |
 | PR | `BACKFILL_REQUIRED` — no PR opened at implementation time |
 | Local commit(s) | `943f646850` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
 | Source usage | `SOURCE_INCORPORATED` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1430,7 +1430,7 @@ affects the 4.1 line, or the `Dockerfile` slim step stops removing `node_modules
 | Code-scanning alert | n/a — no scanner detects this class; that is the point of the guard below |
 | PR | [#53](https://github.com/rubennati/cal.diy/pull/53) |
 | Local commit(s) | `da40b51567` (upstream cherry-pick), `97b74f8c46` (formatting), `0af5714714` (parity guard) |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` |
 | Source usage | `SOURCE_INCORPORATED` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1529,7 +1529,7 @@ F-05.
 | Code-scanning alert | n/a — no scanner reported this; CodeQL has no notion of owner-scoped resource identity |
 | PR | [#54](https://github.com/rubennati/cal.diy/pull/54) |
 | Local commit(s) | `819144124e` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1649,7 +1649,7 @@ reconciled against this divergence rather than merged blindly.
 | Code-scanning alert | n/a — no scanner models owner-scoped permissions; CodeQL cannot see that a function named `checkPermission` returns an unconditional `true` |
 | PR | [#56](https://github.com/rubennati/cal.diy/pull/56) |
 | Local commit(s) | `1bd84ef167` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1762,7 +1762,7 @@ product decision); `docs/PBAC_PLACEHOLDER_AUDIT.md`; `SECURITY_ASSURANCE.md` §2
 | Code-scanning alert | n/a — not a security finding |
 | PR | [#57](https://github.com/rubennati/cal.diy/pull/57) |
 | Local commit(s) | `a2954c7388` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1863,7 +1863,7 @@ preservation, deliberately separate).
 | Code-scanning alert | n/a |
 | PR | [#52](https://github.com/rubennati/cal.diy/pull/52) |
 | Local commit(s) | `2482ce292b` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -1980,7 +1980,7 @@ The completion rule these steps serve is
 | Code-scanning alert | n/a |
 | PR | [#62](https://github.com/rubennati/cal.diy/pull/62), [#63](https://github.com/rubennati/cal.diy/pull/63) |
 | Local commit(s) | `32584ba05b`, `00cb4797e0`, merged as `689bb82f96` |
-| Released in | not yet released |
+| Released in | [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6) |
 | Implementation relationship | `CAL_FORTE_NATIVE` |
 | Source usage | `NONE` |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
