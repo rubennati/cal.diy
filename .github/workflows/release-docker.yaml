@@ -473,7 +473,28 @@ jobs:
         run: |
           set -euo pipefail
 
-          digest_of() { docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' 2>/dev/null | jq -r '.digest // empty'; }
+          # A tag that has never been published (the normal case for a brand
+          # new release tag) makes `imagetools inspect` fail, and that failure
+          # must read as "absent" so reconcile() can create it. But collapsing
+          # every failure into "absent" is worse: an auth or network error
+          # would then look identical to "tag doesn't exist" and reconcile()
+          # would try to (re)create a tag whose real registry state is
+          # actually unknown. Only a confirmed not-found response counts as
+          # absence; anything else is surfaced and aborts the run.
+          digest_of() {
+            local ref="$1" out err rc=0
+            err="$(mktemp)"
+            trap 'rm -f "$err"' RETURN
+            out="$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' 2>"$err")" || rc=$?
+            if [[ $rc -ne 0 ]]; then
+              if grep -qiE 'not found$|manifest unknown|MANIFEST_UNKNOWN|NAME_UNKNOWN' "$err"; then
+                return 0
+              fi
+              cat "$err" >&2
+              return "$rc"
+            fi
+            jq -r '.digest // empty' <<< "$out"
+          }
 
           reconcile() {
             local ref="$1" want="$2" have
