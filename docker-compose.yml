@@ -32,7 +32,7 @@ services:
     networks:
       - stack
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
 
   calcom:
     # Override CALDIY_IMAGE with a reviewed GHCR digest for deployment.
@@ -128,7 +128,7 @@ services:
     networks:
       - stack
     ports:
-      - 5555:5555
+      - "127.0.0.1:5555:5555"
     env_file: .env
     environment:
       # POSTGRES_PASSWORD must not contain URL-reserved characters (/, +, =).
