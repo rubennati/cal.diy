@@ -172,7 +172,10 @@ Pushing the tag runs `Release Docker` in **promotion** mode. It builds nothing.
 6. resolves each recorded digest directly in the registry, by digest, not by candidate tag
 7. reconciles each final architecture tag: absent → create it from the validated digest;
    present and equal → already done, continue; present and different → **fail hard**, because
-   a published version tag is immutable and is never redirected
+   a published version tag is immutable and is never redirected. Tags are written with
+   `docker buildx imagetools create --prefer-index=false`: each candidate digest is a
+   single-platform manifest, and without that flag buildx wraps it in a new manifest list
+   whose digest is not the validated one
 8. moves the convenience `latest` pointer onto the release AMD64 digest
 9. downloads the candidate SBOMs produced against those same images
 10. writes `release-record.json`
