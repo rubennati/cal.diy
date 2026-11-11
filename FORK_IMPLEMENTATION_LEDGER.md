@@ -2088,3 +2088,173 @@ markdown linter worth blocking on, would each qualify.
 `.ai/quality-gates.md` → "No markdown gate exists"; `SECURITY_ASSURANCE.md` §1;
 `agents/rules/ci-check-failures.md`; `FORK_DIVERGENCE.md` → Maintenance And Developer
 Workflow Changes.
+
+---
+
+### FIL-0024 · Move the image and CI from Node 20 to Node 22
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | n/a |
+| PR | see the pull request that introduced this entry |
+| Local commit(s) | `04ca1f6acb` |
+| Released in | `unreleased` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_ADAPTATION` |
+| Source usage | `SOURCE_ADAPTED` |
+| Upstream source | `calcom/cal.diy` `793293c461` (#30416) — **not** cherry-picked; see below |
+| External source | n/a |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+| Licence obligations | none beyond the repository's existing MIT notice |
+| Independent verification | Both digests were resolved from the Docker Hub registry on 2026-11-11 rather than copied from upstream, which pins no digest |
+
+**Problem / desired outcome.** Node 20 reached end-of-life on 2026-04-30. Every image through
+`v6.2.0-6` therefore runs an interpreter that no longer receives security patches. Operators
+should get a runtime that is still supported.
+
+**Decision and rationale.** Upstream made the same move in `793293c461`. That patch cannot be
+taken with `git cherry-pick -x`: it edits unpinned `node:20` tags, while this fork pins every
+base image to a digest (`FIL-0004`), and three of its five files are workflows this fork
+removed (`FIL-0006`). A cherry-pick would have been a conflict resolution that kept one line
+of upstream's intent, so it is recorded honestly as an adaptation, `partial` in
+`UPSTREAM_REVIEW_LEDGER.md`.
+
+**Implementation summary.** `Dockerfile`: the `builder`, `builder-two` and `runner` stages
+move to `node:22@sha256:e13726ca…78cfb`. `apps/api/v2/Dockerfile`: the build stage moves to
+`node:22-alpine@sha256:5b05da3f…8a0bf`. `.github/workflows/forte-ci.yml`: `node-version` 20 →
+22, so install and `type-check:ci` run on the interpreter the image ships.
+
+**Intentional divergence from upstream.** The digest pins. A future sync must not replace
+them with upstream's floating `node:22` tag.
+
+**Impact assessment**
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Runtime returns to a supported Node line |
+| Privacy impact | none |
+| Attack-surface impact | unchanged — same image layout, newer interpreter and base OS packages |
+| New trust boundary | no |
+| New public endpoint | no |
+| New authenticated mutation | no |
+| New persistent state or schema | no |
+| New external communication | no |
+| Compatibility impact | Major interpreter version. No application source changed; upstream runs the same code on Node 22 |
+
+**Validation.** `forte-ci` on Node 22 for the introducing pull request. The image itself is
+validated by the `Release Docker` candidate run — native AMD64 and ARM64 builds, each
+runtime-tested — before any tag can be promoted; a Node 22 incompatibility fails there, not
+in production.
+
+**Guards / CI.** Dependabot's `docker` ecosystem entries watch both Dockerfiles for digest
+updates.
+
+**Rollback / disable.** Revert `04ca1f6acb`. This restores an end-of-life interpreter and
+should only be a stop-gap.
+
+**Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` (`793293c461`, `partial`);
+`.ai/sync-log.md` 2026-11-11.
+
+**Upstream re-evaluation trigger.** Node 22 leaves maintenance (2027-04-30), or upstream moves
+to Node 24.
+
+---
+
+### FIL-0023 · Upstream security intake and dependency round, 2026-11
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | n/a |
+| PR | see the pull request that introduced this entry |
+| Local commit(s) | `9d957d75c4`, `07987c47de`, `f2a64de1e8`, `f317897ad7` (upstream), `1fd882b231`, `7e61e3efe0` (fork) |
+| Released in | `unreleased` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` for the four upstream commits; `CAL_FORTE_NATIVE` for `1fd882b231` and `7e61e3efe0` |
+| Source usage | `SOURCE_INCORPORATED` for the four upstream commits; none for the two fork commits |
+| Upstream source | `calcom/cal.diy` `81ce067c1d` (#30359), `3030d88a1f` (#30461), `ef7954d16a` (#30546), `91eefbf9f4` (#30198) — one `git cherry-pick -x` each, upstream authorship and the `(cherry picked from commit …)` line preserved |
+| External source | n/a |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+| Licence obligations | none beyond the repository's existing MIT notice |
+| Independent verification | Every bumped version was confirmed to exist on the npm registry and to be the resolved version in `yarn.lock`; Trivy's "fixed version" for each advisory was read from the fork's own open code-scanning alerts, not from upstream's commit message |
+
+**Problem / desired outcome.** Between 2026-09-17 and 2026-11-11 the fork took nothing from
+upstream. In that window upstream fixed two input-handling defects, tightened its compose
+file, and cleared its CRITICAL dependency advisories; the fork's own Trivy scan stood at
+470 open alerts on 2026-11-11 — 11 CRITICAL and 180 HIGH. An operator pulling the next image should get
+those fixes.
+
+**Decision and rationale.** `UPSTREAM_SYNC.md` → *Security Fix Priority* makes
+security-relevant upstream commits take-by-default, so the four were taken and the other 27
+commits of the range were dispositioned without intake. The fork-owned commit exists because
+upstream's audit stopped at CRITICAL: ten packages that the root manifest already pins by
+resolution still carried HIGH advisories with a patched release in the same major line.
+Raising an existing pin is the smallest change that clears them. Transitive packages that are
+**not** pinned today (`ws`, `@xmldom/xmldom`, `brace-expansion`, `fast-uri` and others) were
+deliberately left alone — adding new resolutions for them widens what the fork has to
+maintain and belongs in a round of its own.
+
+**Implementation summary.**
+
+- `81ce067c1d` → `docker-compose.yml`: Redis and Prisma Studio ports bound to `127.0.0.1`.
+- `3030d88a1f` → new `packages/lib/getBlacklistedGuestEmails.ts`, used by
+  `checkIfBookerEmailIsBlocked`, `RegularBookingService`, `addGuests.handler` and
+  `checkIfUserEmailVerificationRequired.handler`. Entries are trimmed, lower-cased and
+  reduced to their base address before comparison.
+- `ef7954d16a` → `packages/features/eventtypes/lib/eventNaming.ts`: user-supplied values go
+  through a replacer function instead of being used as a replacement pattern.
+- `91eefbf9f4` → manifests and lockfile: `next` 16.4.3 / 15.5.28, `@sentry/nextjs` 10.75.2,
+  `handlebars` 4.7.10, `trigger.dev` and `@trigger.dev/sdk` 4.5.4, `next-auth` 4.24.15,
+  `proxy-addr` 2.0.8, `shell-quote` 1.11.0. Three `package.json` conflicts resolved to
+  upstream's versions; `yarn.lock` regenerated rather than hand-merged.
+- `1fd882b231` and `7e61e3efe0` → root resolutions, final values: `axios` 1.20.0,
+  `follow-redirects` 1.16.1, `protobufjs` 7.6.5, `node-forge` 1.4.3, `form-data` 4.0.6,
+  `hono` 4.12.34, `multer` 2.5.0, `@modelcontextprotocol/sdk` 1.32.0, `vite` 6.4.5,
+  `js-yaml` 4.3.2, `systeminformation` 5.33.16, `tar` 7.5.21; the direct `axios` and `vite`
+  declarations move with them, and `trigger.dev` / `@trigger.dev/sdk` go to 4.5.9. Two
+  commits because the first targeted the *first* patched release of each package, and the
+  pull request's own Trivy scan then showed newer advisories on several of those releases.
+
+**Intentional divergence from upstream.** The twelve resolutions and the `trigger.dev` pair
+are ahead of upstream (which stopped at `trigger.dev` 4.5.4; that release carries two HIGH
+advisories fixed in 4.5.6). A future sync should keep whichever side is higher, not restore upstream's value.
+
+**Impact assessment**
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Closes a guest-email blocklist bypass and a replacement-pattern injection in event names; removes the CRITICAL and a large share of the HIGH dependency findings |
+| Privacy impact | none |
+| Attack-surface impact | reduced — no new surface; two input paths tightened |
+| New trust boundary | no |
+| New public endpoint | no |
+| New authenticated mutation | no |
+| New persistent state or schema | no |
+| New external communication | no |
+| Compatibility impact | `next` moves one minor (16.3 → 16.4) and `@sentry/nextjs` 42 minors within 10.x. `BLACKLISTED_GUEST_EMAILS` entries that only failed to match because of whitespace, case or a `+tag` now block as written |
+
+**Validation.** Locally on Node 22: `yarn type-check:ci --force` — 10 of 10 tasks, 0 errors,
+run after the upstream intake and again after each fork commit. `TZ=UTC yarn test` — 4267
+tests in 406 files; one full run was completely clean. The other runs reported three
+unhandled rejections from `reschedule.test.ts` (an un-awaited `vi.waitFor` in
+`packages/testing/src/lib/bookingScenario/expects.ts`), and one also failed a wall-clock
+benchmark in the Google Calendar tests. **Both are pre-existing:** three consecutive full runs
+on the pre-intake `develop` (`b4196697d8`) showed the same three rejections every time, plus
+other load-dependent failures in one of them. They are recorded as an existing flaky-test
+defect, not as a regression from this round. Focused runs of the three test files touched by
+the intake: 83 of 83. `git diff --check` clean. On the pull request the open Trivy alerts
+fell from 470 (11 CRITICAL, 180 HIGH) to 0 CRITICAL before the second fork commit.
+
+**Guards / CI.** The upstream commits bring their own regression tests
+(`getBlacklistedGuestEmails.test.ts`, `eventNaming.test.ts`, additions to
+`booking-validations.test.ts`). `forte-trivy` reports any pin that falls behind again.
+
+**Rollback / disable.** Each commit reverts independently. Reverting `f317897ad7` or
+`1fd882b231` reinstates known-vulnerable versions.
+
+**Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` → *Review round 2026-11-11*;
+`.ai/sync-log.md` 2026-11-11.
+
+**Upstream re-evaluation trigger.** Upstream raises any of these pins past the fork's
+value, or a new advisory lands on one of them.

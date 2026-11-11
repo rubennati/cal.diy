@@ -10,6 +10,15 @@
 # `assert_no_drift` verifies that those are the ONLY differences. A harness that
 # silently tests a stale copy of the logic is worse than no harness.
 #
+# `digest_of()` is NOT hand-duplicated the same way: unlike reconcile()'s state
+# machine, its whole job is to tell a genuinely absent tag apart from a lookup
+# that failed for some other reason, and a hand-written mock of that judgment
+# call is exactly the kind of stale copy this file warns about — it is what
+# let the real bug ship in the first place (see the "real digest_of()" section
+# near the end). Those tests extract digest_of() and reconcile() from
+# release-docker.yaml verbatim and execute them under `set -euo pipefail`
+# against a stubbed `docker`, so there is nothing to keep in sync by hand.
+#
 # Registry state is simulated in a temp directory (no `declare -A`, so this runs
 # on macOS's bash 3.2 as well as the runners' bash 5). Nothing is pulled,
 # pushed or built.
@@ -242,6 +251,139 @@ assert_no_drift() {
   return 1
 }
 if assert_no_drift; then pass=$((pass+1)); else fail=$((fail+1)); fi
+
+echo
+echo "=== digest_of()/reconcile(): the REAL implementation, under set -euo pipefail ==="
+# This is the section that would have caught the production bug: digest_of()
+# swallowed a lookup failure's stderr internally, and under set -euo pipefail
+# that failure aborted the calling assignment (have="$(digest_of "$ref")")
+# before reconcile() ever reached the code that was supposed to handle "tag
+# doesn't exist yet". Exercising the mock reconcile() above never touches that
+# path, because the mock's digest_of is a plain file read that cannot fail.
+# So here we extract the real digest_of()/reconcile() out of the workflow file
+# and run them, unmodified, against a stubbed `docker` on PATH.
+WF=".github/workflows/release-docker.yaml"
+if [[ ! -f "$WF" ]]; then
+  echo "  SKIP  $WF not found (run from the repository root)"
+elif ! command -v jq >/dev/null 2>&1; then
+  echo "  SKIP  jq is not installed locally"
+else
+  extract_fn() { sed -n "/^ *$1() {\$/,/^ *}\$/p" "$2"; }
+  DIGEST_OF_SRC="$(extract_fn digest_of "$WF")"
+  RECONCILE_SRC="$(extract_fn reconcile "$WF")"
+
+  FAKE_REG_DIR="$(mktemp -d)"
+  FAKE_BIN_DIR="$(mktemp -d)"
+  trap 'rm -rf "$REG" "$FAKE_REG_DIR" "$FAKE_BIN_DIR"' EXIT
+
+  # A minimal `docker` stand-in. It answers `buildx imagetools inspect/create`
+  # against a one-file-per-ref registry directory ($FAKE_REGISTRY), and — when
+  # FAKE_DOCKER_FORCE_ERROR=auth — always fails the way an unauthorized
+  # registry call really fails, to exercise the "unexpected error" path.
+  cat > "$FAKE_BIN_DIR/docker" <<'DOCKER_STUB'
+#!/usr/bin/env bash
+set -uo pipefail
+key() { printf '%s' "$1" | tr -c 'A-Za-z0-9' '_'; }
+if [[ "${FAKE_DOCKER_FORCE_ERROR:-}" == "auth" ]]; then
+  echo "ERROR: failed to authorize: failed to fetch anonymous token: unexpected status from GET request to https://ghcr.io/token?scope=repository:example/repo:pull&service=ghcr.io: 403 Forbidden" >&2
+  exit 1
+fi
+case "$3" in
+  inspect)
+    f="$FAKE_REGISTRY/$(key "$4")"
+    if [[ -f "$f" ]]; then
+      printf '{"digest":"%s"}\n' "$(cat "$f")"
+      exit 0
+    fi
+    echo "ERROR: $4: not found" >&2
+    exit 1
+    ;;
+  create)
+    printf '%s' "${6#*@}" > "$FAKE_REGISTRY/$(key "$5")"
+    exit 0
+    ;;
+  *)
+    echo "fake docker: unhandled subcommand '$3'" >&2
+    exit 99
+    ;;
+esac
+DOCKER_STUB
+  chmod +x "$FAKE_BIN_DIR/docker"
+
+  REF="ghcr.io/example/repo:vtest"
+  WANT="sha256:cccc000000000000000000000000000000000000000000000000000000000000"
+  OTHER2="sha256:dddd000000000000000000000000000000000000000000000000000000000000"
+
+  # <initial digest, or "" for absent> <mode: normal|force_error> <call: digest_of|reconcile> <want digest>
+  run_case() {
+    local initial="$1" mode="$2" call="$3" want="$4"
+    rm -rf "$FAKE_REG_DIR"; mkdir -p "$FAKE_REG_DIR"
+    [[ -n "$initial" ]] && printf '%s' "$initial" > "$FAKE_REG_DIR/$(key "$REF")"
+    local script_file; script_file="$(mktemp)"
+    {
+      echo 'set -euo pipefail'
+      echo "IMAGE_NAME='ghcr.io/example/repo'"
+      printf '%s\n' "$DIGEST_OF_SRC"
+      printf '%s\n' "$RECONCILE_SRC"
+      if [[ "$call" == digest_of ]]; then
+        printf 'have="$(digest_of %q)"\n' "$REF"
+        echo 'echo "REACHED:$have"'
+      else
+        printf 'reconcile %q %q\n' "$REF" "$want"
+        echo 'echo "REACHED:ok"'
+      fi
+    } > "$script_file"
+    local errf; errf="$(mktemp)"
+    if [[ "$mode" == force_error ]]; then
+      OUT="$(FAKE_DOCKER_FORCE_ERROR=auth FAKE_REGISTRY="$FAKE_REG_DIR" PATH="$FAKE_BIN_DIR:$PATH" bash "$script_file" 2>"$errf")"; RC=$?
+    else
+      OUT="$(FAKE_REGISTRY="$FAKE_REG_DIR" PATH="$FAKE_BIN_DIR:$PATH" bash "$script_file" 2>"$errf")"; RC=$?
+    fi
+    ERR="$(cat "$errf")"
+    FINAL="$(cat "$FAKE_REG_DIR/$(key "$REF")" 2>/dev/null || true)"
+    rm -f "$script_file" "$errf"
+  }
+
+  # <name> <want rc> <stdout must contain, or ""> <stderr must contain, or ""> <final registry digest, "" = absent>
+  dcheck() {
+    local name="$1" want_rc="$2" want_out="$3" want_err="$4" want_final="$5" ok=1
+    [[ "$RC" -eq "$want_rc" ]] || ok=0
+    [[ -n "$want_out" ]] && { grep -qF "$want_out" <<< "$OUT" || ok=0; }
+    [[ -n "$want_err" ]] && { grep -qF "$want_err" <<< "$ERR" || ok=0; }
+    [[ "$FINAL" == "$want_final" ]] || ok=0
+    if [[ "$ok" == 1 ]]; then
+      printf '  PASS  %s\n' "$name"; pass=$((pass+1))
+    else
+      printf '  FAIL  %s\n        rc=%s(want %s) out=%s err=%s final=%s(want %s)\n' \
+        "$name" "$RC" "$want_rc" "$OUT" "$ERR" "$FINAL" "$want_final"
+      fail=$((fail+1))
+    fi
+  }
+
+  run_case ""      normal      digest_of ""
+  dcheck "digest_of: confirmed absent tag -> empty, success" 0 "REACHED:" "" ""
+
+  run_case "$WANT" normal      digest_of ""
+  dcheck "digest_of: existing tag -> returns its real digest" 0 "REACHED:$WANT" "" "$WANT"
+
+  run_case ""      force_error digest_of ""
+  dcheck "digest_of: unexpected lookup failure aborts under set -e, and the error is not swallowed" \
+    1 "" "403 Forbidden" ""
+
+  run_case ""       normal      reconcile "$WANT"
+  dcheck "reconcile: absent tag -> created" 0 "REACHED:ok" "" "$WANT"
+
+  run_case "$WANT"  normal      reconcile "$WANT"
+  dcheck "reconcile: idempotent existing correct tag -> no-op" 0 "nothing to do" "" "$WANT"
+
+  run_case "$OTHER2" normal     reconcile "$WANT"
+  dcheck "reconcile: conflicting immutable tag -> hard fail, tag left untouched" \
+    1 "will not be redirected" "" "$OTHER2"
+
+  run_case ""       force_error reconcile "$WANT"
+  dcheck "reconcile: unexpected lookup failure aborts before ever attempting to create" \
+    1 "" "403 Forbidden" ""
+fi
 
 echo
 echo "$pass passed, $fail failed"
