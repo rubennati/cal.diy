@@ -461,7 +461,8 @@ Node 20, end-of-life since 2026-04-30.
   manifests resolved to upstream's versions, lockfile regenerated
 - `793293c461` → `04ca1f6acb` — **partial**, as a fork adaptation: Node 22 base images,
   digest-pinned, plus `forte-ci` on Node 22 (`FIL-0024`)
-- fork-owned `1fd882b231` — ten pinned resolutions raised to patched releases (`FIL-0023`)
+- fork-owned `1fd882b231` and `7e61e3efe0` — twelve pinned resolutions and the `trigger.dev` pair
+  raised to patched releases (`FIL-0023`)
 - fork-owned `1924b7221f` — `scorecard-action` v2.4.0 → v2.5.0; the old version pulled its
   image from `gcr.io/openssf`, which now refuses anonymous pulls
 
@@ -474,11 +475,15 @@ packages the root manifest does not pin (`ws`, `@xmldom/xmldom`, `brace-expansio
 `fast-uri`, `uuid`, `effect` and others) remain open; clearing them needs new resolutions
 and a round of its own.
 
-**Checks:** `yarn type-check:ci --force` 10/10 tasks, 0 errors (run after the intake and
-again after the fork bumps) · `TZ=UTC yarn test` 4267 passed, 47 skipped, on a clean second
-run — the first run showed three unhandled rejections from `reschedule.test.ts` with all
-tests passing, not reproducible in isolation · focused intake tests 83/83 ·
-`git diff --check` clean. Details in `FIL-0023`.
+**Checks:** `yarn type-check:ci --force` 10/10 tasks, 0 errors (after the intake and after
+each fork commit) · `TZ=UTC yarn test` 4267 tests, one fully clean run · focused intake tests
+83/83 · `git diff --check` clean. Details in `FIL-0023`.
+
+**Flaky tests found, not fixed:** `reschedule.test.ts` raises three unhandled rejections in
+most full runs (un-awaited `vi.waitFor` in `packages/testing/.../expects.ts`), and a
+wall-clock benchmark in the Google Calendar tests fails under load. Three baseline runs on
+pre-intake `develop` `b4196697d8` reproduced the rejections every time, so they predate this
+round. `forte-ci` does not run unit tests, so nothing gates on them today.
 
 **Observed, not changed:**
 - Every upstream push to `main` triggers a failing `Release Docker` run there. `main` carries

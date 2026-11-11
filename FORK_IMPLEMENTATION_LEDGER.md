@@ -2169,10 +2169,10 @@ to Node 24.
 | Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
 | GitHub issue | n/a |
 | PR | see the pull request that introduced this entry |
-| Local commit(s) | `9d957d75c4`, `07987c47de`, `f2a64de1e8`, `f317897ad7` (upstream), `1fd882b231` (fork) |
+| Local commit(s) | `9d957d75c4`, `07987c47de`, `f2a64de1e8`, `f317897ad7` (upstream), `1fd882b231`, `7e61e3efe0` (fork) |
 | Released in | `unreleased` |
-| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` for the four upstream commits; `CAL_FORTE_NATIVE` for `1fd882b231` |
-| Source usage | `SOURCE_INCORPORATED` for the four upstream commits; none for `1fd882b231` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` for the four upstream commits; `CAL_FORTE_NATIVE` for `1fd882b231` and `7e61e3efe0` |
+| Source usage | `SOURCE_INCORPORATED` for the four upstream commits; none for the two fork commits |
 | Upstream source | `calcom/cal.diy` `81ce067c1d` (#30359), `3030d88a1f` (#30461), `ef7954d16a` (#30546), `91eefbf9f4` (#30198) — one `git cherry-pick -x` each, upstream authorship and the `(cherry picked from commit …)` line preserved |
 | External source | n/a |
 | Licence disposition | `PERMISSIVE_COMPATIBLE` |
@@ -2208,13 +2208,17 @@ maintain and belongs in a round of its own.
   `handlebars` 4.7.10, `trigger.dev` and `@trigger.dev/sdk` 4.5.4, `next-auth` 4.24.15,
   `proxy-addr` 2.0.8, `shell-quote` 1.11.0. Three `package.json` conflicts resolved to
   upstream's versions; `yarn.lock` regenerated rather than hand-merged.
-- `1fd882b231` → root resolutions: `axios` 1.20.0, `follow-redirects` 1.16.1, `protobufjs`
-  7.6.1, `node-forge` 1.4.1, `form-data` 4.0.6, `hono` 4.12.25, `multer` 2.5.0,
-  `@modelcontextprotocol/sdk` 1.32.0, `vite` 6.4.4, `js-yaml` 4.3.0; the direct `axios` and
-  `vite` declarations move with them.
+- `1fd882b231` and `7e61e3efe0` → root resolutions, final values: `axios` 1.20.0,
+  `follow-redirects` 1.16.1, `protobufjs` 7.6.5, `node-forge` 1.4.3, `form-data` 4.0.6,
+  `hono` 4.12.34, `multer` 2.5.0, `@modelcontextprotocol/sdk` 1.32.0, `vite` 6.4.5,
+  `js-yaml` 4.3.2, `systeminformation` 5.33.16, `tar` 7.5.21; the direct `axios` and `vite`
+  declarations move with them, and `trigger.dev` / `@trigger.dev/sdk` go to 4.5.9. Two
+  commits because the first targeted the *first* patched release of each package, and the
+  pull request's own Trivy scan then showed newer advisories on several of those releases.
 
-**Intentional divergence from upstream.** The ten resolutions in `1fd882b231` are ahead of
-upstream. A future sync should keep whichever side is higher, not restore upstream's value.
+**Intentional divergence from upstream.** The twelve resolutions and the `trigger.dev` pair
+are ahead of upstream (which stopped at `trigger.dev` 4.5.4; that release carries two HIGH
+advisories fixed in 4.5.6). A future sync should keep whichever side is higher, not restore upstream's value.
 
 **Impact assessment**
 
@@ -2230,13 +2234,17 @@ upstream. A future sync should keep whichever side is higher, not restore upstre
 | New external communication | no |
 | Compatibility impact | `next` moves one minor (16.3 → 16.4) and `@sentry/nextjs` 42 minors within 10.x. `BLACKLISTED_GUEST_EMAILS` entries that only failed to match because of whitespace, case or a `+tag` now block as written |
 
-**Validation.** On the branch head, locally on Node 22: `yarn type-check:ci --force` — 10 of
-10 tasks, 0 errors, run once after the upstream intake and again after the fork bumps.
-`TZ=UTC yarn test` — 406 files, 4267 tests passed, 47 skipped. The first full run reported
-three unhandled rejections from `reschedule.test.ts` with every test passing; the file passed
-twice in isolation and a second full run was clean, so this is recorded as a load-dependent
-timing flake in that test, not as a regression. Focused runs of the three test files touched
-by the intake: 83 of 83. `git diff --check` clean.
+**Validation.** Locally on Node 22: `yarn type-check:ci --force` — 10 of 10 tasks, 0 errors,
+run after the upstream intake and again after each fork commit. `TZ=UTC yarn test` — 4267
+tests in 406 files; one full run was completely clean. The other runs reported three
+unhandled rejections from `reschedule.test.ts` (an un-awaited `vi.waitFor` in
+`packages/testing/src/lib/bookingScenario/expects.ts`), and one also failed a wall-clock
+benchmark in the Google Calendar tests. **Both are pre-existing:** three consecutive full runs
+on the pre-intake `develop` (`b4196697d8`) showed the same three rejections every time, plus
+other load-dependent failures in one of them. They are recorded as an existing flaky-test
+defect, not as a regression from this round. Focused runs of the three test files touched by
+the intake: 83 of 83. `git diff --check` clean. On the pull request the open Trivy alerts
+fell from 470 (11 CRITICAL, 180 HIGH) to 0 CRITICAL before the second fork commit.
 
 **Guards / CI.** The upstream commits bring their own regression tests
 (`getBlacklistedGuestEmails.test.ts`, `eventNaming.test.ts`, additions to
@@ -2248,5 +2256,5 @@ by the intake: 83 of 83. `git diff --check` clean.
 **Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` → *Review round 2026-11-11*;
 `.ai/sync-log.md` 2026-11-11.
 
-**Upstream re-evaluation trigger.** Upstream raises any of the ten pins past the fork's
+**Upstream re-evaluation trigger.** Upstream raises any of these pins past the fork's
 value, or a new advisory lands on one of them.
