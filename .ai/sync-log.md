@@ -421,6 +421,79 @@ describe the step. Decide whether to automate it or document it as deliberately 
 
 ---
 
+## 2026-09-17 — `v6.2.0-7` failed at publication (recorded 2026-11-11)
+
+**Context:** backfilled entry; nothing was written at the time. `v6.2.0-7` was meant to ship
+the Next.js 16.3.5 update (`b18b85a9d6`, PR #74). The promotion PR (#75) merged and the
+annotated tag was pushed on `release` `c500a30a3e`.
+
+**What happened:** Release Docker run `35167714218` passed source-identity validation and
+then failed in *Promote validated digests to final architecture tags*. `digest_of()`
+swallowed a registry lookup failure under `set -e`, so the step exited before any final tag
+was created. No GHCR tag, no GitHub Release and no release record exist for `v6.2.0-7`.
+
+**Follow-up at the time:** the bug was fixed on `develop` in `487921ad57` (PR #76) and a new
+candidate run (`35244715493`) succeeded, but no new build number was cut. `develop` and
+`release` have been one promotion merge and two commits apart since.
+
+**Disposition:** per [../RELEASE_PROCESS.md](../RELEASE_PROCESS.md) → *Failure And Rollback
+Rules* the tag stays as failed-release evidence and is never reused. The fix lives in the
+workflow file, and a tag run executes the workflow from the tagged commit, so re-running the
+`v6.2.0-7` tag would re-run the broken step. The next release is `v6.2.0-8`.
+
+---
+
+## 2026-11-11 — Upstream security intake, dependency round, Node 22
+
+**Context:** first maintenance pass since 2026-09-17. `main` had advanced 31 commits past the
+last reviewed point, the fork's Trivy scan showed 470 open alerts (11 CRITICAL, 180 HIGH),
+`forte-scorecard` had failed every week since at least 2026-09-21, and the image still ran
+Node 20, end-of-life since 2026-04-30.
+
+**Upstream base reviewed:** `176037d0af..ef7954d16a` (31 commits). `main` mirrors
+`ef7954d16a`.
+
+**Taken:**
+- `81ce067c1d` → `9d957d75c4` — compose ports bound to loopback
+- `3030d88a1f` → `07987c47de` — `BLACKLISTED_GUEST_EMAILS` blocklist bypass
+- `ef7954d16a` → `f2a64de1e8` — literal insertion in custom event names
+- `91eefbf9f4` → `f317897ad7` — dependency audit (CRITICAL advisories); conflicts in three
+  manifests resolved to upstream's versions, lockfile regenerated
+- `793293c461` → `04ca1f6acb` — **partial**, as a fork adaptation: Node 22 base images,
+  digest-pinned, plus `forte-ci` on Node 22 (`FIL-0024`)
+- fork-owned `1fd882b231` and `7e61e3efe0` — twelve pinned resolutions and the `trigger.dev` pair
+  raised to patched releases (`FIL-0023`)
+- fork-owned `1924b7221f` — `scorecard-action` v2.4.0 → v2.5.0; the old version pulled its
+  image from `gcr.io/openssf`, which now refuses anonymous pulls
+
+**Intentionally NOT taken (+ reason):** the other 26 commits, each with a row in
+[../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md). None is security-relevant. Six
+are `candidate` for a later functional round: `e8afecd163` (emails when a calendar
+integration fails), `abffde336e` and `b879a54250` (zero-decimal currencies charged at 1% in
+PayPal and HitPay), `6bc4529822`, `569a389e84`, `2e412471fc`. HIGH findings on transitive
+packages the root manifest does not pin (`ws`, `@xmldom/xmldom`, `brace-expansion`,
+`fast-uri`, `uuid`, `effect` and others) remain open; clearing them needs new resolutions
+and a round of its own.
+
+**Checks:** `yarn type-check:ci --force` 10/10 tasks, 0 errors (after the intake and after
+each fork commit) · `TZ=UTC yarn test` 4267 tests, one fully clean run · focused intake tests
+83/83 · `git diff --check` clean. Details in `FIL-0023`.
+
+**Flaky tests found, not fixed:** `reschedule.test.ts` raises three unhandled rejections in
+most full runs (un-awaited `vi.waitFor` in `packages/testing/.../expects.ts`), and a
+wall-clock benchmark in the Google Calendar tests fails under load. Three baseline runs on
+pre-intake `develop` `b4196697d8` reproduced the rejections every time, so they predate this
+round. `forte-ci` does not run unit tests, so nothing gates on them today.
+
+**Observed, not changed:**
+- Every upstream push to `main` triggers a failing `Release Docker` run there. `main` carries
+  upstream's file at the same path as the fork's workflow, so GitHub cannot disable one
+  without the other. Cosmetic; it publishes nothing.
+- Dependabot alerts are disabled in the repository settings, and `.github/dependabot.yml` has
+  produced no pull request. Trivy is currently the only dependency signal.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>
