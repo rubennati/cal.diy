@@ -38,14 +38,20 @@ reg_set() { printf '%s' "$2" > "$REG/$(key "$1")"; }
 reg_get() { cat "$REG/$(key "$1")" 2>/dev/null || true; }
 
 digest_of() { reg_get "$1"; }
-fake_create() { reg_set "$2" "${3##*@}"; }   # --tag <ref> <image@digest>
+# --prefer-index=false --tag <ref> <image@digest>. Without the flag, buildx
+# wraps a single-platform manifest in a new manifest list with a different
+# digest, so the stand-in stores a different digest too.
+WRAPPED="sha256:eeee000000000000000000000000000000000000000000000000000000000000"
+fake_create() {
+  if [[ "$1" == "--prefer-index=false" ]]; then reg_set "$3" "${4##*@}"; else reg_set "$2" "$WRAPPED"; fi
+}
 
 # --- workflow logic; only the two marked lines differ from release-docker.yaml
 reconcile() {
   local ref="$1" want="$2" have
   have="$(digest_of "$ref")"
   if [[ -z "$have" ]]; then
-    fake_create --tag "$ref" "$IMAGE_NAME@$want"
+    fake_create --prefer-index=false --tag "$ref" "$IMAGE_NAME@$want"
     have="$(digest_of "$ref")"
     if [[ "$have" != "$want" ]]; then
       echo "::error::$ref resolved to $have after creation, expected $want"
@@ -102,7 +108,7 @@ echo "=== latest pointer (mutable, so repeating must be safe) ==="
 reg_reset
 latest_move() { # idempotent move of `latest` onto the release AMD64 digest
   local have; have="$(digest_of "$IMAGE_NAME:latest")"
-  [[ "$have" != "$WANT_AMD" ]] && fake_create --tag "$IMAGE_NAME:latest" "$IMAGE_NAME@$WANT_AMD"
+  [[ "$have" != "$WANT_AMD" ]] && fake_create --prefer-index=false --tag "$IMAGE_NAME:latest" "$IMAGE_NAME@$WANT_AMD"
   digest_of "$IMAGE_NAME:latest"
 }
 a="$(latest_move)"; b="$(latest_move)"
@@ -230,9 +236,17 @@ assert_workflow_freeze() {
   else
     echo "  FAIL  release assets are not digest-verified"; bad=1
   fi
+  # 4. every tag write must copy the manifest as-is. Without the flag buildx
+  #    wraps a single-platform manifest in a new list and the published digest
+  #    stops being the validated one (the v6.2.0-7 and v6.2.0-8 failures).
+  if grep -E '^ *docker buildx imagetools create ' "$wf" | grep -vq -- '--prefer-index=false'; then
+    echo "  FAIL  an imagetools create call lacks --prefer-index=false"; bad=1
+  else
+    echo "  PASS  every tag write preserves the validated digest (--prefer-index=false)"
+  fi
   return $bad
 }
-if assert_workflow_freeze; then pass=$((pass+4)); else fail=$((fail+1)); fi
+if assert_workflow_freeze; then pass=$((pass+5)); else fail=$((fail+1)); fi
 
 echo
 echo "=== harness tests the SHIPPED logic, not a stale copy ==="
@@ -299,7 +313,14 @@ case "$3" in
     exit 1
     ;;
   create)
-    printf '%s' "${6#*@}" > "$FAKE_REGISTRY/$(key "$5")"
+    # Mirrors buildx: a single-platform source is copied digest-for-digest
+    # only with --prefer-index=false; otherwise it is wrapped in a new
+    # manifest list, which has a different digest.
+    if [[ "$4" == "--prefer-index=false" ]]; then
+      printf '%s' "${7#*@}" > "$FAKE_REGISTRY/$(key "$6")"
+    else
+      printf '%s' "sha256:eeee000000000000000000000000000000000000000000000000000000000000" > "$FAKE_REGISTRY/$(key "$5")"
+    fi
     exit 0
     ;;
   *)
