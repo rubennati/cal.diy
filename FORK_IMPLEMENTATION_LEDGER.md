@@ -2088,3 +2088,73 @@ markdown linter worth blocking on, would each qualify.
 `.ai/quality-gates.md` → "No markdown gate exists"; `SECURITY_ASSURANCE.md` §1;
 `agents/rules/ci-check-failures.md`; `FORK_DIVERGENCE.md` → Maintenance And Developer
 Workflow Changes.
+
+---
+
+### FIL-0024 · Move the image and CI from Node 20 to Node 22
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | n/a |
+| PR | see the pull request that introduced this entry |
+| Local commit(s) | `04ca1f6acb` |
+| Released in | `unreleased` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_ADAPTATION` |
+| Source usage | `SOURCE_ADAPTED` |
+| Upstream source | `calcom/cal.diy` `793293c461` (#30416) — **not** cherry-picked; see below |
+| External source | n/a |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+| Licence obligations | none beyond the repository's existing MIT notice |
+| Independent verification | Both digests were resolved from the Docker Hub registry on 2026-11-11 rather than copied from upstream, which pins no digest |
+
+**Problem / desired outcome.** Node 20 reached end-of-life on 2026-04-30. Every image through
+`v6.2.0-6` therefore runs an interpreter that no longer receives security patches. Operators
+should get a runtime that is still supported.
+
+**Decision and rationale.** Upstream made the same move in `793293c461`. That patch cannot be
+taken with `git cherry-pick -x`: it edits unpinned `node:20` tags, while this fork pins every
+base image to a digest (`FIL-0004`), and three of its five files are workflows this fork
+removed (`FIL-0006`). A cherry-pick would have been a conflict resolution that kept one line
+of upstream's intent, so it is recorded honestly as an adaptation, `partial` in
+`UPSTREAM_REVIEW_LEDGER.md`.
+
+**Implementation summary.** `Dockerfile`: the `builder`, `builder-two` and `runner` stages
+move to `node:22@sha256:e13726ca…78cfb`. `apps/api/v2/Dockerfile`: the build stage moves to
+`node:22-alpine@sha256:5b05da3f…8a0bf`. `.github/workflows/forte-ci.yml`: `node-version` 20 →
+22, so install and `type-check:ci` run on the interpreter the image ships.
+
+**Intentional divergence from upstream.** The digest pins. A future sync must not replace
+them with upstream's floating `node:22` tag.
+
+**Impact assessment**
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Runtime returns to a supported Node line |
+| Privacy impact | none |
+| Attack-surface impact | unchanged — same image layout, newer interpreter and base OS packages |
+| New trust boundary | no |
+| New public endpoint | no |
+| New authenticated mutation | no |
+| New persistent state or schema | no |
+| New external communication | no |
+| Compatibility impact | Major interpreter version. No application source changed; upstream runs the same code on Node 22 |
+
+**Validation.** `forte-ci` on Node 22 for the introducing pull request. The image itself is
+validated by the `Release Docker` candidate run — native AMD64 and ARM64 builds, each
+runtime-tested — before any tag can be promoted; a Node 22 incompatibility fails there, not
+in production.
+
+**Guards / CI.** Dependabot's `docker` ecosystem entries watch both Dockerfiles for digest
+updates.
+
+**Rollback / disable.** Revert `04ca1f6acb`. This restores an end-of-life interpreter and
+should only be a stop-gap.
+
+**Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` (`793293c461`, `partial`);
+`.ai/sync-log.md` 2026-11-11.
+
+**Upstream re-evaluation trigger.** Node 22 leaves maintenance (2027-04-30), or upstream moves
+to Node 24.
