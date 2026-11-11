@@ -2102,7 +2102,7 @@ __metadata:
     tailwindcss: "npm:4.1.17"
     ts-jest: "npm:29.1.4"
     typescript: "npm:5.9.3"
-    vite: "npm:6.4.4"
+    vite: "npm:6.4.5"
     vite-plugin-dts: "npm:4.5.4"
     vite-plugin-inspect: "npm:0.8.4"
   peerDependencies:
@@ -2341,7 +2341,7 @@ __metadata:
     postcss: "npm:8.5.6"
     tailwindcss: "npm:4.1.17"
     typescript: "npm:5.9.3"
-    vite: "npm:6.4.4"
+    vite: "npm:6.4.5"
     vite-plugin-environment: "npm:1.1.3"
   languageName: unknown
   linkType: soft
@@ -2358,7 +2358,7 @@ __metadata:
     "@vitejs/plugin-react": "npm:5.1.2"
     npm-run-all: "npm:4.1.5"
     typescript: "npm:5.9.3"
-    vite: "npm:6.4.4"
+    vite: "npm:6.4.5"
   peerDependencies:
     react: ^18.2.0 || ^19.0.0
     react-dom: ^18.2.0 || ^19.0.0
@@ -2371,7 +2371,7 @@ __metadata:
   dependencies:
     "@calcom/embed-core": "workspace:*"
     typescript: "npm:5.9.3"
-    vite: "npm:6.4.4"
+    vite: "npm:6.4.5"
   languageName: unknown
   linkType: soft
 
@@ -2504,7 +2504,7 @@ __metadata:
     "@tanstack/react-table": "npm:8.20.6"
     "@tanstack/react-virtual": "npm:3.10.9"
     "@testing-library/react-hooks": "npm:8.0.1"
-    "@trigger.dev/sdk": "npm:4.5.4"
+    "@trigger.dev/sdk": "npm:4.5.9"
     "@types/deasync": "npm:^0"
     "@types/web-push": "npm:3.6.3"
     "@vercel/functions": "npm:1.4.0"
@@ -2519,7 +2519,7 @@ __metadata:
     recharts: "npm:3.0.2"
     stripe: "npm:9.16.0"
     stripe-event-types: "npm:3.1.0"
-    trigger.dev: "npm:4.5.4"
+    trigger.dev: "npm:4.5.9"
     web-push: "npm:3.6.7"
     zustand: "npm:4.5.2"
   peerDependencies:
@@ -2886,7 +2886,7 @@ __metadata:
     "@types/node": "npm:20.17.23"
     "@vitejs/plugin-react": "npm:5.1.2"
     typescript: "npm:5.9.3"
-    vite: "npm:6.4.4"
+    vite: "npm:6.4.5"
     vite-plugin-dts: "npm:4.5.4"
     vite-plugin-environment: "npm:1.1.3"
   peerDependencies:
@@ -10985,13 +10985,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@protobufjs/inquire@npm:^1.1.2":
-  version: 1.1.2
-  resolution: "@protobufjs/inquire@npm:1.1.2"
-  checksum: 10/259756489c75a751552df60d18f82503d2534855646397b96b91cf15807fa852e99bd9eb73dabb64da37aec7913844032ecb031a4326d82aae622f5e4c2f8a17
-  languageName: node
-  linkType: hard
-
 "@protobufjs/path@npm:^1.1.2":
   version: 1.1.2
   resolution: "@protobufjs/path@npm:1.1.2"
@@ -15380,24 +15373,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@trigger.dev/build@npm:4.5.4":
-  version: 4.5.4
-  resolution: "@trigger.dev/build@npm:4.5.4"
+"@trigger.dev/build@npm:4.5.9":
+  version: 4.5.9
+  resolution: "@trigger.dev/build@npm:4.5.9"
   dependencies:
     "@prisma/config": "npm:^6.10.0"
-    "@trigger.dev/core": "npm:4.5.4"
+    "@trigger.dev/core": "npm:4.5.9"
     mlly: "npm:^1.7.1"
     pkg-types: "npm:^1.1.3"
     resolve: "npm:^1.22.8"
     tinyglobby: "npm:^0.2.2"
     tsconfck: "npm:3.1.3"
-  checksum: 10/c2e408605dfda7276dbe4222f81abf20bb4a95f7047acff9bcd9d8073e9d33349374388adfd0ebef94ee3d1ea0529d53518ee6ebdb7f251dc9a82a47915408bb
+  checksum: 10/b4f3de6aeb46f802f21a5f48ca1b76d341aa4dbe44d7cf8c67ab6c61f18258e3e2d11a37529c0a9cad834517c57e5422d20910b1374f3a25e5410a4e1c77e442
   languageName: node
   linkType: hard
 
-"@trigger.dev/core@npm:4.5.4":
-  version: 4.5.4
-  resolution: "@trigger.dev/core@npm:4.5.4"
+"@trigger.dev/core@npm:4.5.9":
+  version: 4.5.9
+  resolution: "@trigger.dev/core@npm:4.5.9"
   dependencies:
     "@bugsnag/cuid": "npm:^3.1.1"
     "@electric-sql/client": "npm:1.0.14"
@@ -15434,16 +15427,16 @@ __metadata:
     zod: "npm:3.25.76"
     zod-error: "npm:1.5.0"
     zod-validation-error: "npm:^1.5.0"
-  checksum: 10/1921fc8418c616fcd86329415d6a3c3ad8a4ff20ab2716b3ec6542f21d008fef4bdd0c22d177af6eaccf42656881c7e740958d6bf311d205d378eeb52e6c52a5
+  checksum: 10/bbdb1682bcc398316802fc3bedcf7063ebd4bddba3b194bdfd51d1c8fc4a2ab78576c82ff8fb7e68b2daa0545fedcd167d542ee34a8698d13a1e0813f92f9e04
   languageName: node
   linkType: hard
 
-"@trigger.dev/schema-to-json@npm:4.5.4":
-  version: 4.5.4
-  resolution: "@trigger.dev/schema-to-json@npm:4.5.4"
+"@trigger.dev/schema-to-json@npm:4.5.9":
+  version: 4.5.9
+  resolution: "@trigger.dev/schema-to-json@npm:4.5.9"
   dependencies:
     "@sodaru/yup-to-json-schema": "npm:^2"
-    "@trigger.dev/core": "npm:4.5.4"
+    "@trigger.dev/core": "npm:4.5.9"
     effect: "npm:^3"
     zod: "npm:3.25.76"
     zod-to-json-schema: "npm:^3.24.0"
@@ -15464,17 +15457,17 @@ __metadata:
       optional: true
     valibot:
       optional: true
-  checksum: 10/417ac4b74b2a6d728a733cbb43635af6bc94b3a82d601d9fa9abacda8e1e194f8d441704eb03a1fe87129cae2f917704e43aefba9b1921cfb3165144ef23e686
+  checksum: 10/4de4c4c6ac0b7af3e81d412b19387c399e2e02132b8223c36d5c0a62789a9bb84b49850750465370ba1a598f9e556d0e52aa135a85d0ed444a08f7de3ea3497d
   languageName: node
   linkType: hard
 
-"@trigger.dev/sdk@npm:4.5.4":
-  version: 4.5.4
-  resolution: "@trigger.dev/sdk@npm:4.5.4"
+"@trigger.dev/sdk@npm:4.5.9":
+  version: 4.5.9
+  resolution: "@trigger.dev/sdk@npm:4.5.9"
   dependencies:
     "@opentelemetry/api": "npm:1.9.1"
     "@opentelemetry/semantic-conventions": "npm:1.41.1"
-    "@trigger.dev/core": "npm:4.5.4"
+    "@trigger.dev/core": "npm:4.5.9"
     chalk: "npm:^5.2.0"
     cronstrue: "npm:^2.21.0"
     debug: "npm:^4.3.4"
@@ -15495,7 +15488,7 @@ __metadata:
       optional: true
     react:
       optional: true
-  checksum: 10/7ea033fa470118b16af6497524f8f1c4f8452da4db4d2abe5b9f17e36bf840aa6e1f7ccc86d6e6ca3b89ba9b3994a1a9656c2dffc6acecfd088c743a38134318
+  checksum: 10/33ee6b7cbd0a0326454ede66d9d84e958efbf0248c9d340f9bc4357c5f734ce228b25323728da1251cf56094dcb8c1156259ae2819b69f28ae855bb8d4cbce98
   languageName: node
   linkType: hard
 
@@ -25589,10 +25582,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:4.12.25":
-  version: 4.12.25
-  resolution: "hono@npm:4.12.25"
-  checksum: 10/0cbdcdfdfb45b43cc915beaa44604170bb73b45e647927917714ec222347e7f44c944708471a45b4733cfd20b03c53820593db5b3b19663b935afca9cf984817
+"hono@npm:4.12.34":
+  version: 4.12.34
+  resolution: "hono@npm:4.12.34"
+  checksum: 10/c33104233b751c50e1821382eefad5584823ff2b635af261eb1e85c17bab706f73f3c1e5ace4d2f4c23a7fdced24e4e4de9cc5a32404b134ac93b66ff0e81a0a
   languageName: node
   linkType: hard
 
@@ -28047,14 +28040,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:4.3.0":
-  version: 4.3.0
-  resolution: "js-yaml@npm:4.3.0"
+"js-yaml@npm:4.3.2":
+  version: 4.3.2
+  resolution: "js-yaml@npm:4.3.2"
   dependencies:
     argparse: "npm:^2.0.1"
   bin:
     js-yaml: bin/js-yaml.js
-  checksum: 10/2bcec3a8118d7f744badeb04e14366578d234a736f353d41fe35d2305e4ce2409a8e041d277f07cd6bbc8aaa12128d650a68ce43247072519bede20962d2126f
+  checksum: 10/05c44b9c73e4901d92703b155e76518df64bf01ac62e4c036b47de4b391e19b72e32656e8954d51b436307f08cc9d0c0d4ec617d061cf2f65fffee9f3114bee7
   languageName: node
   linkType: hard
 
@@ -31919,10 +31912,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-forge@npm:1.4.1":
-  version: 1.4.1
-  resolution: "node-forge@npm:1.4.1"
-  checksum: 10/1fd7578cfc50c2900cbc9d5742ce273449e2ff5b57b00ec9ca4d3d931b397ffc646177749ec649cc87910fc93ceed084611f8d62b6fe727a2bfc5169f50f3f6d
+"node-forge@npm:1.4.3":
+  version: 1.4.3
+  resolution: "node-forge@npm:1.4.3"
+  checksum: 10/e0341f893234fd15aeb52c704ad1ea3b31f0bd8671f2c2aa45abaef9dac928ebbf473c7fcfca69994e90478d71936d0cc1b2001bc4b81ab70b86da0d676060c1
   languageName: node
   linkType: hard
 
@@ -34647,9 +34640,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:7.6.1":
-  version: 7.6.1
-  resolution: "protobufjs@npm:7.6.1"
+"protobufjs@npm:7.6.5":
+  version: 7.6.5
+  resolution: "protobufjs@npm:7.6.5"
   dependencies:
     "@protobufjs/aspromise": "npm:^1.1.2"
     "@protobufjs/base64": "npm:^1.1.2"
@@ -34657,13 +34650,12 @@ __metadata:
     "@protobufjs/eventemitter": "npm:^1.1.1"
     "@protobufjs/fetch": "npm:^1.1.1"
     "@protobufjs/float": "npm:^1.0.2"
-    "@protobufjs/inquire": "npm:^1.1.2"
     "@protobufjs/path": "npm:^1.1.2"
     "@protobufjs/pool": "npm:^1.1.0"
     "@protobufjs/utf8": "npm:^1.1.1"
     "@types/node": "npm:>=13.7.0"
     long: "npm:^5.3.2"
-  checksum: 10/010dcf77ab435da50d62887d57cc4b68384768e4d1cbe85948ec747996222ea659501b7c6b6d3426f96fdbaf59f577213788ce461c0938f89b8126569d8be7e2
+  checksum: 10/58a5a635fbe0632a5c48a1ab659fabfc26d5b994915a20ad623a2cfb59a2ca7411d9f4f690ca79074967b632e2db58ecc184ab507927f5b7d0852fc16568d3da
   languageName: node
   linkType: hard
 
@@ -38653,12 +38645,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"systeminformation@npm:5.31.0":
-  version: 5.31.0
-  resolution: "systeminformation@npm:5.31.0"
+"systeminformation@npm:5.33.16":
+  version: 5.33.16
+  resolution: "systeminformation@npm:5.33.16"
   bin:
     systeminformation: lib/cli.js
-  checksum: 10/1f8eb7e822b0b174c34b3606dc41c8e505f355f3b952c12ba92a53921198ec3be15ebc50240c33e270f10a30ffa4f5db85213e6c54e693332612b274995b6229
+  checksum: 10/f2c41bebab5e864e781f0f30ab5fc48ddc65e6781da60d2027a2bba33adf16ebcecf450d8d62aa6a831afc4203a545eabece45eeea86c96b80fcc5125577ac14
   conditions: (os=darwin | os=linux | os=win32 | os=freebsd | os=openbsd | os=netbsd | os=sunos | os=android)
   languageName: node
   linkType: hard
@@ -38804,16 +38796,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tar@npm:7.5.19":
-  version: 7.5.19
-  resolution: "tar@npm:7.5.19"
+"tar@npm:7.5.21":
+  version: 7.5.21
+  resolution: "tar@npm:7.5.21"
   dependencies:
     "@isaacs/fs-minipass": "npm:^4.0.0"
     chownr: "npm:^3.0.0"
     minipass: "npm:^7.1.2"
     minizlib: "npm:^3.1.0"
     yallist: "npm:^5.0.0"
-  checksum: 10/0b06a0917fe68a4dff361e147db30fd67ae2ee85ab2863d62046a6ccef46f0d1906eed20f92277a436300eaaa0e3cd31d8763d7f02fa389f41d7966e58388db8
+  checksum: 10/a1b7dcee15e4f7dbef7f07c3cf0fe946248efabd1cb029b54c698d817dfc2876c75bcaa164a12dd21191e385759ce3e37fea562cf4aabaa00984ef9ed3c48d17
   languageName: node
   linkType: hard
 
@@ -39302,9 +39294,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"trigger.dev@npm:4.5.4":
-  version: 4.5.4
-  resolution: "trigger.dev@npm:4.5.4"
+"trigger.dev@npm:4.5.9":
+  version: 4.5.9
+  resolution: "trigger.dev@npm:4.5.9"
   dependencies:
     "@clack/prompts": "npm:0.11.0"
     "@depot/cli": "npm:0.0.1-cli.2.80.0"
@@ -39318,9 +39310,9 @@ __metadata:
     "@opentelemetry/sdk-trace-node": "npm:2.7.1"
     "@opentelemetry/semantic-conventions": "npm:1.41.1"
     "@s2-dev/streamstore": "npm:^0.22.10"
-    "@trigger.dev/build": "npm:4.5.4"
-    "@trigger.dev/core": "npm:4.5.4"
-    "@trigger.dev/schema-to-json": "npm:4.5.4"
+    "@trigger.dev/build": "npm:4.5.9"
+    "@trigger.dev/core": "npm:4.5.9"
+    "@trigger.dev/schema-to-json": "npm:4.5.9"
     ansi-escapes: "npm:^7.0.0"
     braces: "npm:^3.0.3"
     c12: "npm:^1.11.1"
@@ -39372,7 +39364,7 @@ __metadata:
     zod-validation-error: "npm:^1.5.0"
   bin:
     trigger: dist/esm/index.js
-  checksum: 10/979ba24f841970c487a5804a882006fa24c13d9b13dc2cf07aea7e3acf7285d187cb3847de80e89310c9db71495b9cc2ecd19d3aea4f4cf6a5b5e3c7f0e1ef17
+  checksum: 10/74c327744a22f5927edd483c30ce885eb7ffb02152ad5f816de1646cd4632616e435c63d084b2905196c6b9a1df8d2883fee6e9d54411a1e1eb3de48cb2bcc44
   languageName: node
   linkType: hard
 
@@ -40925,9 +40917,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:6.4.4":
-  version: 6.4.4
-  resolution: "vite@npm:6.4.4"
+"vite@npm:6.4.5":
+  version: 6.4.5
+  resolution: "vite@npm:6.4.5"
   dependencies:
     esbuild: "npm:^0.25.0"
     fdir: "npm:^6.4.4"
@@ -40976,7 +40968,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10/26145545fc7488ccbc00180992f929a7fff8f30cb83cff37a69b2b8a6a24730044121d69b891125196ee1704c82d6a9afec13d31f0fa10d2282304816ff2586c
+  checksum: 10/aeeb2c3ad09fb2b50b33839262afdf7b74a0b7f800b4732db5f1b741d0d9218e704ae0f8ad8176eb1bc91b734e6c48ff621b35e59ad2ecc465ad325e05b7d61c
   languageName: node
   linkType: hard
 
