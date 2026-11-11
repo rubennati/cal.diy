@@ -446,7 +446,7 @@ workflow file, and a tag run executes the workflow from the tagged commit, so re
 ## 2026-11-11 — Upstream security intake, dependency round, Node 22
 
 **Context:** first maintenance pass since 2026-09-17. `main` had advanced 31 commits past the
-last reviewed point, the fork's Trivy scan showed about 80 open findings (10 CRITICAL),
+last reviewed point, the fork's Trivy scan showed 470 open alerts (11 CRITICAL, 180 HIGH),
 `forte-scorecard` had failed every week since at least 2026-09-21, and the image still ran
 Node 20, end-of-life since 2026-04-30.
 

@@ -2181,8 +2181,8 @@ to Node 24.
 
 **Problem / desired outcome.** Between 2026-09-17 and 2026-11-11 the fork took nothing from
 upstream. In that window upstream fixed two input-handling defects, tightened its compose
-file, and cleared its CRITICAL dependency advisories; the fork's own Trivy scan accumulated
-about 80 open findings, 10 of them CRITICAL. An operator pulling the next image should get
+file, and cleared its CRITICAL dependency advisories; the fork's own Trivy scan stood at
+470 open alerts on 2026-11-11 — 11 CRITICAL and 180 HIGH. An operator pulling the next image should get
 those fixes.
 
 **Decision and rationale.** `UPSTREAM_SYNC.md` → *Security Fix Priority* makes
