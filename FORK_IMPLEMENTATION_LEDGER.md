@@ -2158,3 +2158,95 @@ should only be a stop-gap.
 
 **Upstream re-evaluation trigger.** Node 22 leaves maintenance (2027-04-30), or upstream moves
 to Node 24.
+
+---
+
+### FIL-0023 · Upstream security intake and dependency round, 2026-11
+
+| Field | Value |
+| --- | --- |
+| Status | implemented |
+| Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
+| GitHub issue | n/a |
+| PR | see the pull request that introduced this entry |
+| Local commit(s) | `9d957d75c4`, `07987c47de`, `f2a64de1e8`, `f317897ad7` (upstream), `1fd882b231` (fork) |
+| Released in | `unreleased` |
+| Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` for the four upstream commits; `CAL_FORTE_NATIVE` for `1fd882b231` |
+| Source usage | `SOURCE_INCORPORATED` for the four upstream commits; none for `1fd882b231` |
+| Upstream source | `calcom/cal.diy` `81ce067c1d` (#30359), `3030d88a1f` (#30461), `ef7954d16a` (#30546), `91eefbf9f4` (#30198) — one `git cherry-pick -x` each, upstream authorship and the `(cherry picked from commit …)` line preserved |
+| External source | n/a |
+| Licence disposition | `PERMISSIVE_COMPATIBLE` |
+| Licence obligations | none beyond the repository's existing MIT notice |
+| Independent verification | Every bumped version was confirmed to exist on the npm registry and to be the resolved version in `yarn.lock`; Trivy's "fixed version" for each advisory was read from the fork's own open code-scanning alerts, not from upstream's commit message |
+
+**Problem / desired outcome.** Between 2026-09-17 and 2026-11-11 the fork took nothing from
+upstream. In that window upstream fixed two input-handling defects, tightened its compose
+file, and cleared its CRITICAL dependency advisories; the fork's own Trivy scan accumulated
+about 80 open findings, 10 of them CRITICAL. An operator pulling the next image should get
+those fixes.
+
+**Decision and rationale.** `UPSTREAM_SYNC.md` → *Security Fix Priority* makes
+security-relevant upstream commits take-by-default, so the four were taken and the other 27
+commits of the range were dispositioned without intake. The fork-owned commit exists because
+upstream's audit stopped at CRITICAL: ten packages that the root manifest already pins by
+resolution still carried HIGH advisories with a patched release in the same major line.
+Raising an existing pin is the smallest change that clears them. Transitive packages that are
+**not** pinned today (`ws`, `@xmldom/xmldom`, `brace-expansion`, `fast-uri` and others) were
+deliberately left alone — adding new resolutions for them widens what the fork has to
+maintain and belongs in a round of its own.
+
+**Implementation summary.**
+
+- `81ce067c1d` → `docker-compose.yml`: Redis and Prisma Studio ports bound to `127.0.0.1`.
+- `3030d88a1f` → new `packages/lib/getBlacklistedGuestEmails.ts`, used by
+  `checkIfBookerEmailIsBlocked`, `RegularBookingService`, `addGuests.handler` and
+  `checkIfUserEmailVerificationRequired.handler`. Entries are trimmed, lower-cased and
+  reduced to their base address before comparison.
+- `ef7954d16a` → `packages/features/eventtypes/lib/eventNaming.ts`: user-supplied values go
+  through a replacer function instead of being used as a replacement pattern.
+- `91eefbf9f4` → manifests and lockfile: `next` 16.4.3 / 15.5.28, `@sentry/nextjs` 10.75.2,
+  `handlebars` 4.7.10, `trigger.dev` and `@trigger.dev/sdk` 4.5.4, `next-auth` 4.24.15,
+  `proxy-addr` 2.0.8, `shell-quote` 1.11.0. Three `package.json` conflicts resolved to
+  upstream's versions; `yarn.lock` regenerated rather than hand-merged.
+- `1fd882b231` → root resolutions: `axios` 1.20.0, `follow-redirects` 1.16.1, `protobufjs`
+  7.6.1, `node-forge` 1.4.1, `form-data` 4.0.6, `hono` 4.12.25, `multer` 2.5.0,
+  `@modelcontextprotocol/sdk` 1.32.0, `vite` 6.4.4, `js-yaml` 4.3.0; the direct `axios` and
+  `vite` declarations move with them.
+
+**Intentional divergence from upstream.** The ten resolutions in `1fd882b231` are ahead of
+upstream. A future sync should keep whichever side is higher, not restore upstream's value.
+
+**Impact assessment**
+
+| Dimension | Value |
+| --- | --- |
+| Security impact | Closes a guest-email blocklist bypass and a replacement-pattern injection in event names; removes the CRITICAL and a large share of the HIGH dependency findings |
+| Privacy impact | none |
+| Attack-surface impact | reduced — no new surface; two input paths tightened |
+| New trust boundary | no |
+| New public endpoint | no |
+| New authenticated mutation | no |
+| New persistent state or schema | no |
+| New external communication | no |
+| Compatibility impact | `next` moves one minor (16.3 → 16.4) and `@sentry/nextjs` 42 minors within 10.x. `BLACKLISTED_GUEST_EMAILS` entries that only failed to match because of whitespace, case or a `+tag` now block as written |
+
+**Validation.** On the branch head, locally on Node 22: `yarn type-check:ci --force` — 10 of
+10 tasks, 0 errors, run once after the upstream intake and again after the fork bumps.
+`TZ=UTC yarn test` — 406 files, 4267 tests passed, 47 skipped. The first full run reported
+three unhandled rejections from `reschedule.test.ts` with every test passing; the file passed
+twice in isolation and a second full run was clean, so this is recorded as a load-dependent
+timing flake in that test, not as a regression. Focused runs of the three test files touched
+by the intake: 83 of 83. `git diff --check` clean.
+
+**Guards / CI.** The upstream commits bring their own regression tests
+(`getBlacklistedGuestEmails.test.ts`, `eventNaming.test.ts`, additions to
+`booking-validations.test.ts`). `forte-trivy` reports any pin that falls behind again.
+
+**Rollback / disable.** Each commit reverts independently. Reverting `f317897ad7` or
+`1fd882b231` reinstates known-vulnerable versions.
+
+**Related documentation.** `UPSTREAM_REVIEW_LEDGER.md` → *Review round 2026-11-11*;
+`.ai/sync-log.md` 2026-11-11.
+
+**Upstream re-evaluation trigger.** Upstream raises any of the ten pins past the fork's
+value, or a new advisory lands on one of them.
