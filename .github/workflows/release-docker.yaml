@@ -496,11 +496,17 @@ jobs:
             jq -r '.digest // empty' <<< "$out"
           }
 
+          # `--prefer-index=false` is load-bearing. Each candidate digest is a
+          # single-platform image manifest, and for a single source buildx
+          # defaults to wrapping it in a NEW manifest list — whose digest is
+          # not the validated one. That default failed v6.2.0-7 and v6.2.0-8
+          # at the equality check below. With the flag the manifest is copied
+          # as-is, so the tag resolves to exactly the validated digest.
           reconcile() {
             local ref="$1" want="$2" have
             have="$(digest_of "$ref")"
             if [[ -z "$have" ]]; then
-              docker buildx imagetools create --tag "$ref" "$IMAGE_NAME@$want"
+              docker buildx imagetools create --prefer-index=false --tag "$ref" "$IMAGE_NAME@$want"
               have="$(digest_of "$ref")"
               if [[ "$have" != "$want" ]]; then
                 echo "::error::$ref resolved to $have after creation, expected $want"
@@ -529,7 +535,7 @@ jobs:
           # release AMD64 digest is idempotent and safe to repeat.
           latest_have="$(digest_of "$IMAGE_NAME:latest")"
           if [[ "$latest_have" != "$CAND_AMD64_DIGEST" ]]; then
-            docker buildx imagetools create --tag "$IMAGE_NAME:latest" "$IMAGE_NAME@$CAND_AMD64_DIGEST"
+            docker buildx imagetools create --prefer-index=false --tag "$IMAGE_NAME:latest" "$IMAGE_NAME@$CAND_AMD64_DIGEST"
           fi
           latest_digest="$(digest_of "$IMAGE_NAME:latest")"
 

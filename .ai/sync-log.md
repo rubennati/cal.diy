@@ -494,6 +494,38 @@ round. `forte-ci` does not run unit tests, so nothing gates on them today.
 
 ---
 
+## 2026-11-12 — `v6.2.0-8` failed at publication; real cause of the `-7` failure found
+
+**Context:** `v6.2.0-8` was promoted (PR #80, `release` `bf6c2deeb8`, tree `223eb6292d`) from
+candidate run `43119371466` and tagged. Publication run `43122870526` failed in the same step
+as `v6.2.0-7`.
+
+**Cause:** `docker buildx imagetools create --tag <ref> <image>@<digest>` does not copy a
+single-platform manifest as-is. For a single source it defaults to wrapping it in a new
+manifest list. The tag `ghcr.io/rubennati/cal.diy:v6.2.0-8` was created and resolves to
+`sha256:92b6b965…5970`, a list whose only entry is the validated AMD64 manifest
+`sha256:5c7e25c5…749a`. `reconcile()` compared the two, found them different, and stopped —
+the check worked as designed. Confirmed with `imagetools create --dry-run`: the default
+output is a manifest list; with `--prefer-index=false` it is byte-identical to the source
+manifest and hashes to the validated digest.
+
+**Consequence for the record:** the 2026-09-17 diagnosis of `v6.2.0-7` was incomplete.
+`487921ad57` (PR #76) fixed how `digest_of()` reports lookup errors, which was a real defect,
+but the run had failed for this reason. The artifact-promotion pipeline introduced in PRs
+#69–#71 had never completed a publication; `v6.2.0-6` predates it.
+
+**State left behind:** Git tags `v6.2.0-7` and `v6.2.0-8` stay as failed-release evidence.
+GHCR tag `v6.2.0-8` exists (AMD64 only, wrapped digest); no `-arm` tag, `latest` not moved,
+no GitHub Release, no release record. Per the immutability rule it is neither deleted nor
+redirected. It must not be handed off.
+
+**Fix:** both tag writes in `release-docker.yaml` pass `--prefer-index=false`. The promotion
+harness's registry stand-ins now model buildx's wrapping, so a call without the flag fails
+the harness, and a new assertion requires the flag on every `imagetools create` in the
+workflow. Next release: `v6.2.0-9`.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>
