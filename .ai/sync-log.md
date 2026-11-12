@@ -526,6 +526,42 @@ workflow. Next release: `v6.2.0-9`.
 
 ---
 
+## 2026-11-12 — `v6.2.0-9` released
+
+**Context:** first release since `v6.2.0-6`, and the first one the artifact-promotion
+pipeline completed. Carries the 2026-11 upstream security intake and dependency round, Node
+22 base images, the Next.js update originally meant for `v6.2.0-7`, and the tag-write fix
+from PR #81.
+
+**Release identity:** tag `v6.2.0-9` (annotated) on `release` `a5b682dd20`, tree
+`3c334d53aa`, promoted from `develop` candidate `d041548515` through PR #82. Trees identical.
+
+**Artifacts:** AMD64 `ghcr.io/rubennati/cal.diy:v6.2.0-9@sha256:bd6c53d8…3034`, ARM64
+`ghcr.io/rubennati/cal.diy:v6.2.0-9-arm@sha256:d446cd81…e616`, `latest` → AMD64 digest.
+Candidate run `43124326258`, release run `43131284070`. GitHub Release created by the
+workflow with both SBOMs and `release-record.json`.
+
+**Checks:** all three exact-SHA push gates green on the candidate and on the release commit.
+After publication, verified from outside the pipeline: both registry tags resolve to the
+digests in `release-record.json` as plain image manifests, and `gh attestation verify`
+accepts the SLSA provenance for both digests.
+
+**Incidents on the way:** `v6.2.0-8` failed at publication (entry above). The first
+`v6.2.0-9` candidate attempt failed in the AMD64 job with a registry `unknown blob` during
+`docker push`, after build, runtime test and scan had passed; the job was re-run and
+succeeded. Git over SSH stopped working mid-session (local agent not responding), so
+fetches and pushes from that point used HTTPS with the existing `gh` login.
+
+**Intentionally NOT taken (+ reason):** see the 2026-11-11 entry. 112 HIGH Trivy findings on
+unpinned transitive packages ship in this release under the report-only scanner policy. The
+candidate's image-scan output was not triaged for this release.
+
+**Next step:** hand the digests to `secure-docker-blueprint`; decide whether to enable
+Dependabot alerts; fix the flaky `reschedule.test.ts`; plan a functional intake round for
+the six `candidate` commits.
+
+---
+
 <!-- Template for the next entry:
 
 ## YYYY-MM-DD — <short title>
