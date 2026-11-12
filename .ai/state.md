@@ -14,25 +14,28 @@ steady-state divergence: [../FORK_DIVERGENCE.md](../FORK_DIVERGENCE.md).
 - this repo is **public** → never commit real/personal data (company, support address,
   personal logo); those belong in the private deployment
 
-## Status (as of 2026-08-11)
+## Status (as of 2026-11-12)
 
 **Identity:** `cal.forte` — hardened, review-gated fork of Cal.diy (MIT community edition).
 Upstream intake is selective and recorded commit-by-commit in
 [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 
 **Branches:** `main` = untouched upstream mirror · `develop` = integration/review ·
-`release` = reviewed source for GHCR images. The latest published source is `9b9df424e3`.
+`release` = reviewed source for GHCR images. The latest published source is `a5b682dd20`.
 
-**Latest release:** `v6.2.0-6` from `9b9df424e3` (published 2026-08-28):
-- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`
-- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
-- rollback target: `v6.2.0-5` from `201b016984` — AMD64 `sha256:c2facc284b28e1eea76b6d82c02e680d20d648dc255ef7f74520dbf30d18b17e`, ARM64 `sha256:dffa387024a68b9b057b1bdf3342a21b699bb092da4f711932f129bd932faeae`
+**Latest release:** `v6.2.0-9` from `a5b682dd20` (published 2026-11-12):
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-9@sha256:bd6c53d80dcce24c2112c2878947d261f6bc825bda9fe93bf18e7e673d2f3034`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-9-arm@sha256:d446cd815cd58143bd466215687d34fb2068440db0056e6fae03df45d1d5e616`
+- rollback target: `v6.2.0-6` from `9b9df424e3` — AMD64 `sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`, ARM64 `sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
+- `v6.2.0-7` and `v6.2.0-8` are failed-release tags, never published. A stray GHCR tag
+  `v6.2.0-8` exists and must not be deployed.
 
-It contains the telemetry removal and guard, repaired `packages/lib` type-check coverage,
-the IP-banlist whitespace fix, non-root runtimes, immutable build inputs, and the hardened
-two-architecture release pipeline. Release Docker run `31435807941` produced SBOMs,
-provenance, and the authoritative release record. Downstream handoff is tracked in
-`secure-docker-blueprint` issue #30.
+It adds, over `v6.2.0-6`: Next.js 16.4.3 and the rest of the 2026-11 dependency round (no
+CRITICAL Trivy finding left; 112 HIGH remain on unpinned transitive packages), the
+guest-email blocklist and event-name fixes from upstream, and Node 22 base images. It is the
+first release produced end to end by the artifact-promotion pipeline: candidate run
+`43124326258` built and validated the images, release run `43131284070` promoted those exact
+digests and created the GitHub Release.
 
 **Release topology:** the one-time content-neutral ancestry reconciliation completed in
 `a4e2ff5dcd`; `develop` and `release` were source-identical at published SHA `201b016984`.
@@ -89,12 +92,12 @@ decisions:
 
 - Tracks cal.com **6.2.0** (`apps/web/package.json` on `main` and `develop`).
 - Fork divergence point (merge-base `develop`↔`origin/main`): **`46eb533d`**.
-- Mirror `origin/main` last reviewed through `176037d0af`: 50 commits past base, still the
-  6.2.0 patch line. Nine complete upstream patches are integrated, none are prepared, and
-  41 are not integrated. Exact dispositions and historical aggregate
+- Mirror `origin/main` last reviewed through `ef7954d16a`: 81 commits past base, still the
+  6.2.0 patch line. Fifteen complete upstream patches are integrated, one is partial, none
+  are prepared, and 65 are not integrated. Exact dispositions and historical aggregate
   provenance are in [../UPSTREAM_REVIEW_LEDGER.md](../UPSTREAM_REVIEW_LEDGER.md).
 - ⚠️ The repo's `v6.2.0` tag points at a **fork** commit (`a39c99f5`), **not** the upstream
-  release. Fork release tags are `v6.2.0-1..-5`. Pin bases to the merge-base / real upstream tag.
+  release. Fork release tags are `v6.2.0-1..-6` and `-9`; `-7` and `-8` were never published. Pin bases to the merge-base / real upstream tag.
 
 ## Knowledge base map
 

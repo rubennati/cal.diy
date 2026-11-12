@@ -26,13 +26,13 @@ Goal: a stable, hardened, **auditable** self-host — stay current on upstream s
 fixes, keep fork drift small, and shrink the attack surface. Born out of a real self-host
 compromise; every change here is deliberate and documented.
 
-**Upstream review:** Last checked **2026-08-10** through [`176037d0af`](https://github.com/rubennati/cal.diy/commit/176037d0afbe572f870a3c702985e7cd83fe6c0c). [Full fork status →](FORK_STATUS.md)
+**Upstream review:** Last checked **2026-11-11** through [`ef7954d16a`](https://github.com/rubennati/cal.diy/commit/ef7954d16a). [Full fork status →](FORK_STATUS.md)
 
 **Fork changes:** Security defaults, telemetry, CI, container runtime, and release handling
 intentionally differ from Cal.diy. [See the public divergence register →](FORK_DIVERGENCE.md)
 
-**Latest release:** [`v6.2.0-6`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-6)
-from [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65).
+**Latest release:** [`v6.2.0-9`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-9)
+from [`a5b682dd20`](https://github.com/rubennati/cal.diy/commit/a5b682dd20cb6cf9e90b52c84729f38727fc2475).
 [Full release evidence →](FORK_STATUS.md#latest-release-evidence)
 
 ## Branch model
@@ -52,12 +52,14 @@ from [`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94
 ## Releases
 
 The latest published image was built from `release` at
-[`9b9df424e3`](https://github.com/rubennati/cal.diy/commit/9b9df424e3f3ad94fd4a5fc4c5387764f1dbce65):
+[`a5b682dd20`](https://github.com/rubennati/cal.diy/commit/a5b682dd20cb6cf9e90b52c84729f38727fc2475):
 
-- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-6@sha256:538cbb4a22733d262057c4b2a47c700117766816f57732925b077267a0dbe0f1`
-- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-6-arm@sha256:5b2ffcb7fc0e752a40f079a4d580571da680af91238b0bdf1dbe170f246a2250`
-- Evidence: [Release Docker run 33159543959](https://github.com/rubennati/cal.diy/actions/runs/33159543959)
-- Downstream handoff: [secure-docker-blueprint issue #30](https://github.com/rubennati/secure-docker-blueprint/issues/30)
+- AMD64: `ghcr.io/rubennati/cal.diy:v6.2.0-9@sha256:bd6c53d80dcce24c2112c2878947d261f6bc825bda9fe93bf18e7e673d2f3034`
+- ARM64: `ghcr.io/rubennati/cal.diy:v6.2.0-9-arm@sha256:d446cd815cd58143bd466215687d34fb2068440db0056e6fae03df45d1d5e616`
+- Evidence: [Release Docker run 43131284070](https://github.com/rubennati/cal.diy/actions/runs/43131284070)
+
+Build numbers `-7` and `-8` were tagged but never released; do not deploy the stray
+`v6.2.0-8` image tag. See [FORK_STATUS.md](FORK_STATUS.md).
 
 Tags are architecture-specific; there is currently no combined multi-architecture manifest.
 See [FORK_STATUS.md](FORK_STATUS.md) for the maintenance snapshot and

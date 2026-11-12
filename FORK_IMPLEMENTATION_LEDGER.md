@@ -2095,12 +2095,12 @@ Workflow Changes.
 
 | Field | Value |
 | --- | --- |
-| Status | implemented |
+| Status | released |
 | Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
 | GitHub issue | n/a |
-| PR | see the pull request that introduced this entry |
+| PR | #77 |
 | Local commit(s) | `04ca1f6acb` |
-| Released in | `unreleased` |
+| Released in | [`v6.2.0-9`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-9) |
 | Implementation relationship | `OFFICIAL_UPSTREAM_ADAPTATION` |
 | Source usage | `SOURCE_ADAPTED` |
 | Upstream source | `calcom/cal.diy` `793293c461` (#30416) — **not** cherry-picked; see below |
@@ -2165,12 +2165,12 @@ to Node 24.
 
 | Field | Value |
 | --- | --- |
-| Status | implemented |
+| Status | released |
 | Type | `SECURITY_HARDENING` / `DEPENDENCY_MAINTENANCE` |
 | GitHub issue | n/a |
-| PR | see the pull request that introduced this entry |
+| PR | #78 |
 | Local commit(s) | `9d957d75c4`, `07987c47de`, `f2a64de1e8`, `f317897ad7` (upstream), `1fd882b231`, `7e61e3efe0` (fork) |
-| Released in | `unreleased` |
+| Released in | [`v6.2.0-9`](https://github.com/rubennati/cal.diy/releases/tag/v6.2.0-9) |
 | Implementation relationship | `OFFICIAL_UPSTREAM_CHERRY_PICK` for the four upstream commits; `CAL_FORTE_NATIVE` for `1fd882b231` and `7e61e3efe0` |
 | Source usage | `SOURCE_INCORPORATED` for the four upstream commits; none for the two fork commits |
 | Upstream source | `calcom/cal.diy` `81ce067c1d` (#30359), `3030d88a1f` (#30461), `ef7954d16a` (#30546), `91eefbf9f4` (#30198) — one `git cherry-pick -x` each, upstream authorship and the `(cherry picked from commit …)` line preserved |
