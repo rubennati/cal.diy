@@ -68,9 +68,9 @@ reconciled against current history on **2026-08-10**.
 | `ef7954d16a` | `integrated-full` | `f2a64de1e8` | Custom event names: attendee/host names and booking answers were passed to `String.replace` as the replacement string, so `$&`, `` $` ``, `$'` and `$$` in user input were interpreted as substitution patterns. Now inserted literally. Cherry-picked with `-x` on 2026-11-11, applied without conflict. |
 | `91eefbf9f4` | `integrated-full` | `f317897ad7` | Dependency security audit: `next` 16.4.3 / 15.5.28, `@sentry/nextjs` 10.75.2, `handlebars` 4.7.10, `trigger.dev` + `@trigger.dev/sdk` 4.5.4, `next-auth` 4.24.15, `proxy-addr` 2.0.8, `shell-quote` 1.11.0. Cherry-picked with `-x` on 2026-11-11 **with conflicts**: the three `package.json` conflicts were resolved to upstream's versions (the fork was already at `next` 16.3.5 from its own `b18b85a9d6`, and already carried the `websocket-driver` resolution, so only `proxy-addr` was added there); `yarn.lock` was not merged by hand but regenerated from the resolved manifests with `yarn install`, so its bytes differ from upstream's lockfile while every declared version matches. |
 
-The four intakes of 2026-11-11 (`81ce067c1d`, `3030d88a1f`, `ef7954d16a`, `91eefbf9f4`), the
-earlier `717fed8f86` and `07a288bbd8` (released in `v6.2.0-6`), and the fork's Next.js
-16.3.5 update were first released together with the partial `793293c461` in `v6.2.0-9`.
+The four intakes of 2026-11-11 (`81ce067c1d`, `3030d88a1f`, `ef7954d16a`, `91eefbf9f4`) and
+the partial `793293c461` were first released in `v6.2.0-9`. `717fed8f86` and `07a288bbd8`
+were first released in `v6.2.0-6`; their rows above still say "Not yet released".
 
 The four patches represented by `75c8f5c18f` have aggregate file statistics matching the
 sum of their upstream patches. No partial hunk intake was found. Their provenance is weak
